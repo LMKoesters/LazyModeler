@@ -1,0 +1,15 @@
+Package: ModelOptimizer
+Type: Package
+Title: Generalised linear model optimisation
+Version: 0.1.0
+Authors@R: 
+    person(given = "Lara",
+           family = "Koesters",
+           role = c("aut", "cre"),
+           email = "lkoesters@bgc-jena.mpg.de")
+RoxygenNote: 7.3.0
+Encoding: UTF-8
+LazyData: true
+Suggests: 
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
