@@ -14,7 +14,7 @@ optimize_model(
   round_p = 5,
   plot = FALSE,
   aic_bic = FALSE,
-  autocorrelation_method = "pearson"
+  correlation_method = "pearson"
 )
 }
 \arguments{
@@ -36,7 +36,7 @@ optimize_model(
 
 \item{aic_bic}{Whether to apply AIC and BIC difference in addition to ANOVA to determine if model is better/worse than ancestor}
 
-\item{autocorrelation_method}{The method used for correlation calculation}
+\item{correlation_method}{The method used for correlation calculation}
 }
 \value{
 An edited list of coefficients where autocorrelated variables are removed (according to sorted list of coefficients)
