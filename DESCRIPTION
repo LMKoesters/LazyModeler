@@ -1,7 +1,7 @@
 Package: ModelOptimizer
 Type: Package
 Title: Generalised linear model optimisation
-Version: 0.1.2
+Version: 0.1.3
 Authors@R: 
     person(given = "Lara",
            family = "Koesters",
