@@ -3,10 +3,15 @@ Type: Package
 Title: Generalised linear model optimisation
 Version: 0.1.4
 Authors@R: 
-    person(given = "Lara",
-           family = "Koesters",
-           role = c("aut", "cre"),
-           email = "lkoesters@bgc-jena.mpg.de")
+    c(person(given = "Lara",
+             family = "Koesters",
+             role = c("aut", "cre"),
+             email = "lkoesters@bgc-jena.mpg.de",
+             comment = c(ORCID = "0000-0002-7913-2377")),
+      person(given = "Kevin",
+             family = "Karbstein",
+             role = "aut",
+             comment = c(ORCID = "0000-0003-1424-6557")))
 RoxygenNote: 7.3.0
 Encoding: UTF-8
 LazyData: true
