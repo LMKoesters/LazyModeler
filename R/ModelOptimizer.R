@@ -279,16 +279,16 @@ optimize_model <- function(df, resp_preds, glm_family='binomial',
       for (i in 1:length(all_sign_vars)) {
         sign_var <- all_sign_vars[[i]]
         
-        if (plot) {
-          plot_vars(df_sub, response_col, sign_var, 
-                    glm_family=glm_family)
-        }
         final_model_overview <- data.frame('response' = c(response_col),
                                            'predictor' = c(sign_var))
-        
+        # print(final_model_overview)
         final_model_overview <- merge(final_model_overview, estimates, 
                                       by=c('response', 'predictor'), 
                                       all.x = TRUE)
+        # print(final_model_overview)
+        if (plot) {
+          plot_vars(df_sub, response_col, sign_var, glm_family=glm_family)
+        }
         final_model_overviews[[i + ((i1-1)*length(resp_preds))]] <- final_model_overview
       }
     }
@@ -306,8 +306,7 @@ optimize_model <- function(df, resp_preds, glm_family='binomial',
       !!ensym(p_value_col) < 0.001 ~ '***',
       !!ensym(p_value_col) < 0.01 ~ '**',
       !!ensym(p_value_col) < 0.05 ~ '*',
-      !!ensym(p_value_col) < 0.1 ~ '',
-      TRUE ~ ''
+      TRUE ~ 'ns'
     ))
   
   return(list(
@@ -324,10 +323,21 @@ plot_vars <- function(df, response, predictor, glm_family='binomial') {
                                family = .(glm_family), 
                                control = glm.control(maxit = 1000))))
   
+  estimates <- as.data.frame(coef(summary(glm_model)))
+  
   min_val <- min(df[[predictor]])
   max_val <- max(df[[predictor]])
   
   intercept <- glm_model$coefficients[['(Intercept)']]
+  estimate <- round(estimates[rownames(estimates) == predictor, 'Estimate'], 2)
+  p_value <- round(estimates[rownames(estimates) == predictor, ncol(estimates)], 5)
+  sign <- case_when(
+    p_value < 0.0001 ~ '****',
+    p_value < 0.001 ~ '***',
+    p_value < 0.01 ~ '**',
+    p_value < 0.05 ~ '*',
+    TRUE ~ 'ns'
+  )
   
   pred1 <- data.frame(predictor = seq(from = min_val,
                                       to = max_val, by = 2))
@@ -335,10 +345,69 @@ plot_vars <- function(df, response, predictor, glm_family='binomial') {
   
   pred <- predict(glm_model, newdata = pred1, type = "response")
   
+  range_x <- max_val - min_val
+  y_max <- max(df[[response]])
+  range_y <- y_max - min(df[[response]])
+                         
+  text_x = min_val + (range_x * .01)
+  text_y = max(df[[response]]) - (range_y * .05)
+  
   # TODO: how to plot as example
-  # TODO: add p-values and R2 in plot
   plot(x = df[[predictor]], y = df[[response]], 
        xlab = predictor, ylab=str_interp("${response} values"), 
-       main=str_interp('${predictor}_${response}'), pch=1, lwd=2, lty=2)
+       main=str_interp('${predictor}_${response}'), pch=16, lwd=2, lty=2)
   lines(pred1[[predictor]], pred, lwd=3)
+  rect(
+    xleft = text_x - range_x * 0.02,
+    ybottom = text_y - range_y * 0.08,
+    xright = text_x + range_x * 0.25,
+    ytop = text_y + range_y * 0.08,
+    col = adjustcolor("#91BAB6", alpha.f = 0.3),
+    border = NA
+  )
+  text(
+    x = text_x,
+    y = text_y,
+    labels = str_interp('estimate=${estimate}\np=${p_value}, ${sign}'),
+    adj=0
+  )
+}
+
+
+
+dat <- read.table("~/PycharmProjects/2023_barcodejpg_paper/analysis/kevin/dataset_info_Kevin.tsv", sep = '\t', header=TRUE)
+dat$genus_of_species <- sub("\\_.*", "", dat$taxon)
+dat <- dat %>%
+  group_by(genus_of_species) %>%
+  mutate(species_per_genus = n() - 1) %>% # -1 bc one is always just the row for the genus
+  ungroup() %>%
+  arrange(taxon) # re-sort dataframe according to taxon alphabetically
+dat$confusion <- replace(dat$genus_confusion, is.na(dat$genus_confusion), 0) + replace(dat$species_confusion, is.na(dat$species_confusion), 0) # add column confusion (genus confusion concatenated with species confusion)
+dat$diff_gene_length <- dat$train_mean_gene_length - dat$val_mean_gene_length
+
+# 
+# jobs <- list('Asteraceae', 'Poaceae', 'Coccinellidae', 'Lycaenidae',
+#              c('Asteraceae', 'Poaceae'), c('Coccinellidae', 'Lycaenidae'),
+#              c('Asteraceae', 'Poaceae', 'Coccinellidae', 'Lycaenidae'))
+jobs <- list('Asteraceae', 'Poaceae', 'Coccinellidae', 'Lycaenidae')
+confusion_cols <- c('genus_confusion', 'species_confusion', 'confusion')
+coefficients <- c('val_min_gene_length', 'val_max_gene_length',
+                  'train_min_gene_length', 'train_max_gene_length', 
+                  'train_num_samples', 'val_num_samples',
+                  'mean_gene_length', 'val_mean_gene_length',
+                  'train_mean_gene_length')
+
+resp_preds <- list('genus_confusion'=coefficients, 'species_confusion'=coefficients[!coefficients == 'val_num_samples'], 'confusion'=coefficients)
+
+model_infos <- list()
+for (i in 1:length(jobs)) {
+  if (length(jobs[[i]]) > 1) {
+    job_id <- paste(jobs[[i]], collapse = '_')
+    dat_subset <- dat[dat$dataset %in% jobs[[i]],]
+  } else {
+    job_id <- jobs[[i]]
+    dat_subset <- subset(dat, dat$dataset == job_id)
+  }
+  
+  model_infos[[job_id]] <- optimize_model(dat_subset, resp_preds, glm_family = 'quasibinomial', automatic_removal = TRUE, plot = TRUE)
 }
