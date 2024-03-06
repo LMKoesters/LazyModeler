@@ -9,7 +9,7 @@ remove_autocorrelations(
   coefficients,
   automatic_removal = TRUE,
   autocorrelation_threshold = 0.8,
-  correlation_method = "pearson"
+  correlation_method = "spearman"
 )
 }
 \arguments{

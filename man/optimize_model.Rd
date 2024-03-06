@@ -6,23 +6,21 @@
 \usage{
 optimize_model(
   df,
-  response_cols,
-  predictor_cols,
+  resp_preds,
   glm_family = "binomial",
   autocorrelation_threshold = 0.8,
   automatic_removal = FALSE,
   round_p = 5,
   plot = FALSE,
   aic_bic = FALSE,
-  correlation_method = "pearson"
+  correlation_method = "spearman",
+  model_summaries = FALSE
 )
 }
 \arguments{
 \item{df}{A (wide) dataframe with predictors and response as columns}
 
-\item{response_cols}{A list of response columns sorted by their relevance (most to least)}
-
-\item{predictor_cols}{A list of predictors sorted by their relevance (most to least)}
+\item{resp_preds}{A dictionary of response columns and respective predictors sorted by their relevance (most to least)}
 
 \item{glm_family}{The family used for glm calculation}
 
