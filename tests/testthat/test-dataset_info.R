@@ -9,4 +9,8 @@ test_that("dataset info model optimization without errors", {
   expect_no_error(optimize_model(dataset_info, response_cols, coefficients,
                                     glm_family='quasibinomial',
                                     automatic_removal=TRUE))
+  
+  expect_no_error(optimize_model(dataset_info, response_cols, coefficients,
+                                 glm_family='quasibinomial',
+                                 automatic_removal=TRUE, plot=TRUE))
 })

@@ -10,6 +10,7 @@ Authors@R:
 RoxygenNote: 7.3.0
 Encoding: UTF-8
 LazyData: true
+Imports: corrplot, dplyr, stringr, tibble, tidyr
 Suggests: 
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
