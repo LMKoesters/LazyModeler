@@ -214,6 +214,7 @@ simplify_model <- function(glm_model, aic_bic=FALSE, model_method='binomial',
 #' @param plot Whether to plot correlations for predictors with significant impact
 #' @param aic_bic Whether to apply AIC and BIC difference in addition to ANOVA to determine if model is better/worse than ancestor
 #' @param correlation_method The method used for correlation calculation
+#' @param glm_iter The number of max iterations used for the glm calculation
 #' @return An edited list of coefficients where autocorrelated variables are removed (according to sorted list of coefficients)
 #' @examples 
 #' data("dataset_info");
@@ -227,7 +228,7 @@ simplify_model <- function(glm_model, aic_bic=FALSE, model_method='binomial',
 optimize_model <- function(df, resp_preds, glm_family='binomial', 
                            autocorrelation_threshold=0.8, automatic_removal=FALSE, 
                            round_p=5, plot=FALSE, aic_bic=FALSE, correlation_method='spearman',
-                           model_summaries=FALSE) {
+                           model_summaries=FALSE, glm_iter=1000) {
   model_histories <- list()
   final_model_overviews <- list()
   autocorrelations_overview <- list()
@@ -252,7 +253,8 @@ optimize_model <- function(df, resp_preds, glm_family='binomial',
     autocorrelations_overview[[i1]] <- autocorrelations
     
     frm <- as.formula(paste(response_col, "~", paste(predictor_cols, collapse='+')))
-    glm_model <- eval(bquote(glm(as.formula(frm), data=.(df_sub), family = .(glm_family), control = glm.control(maxit = 1000))))
+    glm_model <- eval(bquote(glm(as.formula(frm), data=.(df_sub), family = .(glm_family), 
+                                 control = glm.control(maxit = .(glm_iter)))))
     
     simplified_model_info <- simplify_model(glm_model, aic_bic=aic_bic, 
                                             model_summaries=model_summaries)
@@ -271,26 +273,15 @@ optimize_model <- function(df, resp_preds, glm_family='binomial',
     all_sign_vars <- all_sign_vars[!is.na(all_sign_vars)]
     
     if (length(all_sign_vars) != 0) {
-      estimates <- as.data.frame(coef(summary(final_model$model)))
-      estimates$predictor <- rownames(estimates)
-      estimates$response <- response_col
-      estimates <- estimates[estimates$predictor != '(Intercept)',]
+      models_overview <- as.data.frame(coef(summary(final_model$model))) %>%
+        rownames_to_column(var='predictor') %>%
+        mutate(response = response_col, .before = predictor) %>%
+        filter(predictor != '(Intercept)')
       
-      for (i in 1:length(all_sign_vars)) {
-        sign_var <- all_sign_vars[[i]]
-        
-        final_model_overview <- data.frame('response' = c(response_col),
-                                           'predictor' = c(sign_var))
-        # print(final_model_overview)
-        final_model_overview <- merge(final_model_overview, estimates, 
-                                      by=c('response', 'predictor'), 
-                                      all.x = TRUE)
-        # print(final_model_overview)
-        if (plot) {
-          plot_vars(df_sub, response_col, sign_var, glm_family=glm_family)
-        }
-        final_model_overviews[[i + ((i1-1)*length(resp_preds))]] <- final_model_overview
-      }
+      if (plot) { plot_glm_vars(df_sub, response_col, all_sign_vars, glm_family=glm_family,
+                glm_iter=glm_iter) }
+      
+      final_model_overviews[[i1]] <- models_overview
     }
   }
   
@@ -317,58 +308,79 @@ optimize_model <- function(df, resp_preds, glm_family='binomial',
 }
 
 
-plot_vars <- function(df, response, predictor, glm_family='binomial') {
-  frm <- as.formula(paste(response, "~", predictor))
-  glm_model <- eval(bquote(glm(as.formula(frm), data=.(df), 
-                               family = .(glm_family), 
-                               control = glm.control(maxit = 1000))))
-  
-  estimates <- as.data.frame(coef(summary(glm_model)))
-  
-  min_val <- min(df[[predictor]])
-  max_val <- max(df[[predictor]])
-  
-  intercept <- glm_model$coefficients[['(Intercept)']]
-  estimate <- round(estimates[rownames(estimates) == predictor, 'Estimate'], 2)
-  p_value <- round(estimates[rownames(estimates) == predictor, ncol(estimates)], 5)
-  sign <- case_when(
-    p_value < 0.0001 ~ '****',
-    p_value < 0.001 ~ '***',
-    p_value < 0.01 ~ '**',
-    p_value < 0.05 ~ '*',
-    TRUE ~ 'ns'
-  )
-  
-  pred1 <- data.frame(predictor = seq(from = min_val,
-                                      to = max_val, by = 2))
-  colnames(pred1) <- c(predictor)
-  
-  pred <- predict(glm_model, newdata = pred1, type = "response")
-  
-  range_x <- max_val - min_val
-  y_max <- max(df[[response]])
-  range_y <- y_max - min(df[[response]])
-  
-  text_x = min_val + (range_x * .01)
-  text_y = max(df[[response]]) - (range_y * .05)
-  
-  # TODO: how to plot as example
-  plot(x = df[[predictor]], y = df[[response]], 
-       xlab = predictor, ylab=str_interp("${response} values"), 
-       main=str_interp('${predictor}_${response}'), pch=16, lwd=2, lty=2)
-  lines(pred1[[predictor]], pred, lwd=3)
-  rect(
-    xleft = text_x - range_x * 0.02,
-    ybottom = text_y - range_y * 0.08,
-    xright = text_x + range_x * 0.25,
-    ytop = text_y + range_y * 0.08,
-    col = adjustcolor("#91BAB6", alpha.f = 0.3),
-    border = NA
-  )
-  text(
-    x = text_x,
-    y = text_y,
-    labels = str_interp('estimate=${estimate}\np=${p_value}, ${sign}'),
-    adj=0
-  )
+#' GLM response~predictor plotting
+#'
+#' Plots response~predictor relationship
+#' @param df A (wide) dataframe with predictors and response as columns
+#' @param response The response columns within the df
+#' @param predictors A list of predictors (i.e. column names)
+#' @param glm_family The family used for glm calculation
+#' @param glm_iter The number of max iterations used for the glm calculation
+#' @return Nothing. Plots relationships in right bottom panel
+#' @examples
+#' data("dataset_info");
+#' coefficients <- c('val_min_gene_length', 'val_max_gene_length',
+#'                   'train_min_gene_length', 'train_max_gene_length',
+#'                   'train_num_samples', 'val_num_samples',
+#'                   'mean_gene_length', 'val_mean_gene_length',
+#'                   'train_mean_gene_length');
+#' plot_glm_vars(dataset_info, "species_confusion", coefficients);
+#' @export
+plot_glm_vars <- function(df, response, predictors, glm_family='binomial', 
+                      glm_iter=1000) {
+  for (predictor in predictors) {
+    frm <- as.formula(paste(response, "~", predictor))
+    glm_model <- eval(bquote(glm(as.formula(frm), data=.(df), 
+                                 family = .(glm_family), 
+                                 control = glm.control(maxit = .(glm_iter)))))
+    
+    estimates <- as.data.frame(coef(summary(glm_model)))
+    
+    min_val <- min(df[[predictor]])
+    max_val <- max(df[[predictor]])
+    
+    intercept <- glm_model$coefficients[['(Intercept)']]
+    estimate <- round(estimates[rownames(estimates) == predictor, 'Estimate'], 2)
+    p_value <- round(estimates[rownames(estimates) == predictor, ncol(estimates)], 5)
+    sign <- case_when(
+      p_value < 0.0001 ~ '****',
+      p_value < 0.001 ~ '***',
+      p_value < 0.01 ~ '**',
+      p_value < 0.05 ~ '*',
+      TRUE ~ 'ns'
+    )
+    
+    pred1 <- data.frame(predictor = seq(from = min_val,
+                                        to = max_val, by = 2))
+    colnames(pred1) <- c(predictor)
+    
+    pred <- predict(glm_model, newdata = pred1, type = "response")
+    
+    range_x <- max_val - min_val
+    y_max <- max(df[[response]])
+    range_y <- y_max - min(df[[response]])
+    
+    text_x = min_val + (range_x * .01)
+    text_y = max(df[[response]]) - (range_y * .05)
+    
+    # TODO: how to plot as example
+    plot(x = df[[predictor]], y = df[[response]], 
+         xlab = predictor, ylab=str_interp("${response} values"), 
+         main=str_interp('${predictor}_${response}'), pch=16, lwd=2, lty=2)
+    lines(pred1[[predictor]], pred, lwd=3)
+    rect(
+      xleft = text_x - range_x * 0.02,
+      ybottom = text_y - range_y * 0.08,
+      xright = text_x + range_x * 0.32,
+      ytop = text_y + range_y * 0.08,
+      col = adjustcolor("#91BAB6", alpha.f = 0.3),
+      border = NA
+    )
+    text(
+      x = text_x,
+      y = text_y,
+      labels = str_interp('estimate=${estimate}\np=${p_value}, ${sign}'),
+      adj=0
+    )
+  }
 }

@@ -14,7 +14,8 @@ optimize_model(
   plot = FALSE,
   aic_bic = FALSE,
   correlation_method = "spearman",
-  model_summaries = FALSE
+  model_summaries = FALSE,
+  glm_iter = 1000
 )
 }
 \arguments{
@@ -35,6 +36,8 @@ optimize_model(
 \item{aic_bic}{Whether to apply AIC and BIC difference in addition to ANOVA to determine if model is better/worse than ancestor}
 
 \item{correlation_method}{The method used for correlation calculation}
+
+\item{glm_iter}{The number of max iterations used for the glm calculation}
 }
 \value{
 An edited list of coefficients where autocorrelated variables are removed (according to sorted list of coefficients)
