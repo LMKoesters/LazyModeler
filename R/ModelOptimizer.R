@@ -33,7 +33,7 @@ NULL
 #' @export
 remove_autocorrelations <- function(df, coefficients, automatic_removal=TRUE,
                                     autocorrelation_threshold=0.8,
-                                    correlation_method='pearson') {
+                                    correlation_method='spearman') {
   correlations <- as.data.frame(cor(df[, coefficients], method=correlation_method))
   # compute p-values
   correlation_p_values <- as.data.frame(cor.mtest(correlations)$p)
@@ -81,7 +81,7 @@ remove_autocorrelations <- function(df, coefficients, automatic_removal=TRUE,
         b_to_a <- autocorrelations[autocorrelations$idx_bigger == b,]
         if (nrow(b_to_a) > 0) {
           for (a in b_to_a$idx_smaller) {
-            if(nrow(autocorrelatins[(autocorrelations$idx_bigger == autocor_row$idx_bigger) & (autocorrelations$idx_smaller == a),]) == 0) {
+            if(nrow(autocorrelations[(autocorrelations$idx_bigger == autocor_row$idx_bigger) & (autocorrelations$idx_smaller == a),]) == 0) {
               # A != C but A==B and B==C: remove B
               coefficient_b <- coefficients_df[b, 'coefficient']
               coefficients <- coefficients[!coefficients == coefficient_b]
@@ -126,11 +126,14 @@ remove_autocorrelations <- function(df, coefficients, automatic_removal=TRUE,
 #' glm_model <- eval(bquote(glm(as.formula(frm), data=.(dataset_info), family = .(glm_family))))
 #' simplify_model(glm_model, aic_bic=TRUE);
 #' @export
-simplify_model <- function(glm_model, aic_bic=FALSE, model_method='binomial') {
+simplify_model <- function(glm_model, aic_bic=FALSE, model_method='binomial',
+                           model_summaries=FALSE) {
   # setup
-  simplification_history <- list(list("summary" = summary(glm_model),
-                                      "model" = glm_model,
+  simplification_history <- list(list("model" = glm_model,
                                       "final" = FALSE))
+  
+  if (model_summaries) { simplification_history[[1]]$summary = summary(glm_model) }
+  
   final_model <- NA
   
   p_values_model <- data.frame(p_values = coef(summary(glm_model))[,4]) %>%
@@ -143,13 +146,10 @@ simplify_model <- function(glm_model, aic_bic=FALSE, model_method='binomial') {
     marginal_sign_vars <- p_values_model[(p_values_model$p_values < 0.1) & (p_values_model$p_values >= 0.05),]
     sign_vars <- p_values_model[p_values_model$p_values < 0.05,]
     
-    marginal_sign_vars <- ifelse(nrow(marginal_sign_vars) > 0 , marginal_sign_vars$coefficients, NA)
-    sign_vars <- ifelse(nrow(sign_vars) > 0 , sign_vars$coefficients, NA)
+    simplification_history[[i]]$anovas <- res_anova
+    simplification_history[[i]]$significant_variables <- sign_vars$coefficients
+    simplification_history[[i]]$marginally_significant_variables <- marginal_sign_vars$coefficients
     
-    simplification_history[[1]][
-      c('anovas', 'significant_variables', 
-        'marginally_significant_variables')] <- c(res_anova, sign_vars,
-                                                  marginal_sign_vars)
     final_model <- simplification_history[[1]]
   } else {
     
@@ -161,14 +161,15 @@ simplify_model <- function(glm_model, aic_bic=FALSE, model_method='binomial') {
     
     for (i in 2:length(p_values_model$coefficients)) {
       last_model <- simplification_history[[i-1]]$model
+      
       glm_model <- update(last_model, paste("~ . -", p_values_model[1, 1]))
       p_values_model <- data.frame(p_values = coef(summary(glm_model))[,4]) %>%
         rownames_to_column(var='coefficients') %>%
         arrange(desc(p_values)) %>%
         filter(coefficients != '(Intercept)')
       model_summary <- summary(glm_model)
-      simplification_history[[i]] <- list("summary" = model_summary,
-                                        "model" = glm_model)
+      simplification_history[[i]] <- list("model" = glm_model)
+      if (model_summaries) { simplification_history[[i]]$summary = summary(glm_model) }
 
       anova_res <- anova(glm_model, last_model)
       simplification_history[[i]]$anova_res <- anova_res
@@ -188,13 +189,8 @@ simplify_model <- function(glm_model, aic_bic=FALSE, model_method='binomial') {
         marginal_sign_vars <- p_values_model[(p_values_model$p_values < 0.1) & (p_values_model$p_values >= 0.05),]
         sign_vars <- p_values_model[p_values_model$p_values < 0.05,]
         
-        marginal_sign_vars <- ifelse(nrow(marginal_sign_vars) > 0 , marginal_sign_vars$coefficients, NA)
-        sign_vars <- ifelse(nrow(sign_vars) > 0 , sign_vars$coefficients, NA)
-        
-        simplification_history[[i]][
-          c('significant_variables',
-            'marginally_significant_variables')] <- c(sign_vars, 
-                                                      marginal_sign_vars)
+        simplification_history[[i]]$significant_variables <- sign_vars$coefficients
+        simplification_history[[i]]$marginally_significant_variables <- marginal_sign_vars$coefficients
         final_model <- simplification_history[[i]]
         break
       }
@@ -210,8 +206,7 @@ simplify_model <- function(glm_model, aic_bic=FALSE, model_method='binomial') {
 #'
 #' Optimize model by removing autocorrelations and variables that do not signicantly predict response variable
 #' @param df A (wide) dataframe with predictors and response as columns
-#' @param response_cols A list of response columns sorted by their relevance (most to least)
-#' @param predictor_cols A list of predictors sorted by their relevance (most to least)
+#' @param resp_preds A dictionary of response columns and respective predictors sorted by their relevance (most to least)
 #' @param glm_family The family used for glm calculation
 #' @param autocorrelation_threshold The threshold deciding (together with the p-values) whether two variables are autocorrelated
 #' @param automatic_removal Whether to automatically remove autocorrelations
@@ -229,17 +224,22 @@ simplify_model <- function(glm_model, aic_bic=FALSE, model_method='binomial') {
 #'                   'train_mean_gene_length');
 #' optimize_model(dataset_info, "species_confusion", coefficients, automatic_removal = TRUE);
 #' @export
-optimize_model <- function(df, response_cols, predictor_cols, glm_family='binomial', 
+optimize_model <- function(df, resp_preds, glm_family='binomial', 
                            autocorrelation_threshold=0.8, automatic_removal=FALSE, 
-                           round_p=5, plot=FALSE, aic_bic=FALSE, correlation_method='pearson') {
+                           round_p=5, plot=FALSE, aic_bic=FALSE, correlation_method='spearman',
+                           model_summaries=FALSE) {
   model_histories <- list()
   final_model_overviews <- list()
   autocorrelations_overview <- list()
   
-  for (i1 in 1:length(response_cols)) {
-    response_col <- response_cols[[i1]]
-      
-    autocorrelation_res <- remove_autocorrelations(df, predictor_cols,
+  for (i1 in 1:length(resp_preds)) {
+    
+    response_col <- names(resp_preds)[[i1]]
+    predictor_cols <- resp_preds[[response_col]]
+    
+    df_sub <- df[!is.na(df[[response_col]]),]
+    
+    autocorrelation_res <- remove_autocorrelations(df_sub, predictor_cols,
                                          automatic_removal = automatic_removal,
                                          autocorrelation_threshold = autocorrelation_threshold,
                                          correlation_method = correlation_method)
@@ -252,25 +252,36 @@ optimize_model <- function(df, response_cols, predictor_cols, glm_family='binomi
     autocorrelations_overview[[i1]] <- autocorrelations
     
     frm <- as.formula(paste(response_col, "~", paste(predictor_cols, collapse='+')))
-    glm_model <- eval(bquote(glm(as.formula(frm), data=.(df), family = .(glm_family))))
+    glm_model <- eval(bquote(glm(as.formula(frm), data=.(df_sub), family = .(glm_family), control = glm.control(maxit = 1000))))
     
-    simplified_model_info <- simplify_model(glm_model, aic_bic=aic_bic)
+    simplified_model_info <- simplify_model(glm_model, aic_bic=aic_bic, 
+                                            model_summaries=model_summaries)
     model_histories <- simplified_model_info$history
     final_model <- simplified_model_info$final_model
     
-    all_vars <- c(final_model$significant_variables, final_model$marginally_significant_variables)
-    all_vars <- all_vars[!is.na(all_vars)]
+    if (all(is.na(final_model))) {
+      return(list(
+        optimization_history = model_histories,
+        summary = NA,
+        autocorrelations = autocorrelations
+      ))
+    }
     
-    if (length(all_vars) != 0) {
+    all_sign_vars <- c(final_model$significant_variables, final_model$marginally_significant_variables)
+    all_sign_vars <- all_sign_vars[!is.na(all_sign_vars)]
+    
+    if (length(all_sign_vars) != 0) {
       estimates <- as.data.frame(coef(summary(final_model$model)))
       estimates$predictor <- rownames(estimates)
       estimates$response <- response_col
       estimates <- estimates[estimates$predictor != '(Intercept)',]
       
-      for (i in 1:length(all_vars)) {
-        sign_var <- all_vars[[i]]
+      for (i in 1:length(all_sign_vars)) {
+        sign_var <- all_sign_vars[[i]]
+        
         if (plot) {
-          plot_vars(df, sign_var, response_col, final_model$model, all_vars)
+          plot_vars(df_sub, response_col, sign_var, 
+                    glm_family=glm_family)
         }
         final_model_overview <- data.frame('response' = c(response_col),
                                            'predictor' = c(sign_var))
@@ -278,9 +289,8 @@ optimize_model <- function(df, response_cols, predictor_cols, glm_family='binomi
         final_model_overview <- merge(final_model_overview, estimates, 
                                       by=c('response', 'predictor'), 
                                       all.x = TRUE)
-        final_model_overviews[[i + ((i1-1)*length(response_cols))]] <- final_model_overview
+        final_model_overviews[[i + ((i1-1)*length(resp_preds))]] <- final_model_overview
       }
-      # im final model overview ist kein R Wert... wollen wir den?
     }
   }
   
@@ -308,21 +318,25 @@ optimize_model <- function(df, response_cols, predictor_cols, glm_family='binomi
 }
 
 
-plot_vars <- function(df, predictor, response, final_model, all_vars) {
+plot_vars <- function(df, response, predictor, glm_family='binomial') {
+  frm <- as.formula(paste(response, "~", predictor))
+  glm_model <- eval(bquote(glm(as.formula(frm), data=.(df), 
+                               family = .(glm_family), 
+                               control = glm.control(maxit = 1000))))
+  
   min_val <- min(df[[predictor]])
   max_val <- max(df[[predictor]])
+  
+  intercept <- glm_model$coefficients[['(Intercept)']]
   
   pred1 <- data.frame(predictor = seq(from = min_val,
                                       to = max_val, by = 2))
   colnames(pred1) <- c(predictor)
-  for (sign_var in all_vars) {
-    if (sign_var == predictor) { next }
-    
-    pred1[[sign_var]] <- pred1[[predictor]]
-  }
   
-  pred <- predict(final_model, newdata = pred1, type = "response")
+  pred <- predict(glm_model, newdata = pred1, type = "response")
+  
   # TODO: how to plot as example
+  # TODO: add p-values and R2 in plot
   plot(x = df[[predictor]], y = df[[response]], 
        xlab = predictor, ylab=str_interp("${response} values"), 
        main=str_interp('${predictor}_${response}'), pch=1, lwd=2, lty=2)

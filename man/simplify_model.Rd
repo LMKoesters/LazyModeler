@@ -4,7 +4,12 @@
 \alias{simplify_model}
 \title{Model simplification}
 \usage{
-simplify_model(glm_model, aic_bic = FALSE, model_method = "binomial")
+simplify_model(
+  glm_model,
+  aic_bic = FALSE,
+  model_method = "binomial",
+  model_summaries = FALSE
+)
 }
 \arguments{
 \item{glm_model}{Starting glm model that will be simplified}

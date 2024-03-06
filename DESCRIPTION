@@ -14,3 +14,4 @@ Imports: corrplot, dplyr, stringr, tibble, tidyr
 Suggests: 
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
+License: GPL (>= 3)
