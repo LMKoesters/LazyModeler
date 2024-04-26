@@ -34,6 +34,7 @@ NULL
 remove_autocorrelations <- function(df, coefficients, automatic_removal=TRUE,
                                     autocorrelation_threshold=0.8,
                                     correlation_method='spearman') {
+  
   correlations <- as.data.frame(cor(df[, coefficients], method=correlation_method))
   # compute p-values
   correlation_p_values <- as.data.frame(cor.mtest(correlations)$p)
@@ -55,7 +56,11 @@ remove_autocorrelations <- function(df, coefficients, automatic_removal=TRUE,
     distinct(comparison, .keep_all = TRUE) %>%
     select(!c(col1, col2, comparison))
   
-  autocorrelations <- correlations_complete[(correlations_complete$cor >= autocorrelation_threshold) & (correlations_complete$p_value < 0.05),]
+  print(correlations_complete)
+  
+  autocorrelations <- correlations_complete[((correlations_complete$cor >= autocorrelation_threshold) | 
+                                               (correlations_complete$cor <= -autocorrelation_threshold)) & 
+                                              (correlations_complete$p_value < 0.05),]
   autocorrelations <- autocorrelations %>%
     add_column(note = NA)
   
@@ -186,6 +191,7 @@ simplify_model <- function(glm_model, aic_bic=FALSE, model_method='binomial',
       }
       
       if (no_more_simplification > 0 & p_values_model[1, 2] < 0.1) {
+        print(coef(summary(glm_model)))
         marginal_sign_vars <- p_values_model[(p_values_model$p_values < 0.1) & (p_values_model$p_values >= 0.05),]
         sign_vars <- p_values_model[p_values_model$p_values < 0.05,]
         
@@ -225,20 +231,34 @@ simplify_model <- function(glm_model, aic_bic=FALSE, model_method='binomial',
 #'                   'train_mean_gene_length');
 #' optimize_model(dataset_info, "species_confusion", coefficients, automatic_removal = TRUE);
 #' @export
-optimize_model <- function(df, resp_preds, glm_family='binomial', 
+
+# resp_preds <- c('response' = c('predictor_col1', 'predictor_col2'))
+# 
+# resp_preds <- c('response' = c(c('predictor_col1' = c('^2', 'log')), 'predictor_col2'))
+# 
+# transforms = c('log_10', 'log_e', 'arcsin', '')
+# 
+# transform_response <- 'nutzer definierte Liste mit transforms für die response var'
+# 
+# (x1 + x2 + x3)^2 <- 'dann rechnet glm das automatisch'
+# quadratic <- 'Liste '
+
+
+optimize_model <- function(df, resp_preds, glm_family=c('binomial'), 
                            autocorrelation_threshold=0.8, automatic_removal=FALSE, 
                            round_p=5, plot=FALSE, aic_bic=FALSE, correlation_method='spearman',
-                           model_summaries=FALSE, glm_iter=1000) {
+                           model_summaries=FALSE, glm_iter=1000, transform_response=FALSE,
+                           interactions=FALSE, quadratic) {
   model_histories <- list()
   final_model_overviews <- list()
   autocorrelations_overview <- list()
   
   for (i1 in 1:length(resp_preds)) {
-    
     response_col <- names(resp_preds)[[i1]]
     predictor_cols <- resp_preds[[response_col]]
-    
     df_sub <- df[!is.na(df[[response_col]]),]
+    print(response_col)
+    process_code <- str_interp('${response_col}_${i1}')
     
     autocorrelation_res <- remove_autocorrelations(df_sub, predictor_cols,
                                                    automatic_removal = automatic_removal,
@@ -250,15 +270,18 @@ optimize_model <- function(df, resp_preds, glm_family='binomial',
     if (nrow(autocorrelations) > 0) {
       autocorrelations$response_col <- response_col
     }
-    autocorrelations_overview[[i1]] <- autocorrelations
+    autocorrelations_overview[[process_code]] <- autocorrelations
     
     frm <- as.formula(paste(response_col, "~", paste(predictor_cols, collapse='+')))
+    dat_cocc <- df_sub[, c('intergeneric_confusion_species', 'train_num_samples_ds_species',
+                       'train_median_species_ds_gene_length', 'val_median_species_ds_gene_length',
+                       'train_min_species_ds_gene_length', 'train_max_species_ds_gene_length')]
     glm_model <- eval(bquote(glm(as.formula(frm), data=.(df_sub), family = .(glm_family), 
                                  control = glm.control(maxit = .(glm_iter)))))
     
     simplified_model_info <- simplify_model(glm_model, aic_bic=aic_bic, 
                                             model_summaries=model_summaries)
-    model_histories <- simplified_model_info$history
+    model_histories[[process_code]] <- simplified_model_info$history
     final_model <- simplified_model_info$final_model
     
     if (all(is.na(final_model))) {
@@ -281,7 +304,7 @@ optimize_model <- function(df, resp_preds, glm_family='binomial',
       if (plot) { plot_glm_vars(df_sub, response_col, all_sign_vars, glm_family=glm_family,
                 glm_iter=glm_iter) }
       
-      final_model_overviews[[i1]] <- models_overview
+      final_model_overviews[[process_code]] <- models_overview
     }
   }
   
@@ -330,7 +353,7 @@ plot_glm_vars <- function(df, response, predictors, glm_family='binomial',
                       glm_iter=1000) {
   for (predictor in predictors) {
     frm <- as.formula(paste(response, "~", predictor))
-    glm_model <- eval(bquote(glm(as.formula(frm), data=.(df), 
+    glm_model <- eval(bquote(glm(.(frm), data=.(df), 
                                  family = .(glm_family), 
                                  control = glm.control(maxit = .(glm_iter)))))
     
