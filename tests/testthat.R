@@ -7,6 +7,6 @@
 # * https://testthat.r-lib.org/articles/special-files.html
 
 library(testthat)
-library(ModelOptimizer)
+library(LazyModeler)
 
-test_check("ModelOptimizer")
+test_check("LazyModeler")

@@ -1,7 +1,7 @@
-Package: ModelOptimizer
+Package: LazyModeler
 Type: Package
-Title: Generalised linear model optimisation
-Version: 0.1.5
+Title: Regression modeling and optimisation
+Version: 0.2.0
 Authors@R: 
     c(person(given = "Lara",
              family = "Koesters",
@@ -12,10 +12,31 @@ Authors@R:
              family = "Karbstein",
              role = "aut",
              comment = c(ORCID = "0000-0003-1424-6557")))
-RoxygenNote: 7.3.0
+Description: LazyModeler allows users to easily perform regression modeling. It includes removal of autocorrelated variables, choice between several types of (non)linear regression models, standard stepwise model simplification, various model quality checks, plotting of coefficient estimates and relationships, and output generation.
+RoxygenNote: 7.3.2
 Encoding: UTF-8
 LazyData: true
-Imports: corrplot, dplyr, stringr, tibble, tidyr
+Imports: 
+    colorspace,
+    corrplot,
+    dplyr,
+    formula.tools,
+    ggplot2,
+    graphics,
+    grDevices,
+    lme4,
+    lmerTest,
+    mgcv,
+    MuMIn,
+    nlme,
+    performance,
+    purrr,
+    rlang,
+    stats,
+    stringr,
+    tibble,
+    tidyr,
+    utils
 Suggests: 
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
