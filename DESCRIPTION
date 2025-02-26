@@ -1,6 +1,6 @@
 Package: LazyModeler
 Type: Package
-Title: Regression modeling and optimisation
+Title: LazyModeler: An R package for automatic simplification, check, and visualization of regression models
 Version: 0.2.0
 Authors@R: 
     c(person(given = "Lara",
