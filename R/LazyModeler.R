@@ -25,7 +25,7 @@ remove_autocorrelations <- function(df, coefficients, ..., automatic_removal=TRU
   cor_args = c(cor_args, list(...))
   correlations <- as.data.frame(do.call(cor, cor_args))
   # compute p-values
-  correlation_p_values <- as.data.frame(corrplot::cor.mtest(correlations)$p)
+  correlation_p_values <- as.data.frame(cor.mtest(correlations)$p)
   
   correlations_l = correlations %>%
     rownames_to_column(var='coefficientA') %>%
@@ -144,8 +144,8 @@ add_assessments <- function(regression_model, evaluation_methods, is_lmer=FALSE)
     else regression_model$aic = AIC(regression_model)
   }
   if ('aicc' %in% evaluation_methods) {
-    if (is_lmer) attr(regression_model, 'aicc') = MuMIn::AICc(regression_model)
-    else regression_model$aicc = MuMIn::AICc(regression_model)
+    if (is_lmer) attr(regression_model, 'aicc') = AICc(regression_model)
+    else regression_model$aicc = AICc(regression_model)
   }
   if ('bic' %in% evaluation_methods) {
     if (is_lmer) attr(regression_model, 'bic') = BIC(regression_model)
@@ -299,7 +299,7 @@ generate_regression_model <- function(df, model_type, term, model_family, ...) {
   else if (model_type == 'lm') regression_model = do.call(lm, model_args)
   else if (model_type == 'glmer') regression_model = try(do.call(glmer, model_args), silent=TRUE)
   else if (model_type == 'lmer') regression_model = do.call(lmer, model_args)
-  else if (model_type == 'gam') regression_model = do.call(mgcv::gam, model_args)
+  else if (model_type == 'gam') regression_model = do.call(gam, model_args)
   else if (model_type == 'nlmer') {
     parameter_names = names(model_args)
     parameter_names[parameter_names == 'non_linear'] = 'model'
@@ -437,7 +437,7 @@ mo_step <- function(df, regression_model, vars, direction, evaluation_methods, c
     # add or remove var from model
     if (direction == 'forward') {
       if (blank_start) {
-        random_effects = lapply(lme4::findbars(formula(regression_model)), function(y) paste0('(', deparse(y), ')'))
+        random_effects = lapply(findbars(formula(regression_model)), function(y) paste0('(', deparse(y), ')'))
         if (length(random_effects) > 0) addon = paste(paste(random_effects, sep=' + '), ' + ')
         else addon = ''
         d = paste('. ~ ', addon)
@@ -585,11 +585,11 @@ simplify_model <- function(df, model_type, term, evaluation_methods, ..., model_
     model_args = generated_model$model_args
     regression_model = generated_model$regression_model
     regression_model = add_assessments(regression_model, evaluation_methods, FALSE)
-    anova_res = nlme::anova.lme(regression_model)
+    anova_res = anova.lme(regression_model)
     regression_model$anova = anova_res
     regression_model$aic = AIC(regression_model)
     regression_model$bic = BIC(regression_model)
-    regression_model$aicc = MuMIn::AICc(regression_model)
+    regression_model$aicc = AICc(regression_model)
     
     models$nlmer = list(final_model = regression_model)
     if (trace) models$nlmer$history = NA
@@ -708,11 +708,11 @@ find_call <- function(term, pred_full=NA, return='all', df_cols=NA) {
   if (return == 'all') {  # return as is
     out = term_labels
   } else if (return == 'fixed') {
-    randoms = lme4::findbars(as.formula(term))
+    randoms = findbars(as.formula(term))
     vars = term_labels
-    response = formula.tools::lhs(as.formula(term))
+    response = lhs(as.formula(term))
     if (length(response) > 1) {
-      response = deparse(formula.tools::lhs(response))
+      response = deparse(lhs(response))
       random_idx = sapply(vars, function(y) grepl(y, randoms, fixed=TRUE))
       out = vars[(vars != response) & !random_idx]
     } else {
@@ -720,13 +720,13 @@ find_call <- function(term, pred_full=NA, return='all', df_cols=NA) {
       out = vars[vars != response]
     }
   } else if (return == 'random') {
-    return(as.character(lme4::findbars(as.formula(term))))
+    return(as.character(findbars(as.formula(term))))
   } else if (return == 'atomic') {  # return column names of fixed effects, i.e., remove transforms
-    randoms = lme4::findbars(as.formula(term))
+    randoms = findbars(as.formula(term))
     vars = all.vars(as.formula(term))
-    response = formula.tools::lhs(as.formula(term))
+    response = lhs(as.formula(term))
     if (length(response) > 1) {
-      response = deparse(formula.tools::lhs(response))
+      response = deparse(lhs(response))
     } else {
       response = deparse(response)
     }
@@ -1025,8 +1025,8 @@ optimize_model <- function(df, term, ..., autocorrelation_cols=NA,
       model_plots = list()
       stat_results = list()
       if (plot_quality_assessment == 'performance') {
-        if (model_type == 'gam') plot(performance::check_model(final_model, residual_type = 'normal'))
-        else if (model_family == 'binomial') withCallingHandlers(plot(performance::check_model(final_model, type = 'discrete_both')),
+        if (model_type == 'gam') plot(check_model(final_model, residual_type = 'normal'))
+        else if (model_family == 'binomial') withCallingHandlers(plot(check_model(final_model, type = 'discrete_both')),
                                                                  warning = function(w) {
                                                                    if (grepl("stat_density", w$message)) {
                                                                      warning(str_interp("${w$message}. Please choose another model family."))
@@ -1036,7 +1036,7 @@ optimize_model <- function(df, term, ..., autocorrelation_cols=NA,
                                                                      warning(w$message)
                                                                    }
                                                                  })
-        else plot(performance::check_model(final_model))
+        else plot(check_model(final_model))
         checked_model = recordPlot()
         dev.off()
       } else if (plot_quality_assessment == 'baseR') {
