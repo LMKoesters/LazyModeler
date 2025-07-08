@@ -28,7 +28,7 @@ plot_regression_numeric(
 
 \item{term}{The formula to be used with the model}
 
-\item{models_overview}{Custom model summary (see expanded_model_summary())}
+\item{models_overview}{Custom model summary (see [slightly_expanded_model_summary()])}
 
 \item{response_str}{Response as string}
 

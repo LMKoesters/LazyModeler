@@ -19,3 +19,8 @@ Language object with if/else statements to be applied to model summary with info
 \description{
 Helper method used for expanding the model summary by adding information on whether or not model variables are categorical
 }
+\examples{
+data("plants");
+
+setup_categorical_check(plants, c('habitat', 'ploidy'), col=quote(predictor))
+}

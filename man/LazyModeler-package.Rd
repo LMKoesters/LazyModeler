@@ -4,9 +4,9 @@
 \name{LazyModeler-package}
 \alias{LazyModeler}
 \alias{LazyModeler-package}
-\title{LazyModeler: Regression modeling and optimisation}
+\title{LazyModeler: LazyModeler: An R package for automatic simplification, check, and visualization of regression models}
 \description{
-LazyModeler is a statistical package for the programming language R that allows users to easily perform regression modeling. It includes removal of autocorrelated variables, choice between several types of (non)linear regression models, standard stepwise model simplification, various model quality checks, plotting of coefficient estimates and relationships, and output generation.
+LazyModeler allows users to easily perform regression modeling. It includes removal of autocorrelated variables, choice between several types of (non)linear regression models, standard stepwise model simplification, various model quality checks, plotting of coefficient estimates and relationships, and output generation.
 }
 \author{
 \strong{Maintainer}: Lara Koesters \email{lkoesters@bgc-jena.mpg.de} (\href{https://orcid.org/0000-0002-7913-2377}{ORCID})

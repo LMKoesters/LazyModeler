@@ -29,20 +29,20 @@ remove_autocorrelations <- function(df, coefficients, ..., automatic_removal=TRU
   
   correlations_l = correlations %>%
     rownames_to_column(var='coefficientA') %>%
-    pivot_longer(!.data$coefficientA, names_to = "coefficientB", values_to = "correlation")
+    pivot_longer(!coefficientA, names_to = "coefficientB", values_to = "correlation")
   
   correlations_p_values_l = correlation_p_values %>%
     rownames_to_column(var='coefficientA') %>%
-    pivot_longer(!.data$coefficientA, names_to = "coefficientB", values_to = "p_value")
+    pivot_longer(!coefficientA, names_to = "coefficientB", values_to = "p_value")
   
   correlations_complete = merge(correlations_l, correlations_p_values_l, by=c('coefficientA', 'coefficientB'))
   
   correlations_complete = correlations_complete %>%
-    filter(.data$coefficientA != .data$coefficientB) %>%
-    mutate(col1 = pmin(.data$coefficientA, .data$coefficientB), col2 = pmax(.data$coefficientA, .data$coefficientB), 
-           comparison = paste(.data$col1, .data$col2)) %>%
-    distinct(.data$comparison, .keep_all = TRUE) %>%
-    select(!c(.data$col1, .data$col2, .data$comparison))
+    filter(coefficientA != coefficientB) %>%
+    mutate(col1 = pmin(coefficientA, coefficientB), col2 = pmax(coefficientA, coefficientB), 
+           comparison = paste(col1, col2)) %>%
+    distinct(comparison, .keep_all = TRUE) %>%
+    select(!c(col1, col2, comparison))
   
   autocorrelations = correlations_complete[((correlations_complete$cor >= autocorrelation_threshold) | 
                                                (correlations_complete$cor <= -autocorrelation_threshold)) & 
@@ -59,10 +59,10 @@ remove_autocorrelations <- function(df, coefficients, ..., automatic_removal=TRU
       autocorrelations = merge(autocorrelations, coefficients_df[c('coefficient', 'idx')], by.x='coefficientB', by.y='coefficient', suffixes = c('1', '2'))
       autocorrelations = autocorrelations %>%
         rowwise() %>%
-        mutate(idx_smaller = sort(c(.data$idx1, .data$idx2))[[1]],
-               idx_bigger = sort(c(.data$idx1, .data$idx2))[[2]],
-               comb = paste(.data$idx_smaller, .data$idx_bigger, sep='|')) %>%
-        arrange(desc(.data$idx_bigger))
+        mutate(idx_smaller = sort(c(idx1, idx2))[[1]],
+               idx_bigger = sort(c(idx1, idx2))[[2]],
+               comb = paste(idx_smaller, idx_bigger, sep='|')) %>%
+        arrange(desc(idx_bigger))
       
       for (i in 1:nrow(autocorrelations)) {
         # C is the least important and part of comparison
@@ -118,6 +118,11 @@ remove_autocorrelations <- function(df, coefficients, ..., automatic_removal=TRU
 #' @param categorical_vars List of categorical variables within the model (base names, i.e., names of columns)
 #' @param col Column to be used for check. Default is 'coefficients'
 #' @return Language object with if/else statements to be applied to model summary with information on whether model variables are categorical
+#' @examples
+#' data("plants");
+#' 
+#' setup_categorical_check(plants, c('habitat', 'ploidy'), col=quote(predictor))
+#' @export
 setup_categorical_check <- function(df, categorical_vars, col=quote(coefficients)) {
   if (length(categorical_vars) > 0) {
     categorical_check = c()
@@ -234,38 +239,38 @@ expanded_model_summary <- function(df, model_type, regression_model, categorical
   
   p_values_model = data.frame(p_values = model_sum) %>%
     rownames_to_column(var='coefficients') %>%
-    filter(.data$coefficients != '(Intercept)') %>% # rownames(.)
-    mutate(is_interaction = case_when(str_detect(.data$coefficients, ':') ~ TRUE,
+    filter(coefficients != '(Intercept)') %>% # rownames(.)
+    mutate(is_interaction = case_when(str_detect(coefficients, ':') ~ TRUE,
                                       TRUE ~ FALSE)) %>%
-    mutate(inter_var1 = case_when(.data$is_interaction ~ str_extract(.data$coefficients, "^[^:]+")),
-           inter_var2 = case_when(.data$is_interaction ~ str_extract(.data$coefficients, "[^:]+$"))) %>%
+    mutate(inter_var1 = case_when(is_interaction ~ str_extract(coefficients, "^[^:]+")),
+           inter_var2 = case_when(is_interaction ~ str_extract(coefficients, "[^:]+$"))) %>%
     mutate(inter_var1 = case_when(!!!setup_categorical_check(df, categorical_vars, quote(inter_var1))),
            inter_var2 = case_when(!!!setup_categorical_check(df, categorical_vars, quote(inter_var2)))) %>%
-    mutate(inter_var1 = case_when(.data$is_interaction & is.na(.data$inter_var1) ~ str_extract(.data$coefficients, "^[^:]+"),
-                                  TRUE ~ .data$inter_var1),
-           inter_var2 = case_when(.data$is_interaction & is.na(.data$inter_var2) ~ str_extract(.data$coefficients, "[^:]+$"),
-                                  TRUE ~ .data$inter_var2)) %>%
+    mutate(inter_var1 = case_when(is_interaction & is.na(inter_var1) ~ str_extract(coefficients, "^[^:]+"),
+                                  TRUE ~ inter_var1),
+           inter_var2 = case_when(is_interaction & is.na(inter_var2) ~ str_extract(coefficients, "[^:]+$"),
+                                  TRUE ~ inter_var2)) %>%
     mutate(cat_var = case_when(!!!setup_categorical_check(df, categorical_vars))) %>%
-    mutate(var_type = ifelse(is.na(.data$cat_var), 'cont', 'cat')) %>%
-    mutate(cat_var = ifelse(is.na(.data$cat_var), .data$coefficients, .data$cat_var)) %>%
-    mutate(cat_var = case_when(.data$is_interaction ~ paste0(.data$inter_var1, ':', .data$inter_var2),
-                               TRUE ~ .data$cat_var),
-           inter_var1 = ifelse(is.na(.data$inter_var1), .data$cat_var, .data$inter_var1),
-           inter_var2 = ifelse(is.na(.data$inter_var2), .data$cat_var, .data$inter_var2)) %>%
-    mutate(cat_var = ifelse(grepl(')[0-9]+$', .data$coefficients), gsub('[0-9]+$', '', .data$coefficients), .data$cat_var)) # TEST
+    mutate(var_type = ifelse(is.na(cat_var), 'cont', 'cat')) %>%
+    mutate(cat_var = ifelse(is.na(cat_var), coefficients, cat_var)) %>%
+    mutate(cat_var = case_when(is_interaction ~ paste0(inter_var1, ':', inter_var2),
+                               TRUE ~ cat_var),
+           inter_var1 = ifelse(is.na(inter_var1), cat_var, inter_var1),
+           inter_var2 = ifelse(is.na(inter_var2), cat_var, inter_var2)) %>%
+    mutate(cat_var = ifelse(grepl(')[0-9]+$', coefficients), gsub('[0-9]+$', '', coefficients), cat_var)) # TEST
   
   p_values_model = p_values_model %>%
     rowwise() %>%
-    mutate(smallest_p_value = min(p_values_model[(p_values_model['inter_var1'] == .data$cat_var) | (p_values_model['inter_var2'] == .data$cat_var) | (p_values_model['cat_var'] == .data$cat_var), 'p_values']))
+    mutate(smallest_p_value = min(p_values_model[(p_values_model['inter_var1'] == cat_var) | (p_values_model['inter_var2'] == cat_var) | (p_values_model['cat_var'] == cat_var), 'p_values']))
   
   non_sign_interactions = p_values_model[(p_values_model$p_values > 0.1) & p_values_model$is_interaction, 'coefficients']
 
   if (nrow(non_sign_interactions) > 0) {
     p_values_model = p_values_model %>%
-      arrange(desc(.data$is_interaction), desc(.data$smallest_p_value))
+      arrange(desc(is_interaction), desc(smallest_p_value))
   } else {
     p_values_model = p_values_model %>%
-      arrange(desc(.data$smallest_p_value))
+      arrange(desc(smallest_p_value))
   }
   
   return(p_values_model)
@@ -563,9 +568,9 @@ mo_step <- function(df, regression_model, vars, direction, evaluation_methods, c
 #'
 #' Simplify or expand a regression model given the data and model parameters
 #' @param df Dataframe with response and predictors as columns
-#' @param model_type The model to be used (options: (g/n)(l/a)m(er), default: glm)
+#' @param model_type The model to be used (options: (g/n)(l/a)m(er))
 #' @param term The formula to be used with the model. Can be either quote() or formula()
-#' @param evaluation_methods Methods to be used for model evaluation (options: anova, aic, aicc, bic, default: anova)
+#' @param evaluation_methods Methods to be used for model evaluation (options: anova, aic, aicc, bic)
 #' @param ... Parameters to be directly used with model call
 #' @param model_family The family used for glm calculation (default: gaussian)
 #' @param direction Mode of stepwise model improvement. Either 'forward' (i.e., forward selection), or 'backward' (i.e., backward simplification), or 'both' (default: both)
@@ -574,6 +579,15 @@ mo_step <- function(df, regression_model, vars, direction, evaluation_methods, c
 #' @param trace Store and return model selection history (default: FALSE)
 #' @param omit.na Either 'overall' or 'stepwise'. If 'overall', NAs are removed before modeling. If 'stepwise', NAs are removed per step based on the variables in the current formula
 #' @return List of results from forward and/or backward model selection. Backward/forward result will have the following structure: List containing the final regression model, the significant and marginally significant model variables and the selection history if trace is TRUE
+#' @examples
+#' data("plants");
+#' 
+#' simplify_model(plants, "glm", quote(sexual_seed_prop ~ altitude + solar_radiation + annual_mean_temperature + 
+#' isothermality + I(isothermality^2) + habitat + ploidy + solar_radiation:annual_mean_temperature + 
+#' solar_radiation:isothermality + annual_mean_temperature:isothermality),
+#' c("anova"), model_family='quasibinomial', direction='backward',
+#' categorical_vars=c('habitat', 'ploidy'), backward_simplify_model=TRUE, trace=TRUE, omit.na='overall')
+#' @export
 simplify_model <- function(df, model_type, term, evaluation_methods, ..., model_family='binomial', 
                            direction='both', categorical_vars=NA, backward_simplify_model=TRUE, trace=FALSE, omit.na='overall') {
   models = list()
@@ -790,18 +804,29 @@ determine_model_family = function(df, response_frm) {
 #' @param model_summary Initial model summary
 #' @param response_frm Response formula
 #' @param term The formula to be used with the model. Can be either quote() or formula()
-#' @param categorical_check Output of setup_categorical_check()
+#' @param categorical_check Output of [setup_categorical_check()]
 #' @param round_p Convenience parameter for automatic rounding of p-values
 #' @param df Dataframe with response and predictors as columns
 #' @return Expanded summary of a regression model with added information on base variables, variable types and significance levels
-not_so_expanded_model_summary = function(model_summary, response_frm, term, categorical_check, round_p, df) {
+#' @examples
+#' data("plants")
+#' 
+#' model_family = 'quasibinomial'
+#' categorical_check = setup_categorical_check(plants, c('habitat', 'ploidy'), col=quote(predictor))
+#' final_model = glm(sexual_seed_prop ~ altitude + solar_radiation + 
+#' annual_mean_temperature + isothermality + habitat + ploidy + 
+#' solar_radiation:isothermality, family=model_family, data=plants)
+#' models_overview = coef(summary(final_model))
+#' slightly_expanded_model_summary(models_overview, quote(sexual_seed_prop), quote(sexual_seed_prop ~ altitude + solar_radiation + annual_mean_temperature + isothermality + I(isothermality^2) + habitat + ploidy + solar_radiation:annual_mean_temperature + solar_radiation:isothermality + annual_mean_temperature:isothermality), categorical_check, 3, plants)
+#' @export
+slightly_expanded_model_summary <- function(model_summary, response_frm, term, categorical_check, round_p, df) {
   models_overview = as.data.frame(model_summary) %>%
     rownames_to_column(var='predictor') %>%
-    filter(.data$predictor != '(Intercept)') %>% # rownames(.)
-    mutate(response = paste(response_frm), .before = .data$predictor) %>%
-    mutate(predictor_col = case_when(!!!categorical_check), .after = .data$predictor) %>%
-    mutate(var_type = ifelse(is.na(.data$predictor_col), 'numeric', 'categorical'), .after = .data$predictor_col) %>%
-    mutate(predictor_col = ifelse(is.na(.data$predictor_col), .data$predictor, .data$predictor_col), .after = .data$predictor)
+    filter(predictor != '(Intercept)') %>% # rownames(.)
+    mutate(response = paste(response_frm), .before = "predictor") %>%
+    mutate(predictor_col = case_when(!!!categorical_check), .after = "predictor") %>%
+    mutate(var_type = ifelse(is.na(predictor_col), 'numeric', 'categorical'), .after = "predictor_col") %>%
+    mutate(predictor_col = ifelse(is.na(predictor_col), predictor, predictor_col), .after = "predictor")
   p_value_col = tail(colnames(models_overview)[-1], n=1)
   
   split_frm = find_call(term, return='atomic', df_cols=colnames(df))
@@ -853,7 +878,7 @@ not_so_expanded_model_summary = function(model_summary, response_frm, term, cate
 #' @param round_p Convenience parameter for automatic rounding of p-values
 #' @param backward_simplify_model If FALSE, the model and information on significant and marginally significant variables are returned without backward simplification (default: TRUE)
 #' @param trace Store and return model selection history (default: FALSE)
-#' @return List with a) information on autocorrelated variables and b) final simplified/expanded models with further information (see function simplify_model for further details)
+#' @return List with a) information on autocorrelated variables and b) final simplified/expanded models with further information (see function [simplify_model()] for further details)
 #' @examples
 #' data("plants");
 #' optimize_model(plants, quote(sexual_seed_prop ~ altitude + latitude_gps_n + longitude_gps_e + (solar_radiation + annual_mean_temperature + isothermality)^2 + I(isothermality^2) + habitat + ploidy), 
@@ -989,11 +1014,11 @@ optimize_model <- function(df, term, ..., autocorrelation_cols=NA,
   }
   
   simplified_models = simplify_model(df, model_type, term, evaluation_methods, ..., 
-                                      model_family=model_family,
-                                      categorical_vars=categorical_vars,
-                                      direction=simplification_direction,
-                                      backward_simplify_model=backward_simplify_model, 
-                                      trace=trace, omit.na=omit.na)
+                                     model_family=model_family,
+                                     categorical_vars=categorical_vars,
+                                     direction=simplification_direction,
+                                     backward_simplify_model=backward_simplify_model, 
+                                     trace=trace, omit.na=omit.na)
   
   errors = simplified_models$errors
   for (error in unique(errors)) warning(error)
@@ -1048,20 +1073,19 @@ optimize_model <- function(df, term, ..., autocorrelation_cols=NA,
         checked_model = NA
       }
       model_plots$model_check = checked_model
-      
       categorical_check = setup_categorical_check(df, categorical_vars, quote(predictor))
       
       if (model_type == 'gam') {
         models_overview = summary(final_model)$p.table
         models_overview_s = summary(final_model)$s.table
-        models_overview_s = not_so_expanded_model_summary(models_overview_s, response_frm, term, categorical_check, round_p, df)
+        models_overview_s = slightly_expanded_model_summary(models_overview_s, response_frm, term, categorical_check, round_p, df)
       }
       else models_overview = coef(summary(final_model))
       
-      models_overview = not_so_expanded_model_summary(models_overview, response_frm, term, categorical_check, round_p, df)
+      models_overview = slightly_expanded_model_summary(models_overview, response_frm, term, categorical_check, round_p, df)
       models_overview = models_overview %>%
         mutate(effect_direction = case_when(
-          .data$Estimate < 0 ~ 'negative',
+          Estimate < 0 ~ 'negative',
           TRUE ~ 'positive'
         ))
       
@@ -1079,12 +1103,12 @@ optimize_model <- function(df, term, ..., autocorrelation_cols=NA,
     }
     
     models_overview = models_overview %>%
-      rename(Response = .data$response,
-             Predictor = .data$predictor,
-             `Variable Type` = .data$var_type,
-             Significance = .data$significance,
-             `Effect Direction` = .data$effect_direction) %>%
-      select(!c(.data$predictor_col))
+      rename(Response = response,
+             Predictor = predictor,
+             `Variable Type` = var_type,
+             Significance = significance,
+             `Effect Direction` = effect_direction) %>%
+      select(-predictor_col)
     
     if (model_type == 'gam') models_overview = list(p.table = models_overview, s.table = models_overview_s)
     
@@ -1107,7 +1131,7 @@ optimize_model <- function(df, term, ..., autocorrelation_cols=NA,
 #'
 #' Plot estimate, regression and effect size
 #' @param regression_model The (simplified) regression model
-#' @param models_overview Custom model summary (see expanded_model_summary())
+#' @param models_overview Custom model summary (see [slightly_expanded_model_summary()])
 #' @param model_type Type of regression model (e.g., 'glm')
 #' @param model_family Model family used for glm calculation (default: gaussian)
 #' @param plot_type Whether to plot as boxplot or violin plot for categorical variables (default: boxplot)
@@ -1116,6 +1140,24 @@ optimize_model <- function(df, term, ..., autocorrelation_cols=NA,
 #' @param round_p Convenience parameter for automatic rounding of p-values
 #' @param remove_insignificant Used to exclude insignificant relationships from both estimate and effect size plots and omit curves from regression plots (default: FALSE)
 #' @return A list of plots (estimate, regression, and effect size) and statistics for categorical variables
+#' @examples
+#' data("plants");
+#' 
+#' model_type = 'glm'
+#' model_family = 'quasibinomial'
+#' categorical_check = setup_categorical_check(plants, c('habitat', 'ploidy'), col=quote(predictor))
+#' final_model = glm(sexual_seed_prop ~ altitude + solar_radiation + annual_mean_temperature + isothermality + habitat + ploidy + solar_radiation:isothermality, family=model_family, data=plants)
+#' 
+#' models_overview = coef(summary(final_model))
+#' models_overview = slightly_expanded_model_summary(models_overview, quote(sexual_seed_prop), quote(sexual_seed_prop ~ altitude + solar_radiation + annual_mean_temperature + isothermality + I(isothermality^2) + habitat + ploidy + solar_radiation:annual_mean_temperature + solar_radiation:isothermality + annual_mean_temperature:isothermality), categorical_check, 3, plants)
+#' models_overview = models_overview %>%
+#' mutate(effect_direction = case_when(
+#' Estimate < 0 ~ 'negative',
+#' TRUE ~ 'positive'
+#' ))
+#' 
+#' plot_model_features(final_model, models_overview, model_type, model_family, plot_type='boxplot', jitter_plots=TRUE, test='wilcox', round_p=3, remove_insignificant=FALSE)
+#' @export
 plot_model_features <- function(regression_model, models_overview, model_type, model_family, plot_type='boxplot', jitter_plots=FALSE, test='wilcox', round_p=5, remove_insignificant=FALSE) {
   if (remove_insignificant) models_overview_ns = models_overview[models_overview$significance != 'ns',]
   else models_overview_ns = models_overview
@@ -1135,7 +1177,7 @@ plot_model_features <- function(regression_model, models_overview, model_type, m
 #' Plot regression model estimate
 #'
 #' Plot estimate, regression and effect size
-#' @param models_overview Custom model summary (see expanded_model_summary())
+#' @param models_overview Custom model summary (see [slightly_expanded_model_summary()])
 #' @param regression_model The (simplified) regression model
 #' @param model_type Type of regression model (e.g., 'glm')
 #' @return A plot of the estimates listed within the model summary
@@ -1160,10 +1202,10 @@ plot_estimate <- function(models_overview, regression_model, model_type) {
   })
   models_overview = bind_rows(models_overview, do.call(rbind, new_rows))
   models_overview = models_overview %>%
-    arrange(desc(.data$predictor_col), desc(.data$predictor)) %>%
-    mutate(formatted_predictor = case_when((.data$significance != 'ref') & (var_type == 'categorical') ~ paste0('italic(', .data$predictor, ')'),
-                                           TRUE ~ .data$predictor),
-           formatted_predictor = factor(.data$formatted_predictor, levels=.data$formatted_predictor))
+    arrange(desc(predictor_col), desc(predictor)) %>%
+    mutate(formatted_predictor = case_when((significance != 'ref') & (var_type == 'categorical') ~ paste0('italic(', predictor, ')'),
+                                           TRUE ~ predictor),
+           formatted_predictor = factor(formatted_predictor, levels=formatted_predictor))
  
   formatted_labels = sapply(models_overview$formatted_predictor, function(x) {
     if (grepl("^italic", x)) {
@@ -1173,7 +1215,7 @@ plot_estimate <- function(models_overview, regression_model, model_type) {
     }
   })
   
-  p = ggplot(models_overview, aes(x=.data$Estimate, y=.data$formatted_predictor)) +
+  p = ggplot(models_overview, aes(x=Estimate, y=formatted_predictor)) +
     theme_minimal() +
     theme(panel.grid.major = element_blank(),
           panel.grid.minor = element_blank(),
@@ -1181,8 +1223,8 @@ plot_estimate <- function(models_overview, regression_model, model_type) {
     labs(y='Predictor') +
     scale_y_discrete(labels = formatted_labels) +
     geom_vline(xintercept=0, colour="black", linewidth=.5) +
-    geom_point(aes(color=.data$Estimate)) +
-    geom_errorbar(aes(xmin=.data$Estimate-.data$`Std. Error`, xmax=.data$Estimate+.data$`Std. Error`, color=.data$Estimate), width=.0) +
+    geom_point(aes(color=Estimate)) +
+    geom_errorbar(aes(xmin=Estimate-`Std. Error`, xmax=Estimate+`Std. Error`, color=Estimate), width=.0) +
     scale_color_continuous_diverging(rev=TRUE)
   return(p)
 }
@@ -1192,7 +1234,7 @@ plot_estimate <- function(models_overview, regression_model, model_type) {
 #' Plot categorical regression of model variables
 #' @param cat_var Categorical variable to plot
 #' @param df Dataframe object extracted from model
-#' @param models_overview Custom model summary (see expanded_model_summary())
+#' @param models_overview Custom model summary (see [slightly_expanded_model_summary()])
 #' @param test Test to be used for pairwise significance testing for categorical variables. Either wilcox or t.test
 #' @param response_str Response as string
 #' @param response_col Response column name
@@ -1202,7 +1244,7 @@ plot_estimate <- function(models_overview, regression_model, model_type) {
 #' @return Regression plots of variables listed within the model summary + statistics
 plot_regression_categorical <- function(cat_var, df, models_overview, test, response_str, response_col, plot_type, regression_plots, stat_results) {
   models_overview_group = models_overview[models_overview$predictor_col == cat_var,] %>%
-    mutate(factor_group = str_remove(.data$predictor, .data$predictor_col))
+    mutate(factor_group = str_remove(predictor, predictor_col))
   
   new_rows = lapply(unique(models_overview_group[models_overview_group['var_type'] == 'categorical', 'predictor_col']), function(cat_var) {
     cat_var_states = unique(df[[cat_var]])
@@ -1228,7 +1270,7 @@ plot_regression_categorical <- function(cat_var, df, models_overview, test, resp
     df = stat_out$df
     stat_results[[cat_var]] = stat_out$stat_results
     
-    df = df %>% mutate(significance = ifelse(is.na(.data$significance), 'ref', .data$significance))
+    df = df %>% mutate(significance = ifelse(is.na(significance), 'ref', significance))
     p = ggplot(data=df, aes(x=!!cat_var, y=!!response_sym))
     if (plot_type == 'boxplot') p = p + geom_boxplot(aes(color=!!cat_var, fill=!!cat_var))
     else p = p + geom_violin(aes(color=!!cat_var, fill=!!cat_var))
@@ -1236,8 +1278,8 @@ plot_regression_categorical <- function(cat_var, df, models_overview, test, resp
     p = p +
       scale_color_viridis_d(option = "G") +
       scale_fill_viridis_d(option = "G") +
-      geom_text(aes(x=!!cat_var, label=.data$letter), y=max(df[!is.na(df[response_str]),response_str])*1.1, check_overlap = TRUE) +
-      geom_text(aes(x=!!cat_var, label=.data$significance), y=max(df[!is.na(df[response_str]),response_str]*1.05), check_overlap = TRUE) +
+      geom_text(aes(x=!!cat_var, label=letter), y=max(df[!is.na(df[response_str]),response_str])*1.1, check_overlap = TRUE) +
+      geom_text(aes(x=!!cat_var, label=significance), y=max(df[!is.na(df[response_str]),response_str]*1.05), check_overlap = TRUE) +
       ylim(min(df[!is.na(df[response_str]),response_str]), max(df[!is.na(df[response_str]),response_str])*1.1)
   } else {  # single vars
     p = ggplot(data=df, aes(x=!!cat_var, y=!!response_sym))
@@ -1258,7 +1300,7 @@ plot_regression_categorical <- function(cat_var, df, models_overview, test, resp
 #' @param regression_model The (simplified) regression model
 #' @param df Dataframe object extracted from model
 #' @param term The formula to be used with the model
-#' @param models_overview Custom model summary (see expanded_model_summary())
+#' @param models_overview Custom model summary (see [slightly_expanded_model_summary()])
 #' @param response_str Response as string
 #' @param regression_plots A list storing regression plots
 #' @param jitter Whether to use jitter when generating dotplots
@@ -1390,7 +1432,7 @@ plot_regression_numeric <- function(predictor_full, regression_model, df, term, 
 #'
 #' Plot regression of model variables
 #' @param regression_model The (simplified) regression model
-#' @param models_overview Custom model summary (see expanded_model_summary())
+#' @param models_overview Custom model summary (see [expanded_model_summary()])
 #' @param model_type Type of regression model (e.g., 'glm')
 #' @param model_family Model family used for glm calculation (default: gaussian)
 #' @param plot_type Whether to plot as boxplot or violin plot for categorical variables (default: boxplot)
@@ -1440,19 +1482,19 @@ plot_regression <- function(regression_model, models_overview, model_type, model
 #' Plot regression model effect sizes
 #'
 #' Plot effect sizes of model variables
-#' @param models_overview Custom model summary (see function expanded_model_summary)
+#' @param models_overview Custom model summary (see function [expanded_model_summary()])
 #' @return A plot of the effect sizes of the variables listed within the model summary
 plot_effect_size = function(models_overview) {
   models_overview = models_overview %>%
-    mutate(Estimate_abs = abs(.data$Estimate),
-           Est_sum = sum(.data$Estimate_abs),
+    mutate(Estimate_abs = abs(Estimate),
+           Est_sum = sum(Estimate_abs),
            `Effect size` = case_when(
-             .data$Estimate > 0 ~ (.data$Estimate_abs / Est_sum) * 100,
-             .data$Estimate < 0 ~ (.data$Estimate_abs / Est_sum) * -100
+             Estimate > 0 ~ (Estimate_abs / Est_sum) * 100,
+             Estimate < 0 ~ (Estimate_abs / Est_sum) * -100
            )) %>%
-    arrange(desc(.data$`Effect size`))
+    arrange(desc(`Effect size`))
   
-  p = ggplot(models_overview, aes(y=.data$`Effect size`, x=.data$predictor, fill=.data$`Effect size`)) +
+  p = ggplot(models_overview, aes(y=`Effect size`, x=predictor, fill=`Effect size`)) +
     geom_bar(stat = 'identity') +
     scale_fill_continuous_diverging(rev=TRUE) +
     theme_minimal() +
@@ -1486,7 +1528,7 @@ run_stats <- function(df, response, predictor, test='wilcox') {
       # for accessibility
       stat_results = stat_results %>%
         rowwise() %>%
-        mutate(comb = paste(sort(c(.data$idx1, .data$idx2)), collapse='|'))
+        mutate(comb = paste(sort(c(idx1, idx2)), collapse='|'))
       
       letter = 'A'
       for (i in 1:nrow(df_sorted)) {
@@ -1543,14 +1585,14 @@ run_stats <- function(df, response, predictor, test='wilcox') {
       pivot_longer(cols = -c('var1'),
                    names_to = 'var2',
                    values_to = 'p_value') %>%
-      filter((.data$var1 != .data$var2) & (!is.na(.data$p_value)))
+      filter((var1 != var2) & (!is.na(p_value)))
   } else if (test == 't.test') {
     stat_results = as.data.frame(pairwise.t.test(df[[response]], df[[predictor]])$p.value) %>%
       rownames_to_column(var='var1') %>%
       pivot_longer(cols = -c('var1'),
                    names_to = 'var2',
                    values_to = 'p_value') %>%
-      filter((.data$var1 != .data$var2) & (!is.na(.data$p_value)))
+      filter((var1 != var2) & (!is.na(p_value)))
   } else {
     warning("We only allow wilcox and t.test for statistical testing.")
   }

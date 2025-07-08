@@ -2,6 +2,23 @@
 
 `LazyModeler` is a statistical package for the programming language R that allows users to easily perform regression modeling. It includes removal of autocorrelated variables, choice between several types of (non)linear regression models, standard stepwise model simplification, various model quality checks, plotting of coefficient estimates and relationships, and output generation.
 
+# Statement of need
+
+Statistical modeling describes the process of finding a mathematical function with specific statistical assumptions that best fits the observed data (Crawley, 2007, 2015; Henley et al., 2020).
+This process attempts, in practice, to find a (causal) relationship between a dependent response variable `y` and an independent predictor variable `x` for any postulated hypothesis. For statistical inference and graphics in science, the programming environment R [@RCoreTeam2024] has become highly popular.
+
+Linear regression models, as one of the most basic and powerful tools, have been frequently applied in this context (Crawley, 2007, 2015; Li, 2023; Schielzeth et al., 2020).
+Because of their flexibility, they also allow for non-normally distributed response variables (e.g., in the case of binomial, proportional, or count data), and any kind of transformation for numerical (e.g., polynomial or logarithmic) and categorical (e.g., centered or one-hot/fractional encoded) predictor variables, as well as interactions among them (e.g., Cai et al., 2023; Henley et al., 2020; Karbstein et al., 2019, 2020, 2021; Liaw et al., 2021; Römermann et al., 2016; Schielzeth, 2010).
+Regression models also provide the ability to control for random effects that may influence the variables of interest (e.g., Bauer & Albrecht, 2020; Schielzeth et al., 2020; Wicke et al. 2016).
+Recent developments make regression models also applicable to nonlinear scenarios (e.g., Bates et al., 2024; Hastie, 2023). Consequently, they are of high practical value in finding and interpreting significant relationships.
+
+In statistical modeling, and especially in real-world applications, multiple predictors are assumed for a given response variable. 
+As a consequence, people strive to exclude the irrelevant from the relevant (statistically significant) information, which is called model simplification (Crawley, 2007, 2015; Forstmeier & Schielzeth, 2011).
+Model simplification continuous to be a rather manual process [on GoogleScholar, only ca. 5,000 "stepAIC" entries despite ca. 5,000,000 "linear regression model" studies (0.1%); e.g., Römermann et al. (2016); Karbstein et al. (2019); Henley et al. (2020); Karbstein et al. (2020); Cai et al. (2023); Li (2023)].
+In addition, simplification and other aspects such as data cleaning, model comparison and quality control, and output visualization have not been automated.
+
+Our R package `LazyModeler` enables users to automatically remove autocorrelated variables, choose between several types of (non)linear regression models (e.g., LM, GLM, LMER, GLMER, GAM, or NLMER), perform stepwise model simplification, check model quality, plot coefficient estimates and relationships, and generate the output of the final model.
+
 # Overview and major functions
 
 `LazyModeler` automatizes all necessary steps needed for use of (non)linear regression models. It comprises three major functions that are included within the main function `optimize_model`.
@@ -14,6 +31,18 @@ Using the third major function `fancy_plotting`, the final model then undergoes 
 
 `LazyModeler` makes use of the R package `corrplot` (Wei and Simko 2021) to calculate correlations between variables, `lme4` (Bates et al. 2024) and `lmerTest` (Kuznetsova, Brockhoff, and Christensen 2017) for regression modeling, `tidyverse` (Wickham
 et al. 2019) for data handling, and `MuMIn` (Bartoń 2024) for calculation of AICc scores. For generation of plots visualizing regression, effect size, and estimates, the script further leverages `tidyverse` and color palettes included in the `colorspace` (Zeileis et al. 2020) and `viridis` (Garnier et al. 2024) R packages.
+
+# How to install
+You have two options to install LazyModeler. You can either install through GitHub using the `devtools` library.
+``` r
+library("devtools")
+install_github("LMKoesters/LazyModeler")
+```
+
+For the second option, you need to download the tarball from GitHub and then install using `install.packages`.
+``` r
+install.packages("PATH_TO_TARBALL/LazyModeler-v.0.2.0.tar.gz", repos = NULL, type="source")
+```
 
 # Example
 
@@ -51,6 +80,10 @@ Navigating through the output. For example, (a) simply click on dataframe button
 ![(a) Model quality check and (b,c) exemplary output plots of significant relationships.](paper/assets/figure2.png)
 (a) Model quality check and (b,c) exemplary output plots of significant relationships.
 
+# Community guidelines
+We welcome contributions, feedback, and suggestions to improve this project.
+- Encountered a bug or unexpected behavior? Open an issue on GitHub. Just make sure that your issue hasn't been reported yet by checking existing issues before opening a new one.
+- Contributions (e.g., code improvements, new features, documentation) are welcome via pull requests. When contributing, describe your changes clearly and provide sufficient context to help us understand your work.
 
 # References
 Bartoń, Kamil. 2024. *MuMIn: Multi-Model Inference*.
@@ -60,15 +93,38 @@ Bates, D., M. Maechler, B. Bolker, and S. Walker. 2024.
 “<span class="nocase">lme4 - Linear mixed-effects models using ’Eigen’
 and S4</span>.” <https://github.com/lme4/lme4/>.
 
+Bauer, M., & Albrecht, H. (2020). Vegetation monitoring in a 100-year-old calcareous grassland
+reserve in Germany. Basic and Applied Ecology, 42, 15–26. <https://doi.org/10.1016/j.baae.2019.11.003>.
+
+Cai, L., Kreft, H., Taylor, A., Denelle, P., Schrader, J., Essl, F., Kleunen, M. van, Pergl, J.,
+Pyšek, P., Stein, A., Winter, M., Barcelona, J. F., Fuentes, N., Inderjit, Karger, D. N.,
+Kartesz, J., Kuprijanov, A., Nishino, M., Nickrent, D., … Weigelt, P. (2023). Global models
+and predictions of plant diversity based on advanced machine learning techniques. New
+Phytologist, 237(4), 1432–1445. <https://doi.org/10.1111/nph.1853>.
+
 Dormann, Carsten F, Jane Elith, Sven Bacher, Carsten Buchmann, Gudrun
 Carl, Gabriel Carré, Jaime R. García Marquéz, et al. 2013.
 “<span class="nocase">Collinearity: a review of methods to deal with it
 and a simulation study evaluating their performance</span>.” *Ecography*
 36 (1): 27–46. <https://doi.org/10.1111/j.1600-0587.2012.07348.x>.
 
+Forstmeier, W., & Schielzeth, H. (2011). Cryptic multiple hypotheses testing in linear models:
+overestimated effect sizes and the winner’s curse. Behavioral Ecology and Sociobiology,
+65(1), 47–55. <https://doi.org/10.1007/s00265-010-1038-5>.
+
 Garnier, Simon, Ross, Noam, Rudis, Robert, Camargo, et al. 2024.
 *<span class="nocase">viridis(Lite)</span> - Colorblind-Friendly Color
 Maps for r*. <https://doi.org/10.5281/zenodo.4679423>.
+
+Hastie, T. (2023). gam: Generalized Additive Models. <https://cran.r-project.org/web/>.
+
+Kuznetsova, Alexandra, Per B. Brockhoff, and Rune H. B. Christensen.
+2017. “<span class="nocase">lmerTest</span> Package: Tests in Linear
+Mixed Effects Models.” *Journal of Statistical Software* 82 (13): 1–26.
+<https://doi.org/10.18637/jss.v082.i13>.
+
+Li, J. (2023). Overview of high dimensional linear regression models. Theoretical and Natural
+Science, 5(1), 656–661. <https://doi.org/10.54254/2753-8818/5/20230427>.
 
 Lüdecke, Daniel, Mattan S. Ben-Shachar, Indrajeet Patil, Philip
 Waggoner, and Dominique Makowski. 2021. “Performance: An r Package for
@@ -76,14 +132,26 @@ Assessment, Comparison and Testing of Statistical Models.” *Journal of
 Open Source Software* 6 (60): 3139.
 <https://doi.org/10.21105/joss.03139>.
 
-Kuznetsova, Alexandra, Per B. Brockhoff, and Rune H. B. Christensen.
-2017. “<span class="nocase">lmerTest</span> Package: Tests in Linear
-Mixed Effects Models.” *Journal of Statistical Software* 82 (13): 1–26.
-<https://doi.org/10.18637/jss.v082.i13>.
+Römermann, C., Bucher, S. F., Hahn, M., & Bernhardt-Römermann, M. (2016). Plant
+functional traits – fixed facts or variable depending on the season? Folia Geobotanica,
+51(2), 143–159. <https://doi.org/10.1007/s12224-016-9250-3>.
 
-Wei, Taiyun, and Viliam Simko. 2021. *R Package ’Corrplot’:
+Schielzeth, H. (2010). Simple means to improve the interpretability of regression coefficients.
+Methods in Ecology and Evolution, 1(2), 103–113. <https://doi.org/10.1111/j.2041-210X.2010.00012.x>
+
+Schielzeth, H., Dingemanse, N. J., Nakagawa, S., Westneat, D. F., Allegue, H., Teplitsky, C.,
+Réale, D., Dochtermann, N. A., Garamszegi, L. Z., & Araya‐Ajoy, Y. G. (2020). Robustness
+of linear mixed‐effects models to violations of distributional assumptions. Methods in
+Ecology and Evolution, 11(9), 1141–1152. <https://doi.org/10.1111/2041-210X.13434>.
+
+Wei, Taiyun, and Viliam, Simko. 2021. *R Package ’Corrplot’:
 Visualization of a Correlation Matrix*.
 <https://github.com/taiyun/corrplot>.
+
+Wicke, S., Müller, K. F., DePamphilis, C. W., Quandt, D., Bellot, S., & Schneeweiss, G.M. (2016).
+Mechanistic model of evolutionary rate variation en route to a nonphotosynthetic lifestyle in plants.
+Proceedings of the National Academy of Sciences of the United States of America, 113(32), 9045-9050.
+<https://doi.org/10.1073/pnas.1607576113>.
 
 Wickham, Hadley, Mara Averick, Jennifer Bryan, Winston Chang, Lucy
 D’Agostino McGowan, Romain François, Garrett Grolemund, et al. 2019.

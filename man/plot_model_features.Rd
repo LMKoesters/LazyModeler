@@ -19,7 +19,7 @@ plot_model_features(
 \arguments{
 \item{regression_model}{The (simplified) regression model}
 
-\item{models_overview}{Custom model summary (see expanded_model_summary())}
+\item{models_overview}{Custom model summary (see [slightly_expanded_model_summary()])}
 
 \item{model_type}{Type of regression model (e.g., 'glm')}
 
@@ -40,4 +40,22 @@ A list of plots (estimate, regression, and effect size) and statistics for categ
 }
 \description{
 Plot estimate, regression and effect size
+}
+\examples{
+data("plants");
+
+model_type = 'glm'
+model_family = 'quasibinomial'
+categorical_check = setup_categorical_check(plants, c('habitat', 'ploidy'), col=quote(predictor))
+final_model = glm(sexual_seed_prop ~ altitude + solar_radiation + annual_mean_temperature + isothermality + habitat + ploidy + solar_radiation:isothermality, family=model_family, data=plants)
+
+models_overview = coef(summary(final_model))
+models_overview = slightly_expanded_model_summary(models_overview, quote(sexual_seed_prop), quote(sexual_seed_prop ~ altitude + solar_radiation + annual_mean_temperature + isothermality + I(isothermality^2) + habitat + ploidy + solar_radiation:annual_mean_temperature + solar_radiation:isothermality + annual_mean_temperature:isothermality), categorical_check, 3, plants)
+models_overview = models_overview \%>\%
+mutate(effect_direction = case_when(
+Estimate < 0 ~ 'negative',
+TRUE ~ 'positive'
+))
+
+plot_model_features(final_model, models_overview, model_type, model_family, plot_type='boxplot', jitter_plots=TRUE, test='wilcox', round_p=3, remove_insignificant=FALSE)
 }

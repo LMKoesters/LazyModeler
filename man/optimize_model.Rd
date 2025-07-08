@@ -75,7 +75,7 @@ optimize_model(
 \item{trace}{Store and return model selection history (default: FALSE)}
 }
 \value{
-List with a) information on autocorrelated variables and b) final simplified/expanded models with further information (see function simplify_model for further details)
+List with a) information on autocorrelated variables and b) final simplified/expanded models with further information (see function [simplify_model()] for further details)
 }
 \description{
 Optimize model by removing autocorrelations and variables that do not significantly predict response variable

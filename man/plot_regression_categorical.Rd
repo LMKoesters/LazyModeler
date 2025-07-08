@@ -21,7 +21,7 @@ plot_regression_categorical(
 
 \item{df}{Dataframe object extracted from model}
 
-\item{models_overview}{Custom model summary (see expanded_model_summary())}
+\item{models_overview}{Custom model summary (see [slightly_expanded_model_summary()])}
 
 \item{test}{Test to be used for pairwise significance testing for categorical variables. Either wilcox or t.test}
 

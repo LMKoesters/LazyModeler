@@ -21,11 +21,11 @@ simplify_model(
 \arguments{
 \item{df}{Dataframe with response and predictors as columns}
 
-\item{model_type}{The model to be used (options: (g/n)(l/a)m(er), default: glm)}
+\item{model_type}{The model to be used (options: (g/n)(l/a)m(er))}
 
 \item{term}{The formula to be used with the model. Can be either quote() or formula()}
 
-\item{evaluation_methods}{Methods to be used for model evaluation (options: anova, aic, aicc, bic, default: anova)}
+\item{evaluation_methods}{Methods to be used for model evaluation (options: anova, aic, aicc, bic)}
 
 \item{...}{Parameters to be directly used with model call}
 
@@ -46,4 +46,13 @@ List of results from forward and/or backward model selection. Backward/forward r
 }
 \description{
 Simplify or expand a regression model given the data and model parameters
+}
+\examples{
+data("plants");
+
+simplify_model(plants, "glm", quote(sexual_seed_prop ~ altitude + solar_radiation + annual_mean_temperature + 
+isothermality + I(isothermality^2) + habitat + ploidy + solar_radiation:annual_mean_temperature + 
+solar_radiation:isothermality + annual_mean_temperature:isothermality),
+c("anova"), model_family='quasibinomial', direction='backward',
+categorical_vars=c('habitat', 'ploidy'), backward_simplify_model=TRUE, trace=TRUE, omit.na='overall')
 }
