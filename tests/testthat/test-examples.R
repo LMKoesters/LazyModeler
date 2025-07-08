@@ -46,8 +46,8 @@ test_that("plot model features", {
                                                   categorical_check, 
                                                   3,
                                                   plants)
-  models_overview = mutate(models_overview,
-    effect_direction = case_when(
+  models_overview = models_overview |>
+    mutate(effect_direction = case_when(
       Estimate < 0 ~ 'negative',
       TRUE ~ 'positive'
     ))

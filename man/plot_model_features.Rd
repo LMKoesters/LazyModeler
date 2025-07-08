@@ -51,8 +51,8 @@ final_model = glm(sexual_seed_prop ~ altitude + solar_radiation + annual_mean_te
 
 models_overview = coef(summary(final_model))
 models_overview = slightly_expanded_model_summary(models_overview, quote(sexual_seed_prop), quote(sexual_seed_prop ~ altitude + solar_radiation + annual_mean_temperature + isothermality + I(isothermality^2) + habitat + ploidy + solar_radiation:annual_mean_temperature + solar_radiation:isothermality + annual_mean_temperature:isothermality), categorical_check, 3, plants)
-models_overview = models_overview \%>\%
-mutate(effect_direction = case_when(
+models_overview = models_overview |>
+dplyr::mutate(effect_direction = dplyr::case_when(
 Estimate < 0 ~ 'negative',
 TRUE ~ 'positive'
 ))
