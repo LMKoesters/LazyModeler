@@ -5,17 +5,7 @@
 # Statement of need
 
 Statistical modeling describes the process of finding a mathematical function with specific statistical assumptions that best fits the observed data (Crawley, 2007, 2015; Henley et al., 2020).
-This process attempts, in practice, to find a (causal) relationship between a dependent response variable `y` and an independent predictor variable `x` for any postulated hypothesis. For statistical inference and graphics in science, the programming environment R [@RCoreTeam2024] has become highly popular.
-
-Linear regression models, as one of the most basic and powerful tools, have been frequently applied in this context (Crawley, 2007, 2015; Li, 2023; Schielzeth et al., 2020).
-Because of their flexibility, they also allow for non-normally distributed response variables (e.g., in the case of binomial, proportional, or count data), and any kind of transformation for numerical (e.g., polynomial or logarithmic) and categorical (e.g., centered or one-hot/fractional encoded) predictor variables, as well as interactions among them (e.g., Cai et al., 2023; Henley et al., 2020; Karbstein et al., 2019, 2020, 2021; Liaw et al., 2021; Römermann et al., 2016; Schielzeth, 2010).
-Regression models also provide the ability to control for random effects that may influence the variables of interest (e.g., Bauer & Albrecht, 2020; Schielzeth et al., 2020; Wicke et al. 2016).
-Recent developments make regression models also applicable to nonlinear scenarios (e.g., Bates et al., 2024; Hastie, 2023). Consequently, they are of high practical value in finding and interpreting significant relationships.
-
-In statistical modeling, and especially in real-world applications, multiple predictors are assumed for a given response variable. 
-As a consequence, people strive to exclude the irrelevant from the relevant (statistically significant) information, which is called model simplification (Crawley, 2007, 2015; Forstmeier & Schielzeth, 2011).
-Model simplification continuous to be a rather manual process [on GoogleScholar, only ca. 5,000 "stepAIC" entries despite ca. 5,000,000 "linear regression model" studies (0.1%); e.g., Römermann et al. (2016); Karbstein et al. (2019); Henley et al. (2020); Karbstein et al. (2020); Cai et al. (2023); Li (2023)].
-In addition, simplification and other aspects such as data cleaning, model comparison and quality control, and output visualization have not been automated.
+This process attempts, in practice, to find a (causal) relationship between a dependent response variable `y` and an independent predictor variable `x` for any postulated hypothesis. For statistical inference and graphics in science, the programming environment R (R Core Team, 2024) has become highly popular.
 
 Our R package `LazyModeler` enables users to automatically remove autocorrelated variables, choose between several types of (non)linear regression models (e.g., LM, GLM, LMER, GLMER, GAM, or NLMER), perform stepwise model simplification, check model quality, plot coefficient estimates and relationships, and generate the output of the final model.
 
@@ -33,7 +23,7 @@ Using the third major function `fancy_plotting`, the final model then undergoes 
 et al. 2019) for data handling, and `MuMIn` (Bartoń 2024) for calculation of AICc scores. For generation of plots visualizing regression, effect size, and estimates, the script further leverages `tidyverse` and color palettes included in the `colorspace` (Zeileis et al. 2020) and `viridis` (Garnier et al. 2024) R packages.
 
 # How to install
-You have two options to install LazyModeler. You can either install through GitHub using the `devtools` library.
+You have two options to install `LazyModeler`. You can either install through GitHub using the `devtools` library.
 ``` r
 library("devtools")
 install_github("LMKoesters/LazyModeler")
@@ -102,6 +92,10 @@ Kartesz, J., Kuprijanov, A., Nishino, M., Nickrent, D., … Weigelt, P. (2023). 
 and predictions of plant diversity based on advanced machine learning techniques. New
 Phytologist, 237(4), 1432–1445. <https://doi.org/10.1111/nph.1853>.
 
+Crawley, M. J. (2007). The R Book (p. 942). John Wiley & Sons, Ltd. <https://doi.org/10.1251002/9780470515075126>
+
+Crawley, M. J. (2015). Statistics: an introduction using R (sec. ed., p. 339). John Wiley & Sons. ISBN: 1118448960
+
 Dormann, Carsten F, Jane Elith, Sven Bacher, Carsten Buchmann, Gudrun
 Carl, Gabriel Carré, Jaime R. García Marquéz, et al. 2013.
 “<span class="nocase">Collinearity: a review of methods to deal with it
@@ -131,6 +125,9 @@ Waggoner, and Dominique Makowski. 2021. “Performance: An r Package for
 Assessment, Comparison and Testing of Statistical Models.” *Journal of
 Open Source Software* 6 (60): 3139.
 <https://doi.org/10.21105/joss.03139>.
+
+R Core Team. (2024). R: a language and environment for statistical computing. 
+R Foundation for Statistical Computing. <http://www.r-project.org/>
 
 Römermann, C., Bucher, S. F., Hahn, M., & Bernhardt-Römermann, M. (2016). Plant
 functional traits – fixed facts or variable depending on the season? Folia Geobotanica,

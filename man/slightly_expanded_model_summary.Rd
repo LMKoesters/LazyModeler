@@ -20,7 +20,7 @@ slightly_expanded_model_summary(
 
 \item{term}{The formula to be used with the model. Can be either quote() or formula()}
 
-\item{categorical_check}{Output of [setup_categorical_check()]}
+\item{categorical_check}{Output of \code{\link[=setup_categorical_check]{setup_categorical_check()}}}
 
 \item{round_p}{Convenience parameter for automatic rounding of p-values}
 

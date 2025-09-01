@@ -140,7 +140,7 @@ setup_categorical_check <- function(df, categorical_vars, col=quote(coefficients
 #'
 #' Add evaluations of model given model and evaluation methods (anova/aic/aicc/bic)
 #' @param regression_model Regression model that is assessed
-#' @param evaluation_methods List of methods to use for model assessment. Options are: anova, aic, aicc, and bic
+#' @param evaluation_methods List of methods to use for model evaluation Options are: anova, aic, aicc, and bic
 #' @param is_lmer Boolean stating whether model is of type lmer
 #' @return Regression model with added assessments based on assessment methods provided
 add_assessments <- function(regression_model, evaluation_methods, is_lmer=FALSE) {
@@ -165,7 +165,7 @@ add_assessments <- function(regression_model, evaluation_methods, is_lmer=FALSE)
 #' Determine if model 1 better fits the data than model 2 given two models and evaluation methods (anova/aic/aicc/bic)
 #' @param regression_model Regression model 1
 #' @param old_regression_model Regression model 2
-#' @param evaluation_methods List of methods to use for model assessment. Options are: anova, aic, aicc, and bic
+#' @param evaluation_methods List of methods to use for model evaluation Options are: anova, aic, aicc, and bic
 #' @param direction Mode of stepwise model improvement. Either 'forward' (i.e., forward selection), or 'backward' (i.e., backward simplification)
 #' @param model_type The model to be used (options: (g/n)(l/a)m(er), default: glm)
 #' @return Boolean; TRUE if model 1 better fits the data than model 2
@@ -878,7 +878,7 @@ slightly_expanded_model_summary <- function(model_summary, response_frm, term, c
 #' @param round_p Convenience parameter for automatic rounding of p-values
 #' @param backward_simplify_model If FALSE, the model and information on significant and marginally significant variables are returned without backward simplification (default: TRUE)
 #' @param trace Store and return model selection history (default: FALSE)
-#' @return List with a) information on autocorrelated variables and b) final simplified/expanded models with further information (see function [simplify_model()] for further details)
+#' @return List with a) information on autocorrelated variables and b) final simplified/expanded models with further information (see function [LazyModeler::simplify_model()] for further details)
 #' @examples
 #' data("plants");
 #' optimize_model(plants, quote(sexual_seed_prop ~ altitude + latitude_gps_n + longitude_gps_e + (solar_radiation + annual_mean_temperature + isothermality)^2 + I(isothermality^2) + habitat + ploidy), 

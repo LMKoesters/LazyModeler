@@ -7,7 +7,7 @@
 plot_estimate(models_overview, regression_model, model_type)
 }
 \arguments{
-\item{models_overview}{Custom model summary (see [slightly_expanded_model_summary()])}
+\item{models_overview}{Custom model summary (see \code{\link[=slightly_expanded_model_summary]{slightly_expanded_model_summary()}})}
 
 \item{regression_model}{The (simplified) regression model}
 

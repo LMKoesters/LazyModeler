@@ -14,15 +14,17 @@ authors:
 - name: Lara M. Kösters
   orcid: "0000-0002-7913-2377"
   equal-contrib: yes
-  affiliation: 1
+  affiliation: "1, 2"
 - name: Kevin Karbstein
   orcid: "0000-0003-1424-6557"
   equal-contrib: yes
-  affiliation: 1
+  affiliation: "1, 2"
 bibliography: paper.bib
 affiliations:
-- name: Max Planck Institute for Biogeochemistry, Department of Biogeochemical Integration, Jena, Germany
+- name: Max-Planck-Institute for Biogeochemistry, Department of Biogeochemical Integration, Jena, Germany
   index: 1
+- name: Technical University Ilmenau, Data‑Intensive Systems and Visualization Group (dAI.SY), Ilmenau, Germany
+  index: 2
 ---
 
 # Summary
@@ -33,7 +35,7 @@ Setting up, simplifying, checking, and visualizing regression models continues t
 
 Statistical modeling describes the process of finding a mathematical function with specific statistical assumptions that best fits the observed data [@Crawley2007; @Crawley2015; @Henley2020]. This process attempts, in practice, to find a (causal) relationship between a dependent response variable `y` and an independent predictor variable `x` for any postulated hypothesis. For statistical inference and graphics in science, the programming environment R [@RCoreTeam2024] has become highly popular.
 
-Linear regression models, as one of the most basic and powerful tools, have been frequently applied in this context [@Crawley2007; @Crawley2015; @Schielzeth2020; @Li2023]. Because of their flexibility, they also allow for non-normally distributed response variables (e.g., in the case of binomial, proportional, or count data), and any kind of transformation for numerical (e.g., polynomial or logarithmic) and categorical (e.g., centered or one-hot/fractional encoded) predictor variables, as well as interactions among them [e.g., @Cai2023; @Roemermann2016; @Henley2020; @Karbstein2019; @Karbstein2020; @Karbstein2021; @Liaw2021; @Schielzeth2010]. Regression models also provide the ability to control for random effects that may influence the variables of interest [e.g., @Bauer2020; @Wicke2016; @Schielzeth2020]. Although other statistical technologies can outperform them in highly complex, non-linear scenarios, regression models allow for detailed variable transformation and interaction, mathematical formula specification, calculation of effect sizes, determination of variable significance, and thus hypothesis testing and explanation [@Benjamin2018; @Bzdok2019; @Schulz2020; @Cai2023; @Karbstein2023; @Li2023]. Recent developments make regression models also applicable to nonlinear scenarios [e.g., @Bates2024; @Hastie2023]. Consequently, they are of high practical value in finding and interpreting significant relationships.
+Linear regression models, as one of the most basic and powerful tools, have been frequently applied in this context [@Crawley2007; @Crawley2015; @Schielzeth2020; @Li2023]. Because of their flexibility, they also allow for non-normally distributed response variables (e.g., in the case of binomial, proportional, or count data), and any kind of transformation for numerical (e.g., polynomial or logarithmic) and categorical (e.g., centered or one-hot/fractional encoded) predictor variables, as well as interactions among them [@Cai2023; @Roemermann2016; @Henley2020; @Karbstein2019; @Karbstein2020; @Karbstein2021; @Liaw2021; @Schielzeth2010]. Regression models also provide the ability to control for random effects that may influence the variables of interest [e.g., @Bauer2020; @Wicke2016; @Schielzeth2020]. Although other statistical technologies can outperform them in highly complex, non-linear scenarios, regression models allow for detailed variable transformation and interaction, mathematical formula specification, calculation of effect sizes, determination of variable significance, and thus hypothesis testing and explanation [@Benjamin2018; @Bzdok2019; @Schulz2020; @Cai2023; @Karbstein2023; @Li2023]. Recent developments make regression models also applicable to nonlinear scenarios [e.g., @Bates2024; @Hastie2023]. Consequently, they are of high practical value in finding and interpreting significant relationships.
 
 In statistical modeling, and especially in real-world applications, multiple predictors are assumed for a given response variable. As a consequence, people strive to exclude the irrelevant from the relevant (statistically significant) information, which is called model simplification [@Crawley2007; @Forstmeier2011; @Crawley2015]. One of the most widely used optimization workflows is stepwise model simplification. For example, starting from a full/saturated model, the least significant variable (p\>0.05) is excluded until the final minimal adequate model is attained ['backward simplification'; @Crawley2007; @Forstmeier2011; @Crawley2015]. Each model simplification step will be justified with certain metrics (e.g., SSE, AIC, or BIC) [@Henley2020]. Given the number of models, variables of interest, and their data characteristics, this task can be extraordinarily time consuming. Currently, only AIC/BIC-based automated simplification is available [e.g., 'stepAIC', @Venables2002]. Nevertheless, model simplification continuous to be a rather manual process [on GoogleScholar, only ca. 5,000 "stepAIC" entries despite ca. 5,000,000 "linear regression model" studies (0.1%); e.g., @Roemermann2016; @Karbstein2019; @Henley2020; @Karbstein2020; @Cai2023; @Li2023]. In addition, simplification and other aspects such as data cleaning, model comparison and quality control, and output visualization have not been automated. An easy-to-use, all-in-one function for the entire modeling process within a single software package is missing.
 
@@ -87,7 +89,7 @@ backward_simplify_model=TRUE, trace=TRUE)
 
 # Conclusions
 
-In summary, LazyModeler streamlines the process of building, simplifying, and visualizing regression models in R. By automating key steps such as autocorrelation removal, model selection, quality assessment, and output generation, it significantly reduces manual effort. The package is especially valuable for researchers dealing with large and complex datasets who seek a reproducible and statistically sound regression modeling workflow. We anticipate that LazyModeler will serve as a practical and accessible tool for both novice and experienced users in the scientific community.
+In summary, `LazyModeler` streamlines the process of building, simplifying, and visualizing regression models in R. By automating key steps such as autocorrelation removal, model selection, quality assessment, and output generation, it significantly reduces manual effort. The package is especially valuable for researchers dealing with large and complex datasets who seek a reproducible and statistically sound regression modeling workflow. We anticipate that `LazyModeler` will serve as a practical and accessible tool for both novice and experienced users in the scientific community.
 
 \newpage
 

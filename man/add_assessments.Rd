@@ -9,7 +9,7 @@ add_assessments(regression_model, evaluation_methods, is_lmer = FALSE)
 \arguments{
 \item{regression_model}{Regression model that is assessed}
 
-\item{evaluation_methods}{List of methods to use for model assessment. Options are: anova, aic, aicc, and bic}
+\item{evaluation_methods}{List of methods to use for model evaluation Options are: anova, aic, aicc, and bic}
 
 \item{is_lmer}{Boolean stating whether model is of type lmer}
 }

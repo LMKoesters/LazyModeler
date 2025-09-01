@@ -17,7 +17,7 @@ model_improved(
 
 \item{old_regression_model}{Regression model 2}
 
-\item{evaluation_methods}{List of methods to use for model assessment. Options are: anova, aic, aicc, and bic}
+\item{evaluation_methods}{List of methods to use for model evaluation Options are: anova, aic, aicc, and bic}
 
 \item{direction}{Mode of stepwise model improvement. Either 'forward' (i.e., forward selection), or 'backward' (i.e., backward simplification)}
 

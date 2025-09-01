@@ -19,7 +19,7 @@ plot_model_features(
 \arguments{
 \item{regression_model}{The (simplified) regression model}
 
-\item{models_overview}{Custom model summary (see [slightly_expanded_model_summary()])}
+\item{models_overview}{Custom model summary (see \code{\link[=slightly_expanded_model_summary]{slightly_expanded_model_summary()}})}
 
 \item{model_type}{Type of regression model (e.g., 'glm')}
 
