@@ -23,13 +23,12 @@ Using the third major function `fancy_plotting`, the final model then undergoes 
 et al. 2019) for data handling, and `MuMIn` (Bartoń 2024) for calculation of AICc scores. For generation of plots visualizing regression, effect size, and estimates, the script further leverages `tidyverse` and color palettes included in the `colorspace` (Zeileis et al. 2020) and `viridis` (Garnier et al. 2024) R packages.
 
 # How to install
-You have two options to install `LazyModeler`. You can either install through GitHub using the `devtools` library.
+You have two options to install `LazyModeler`. You can either install through GitHub using the `remotes` package.
 ``` r
-library("devtools")
-install_github("LMKoesters/LazyModeler")
+remotes::install_github("LMKoesters/LazyModeler")
 ```
 
-For the second option, you need to download the tarball from GitHub and then install using `install.packages`.
+Alternatively, you need to download the tarball from GitHub and then install using `install.packages`.
 ``` r
 install.packages("PATH_TO_TARBALL/LazyModeler-v.0.2.0.tar.gz", repos = NULL, type="source")
 ```
