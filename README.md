@@ -75,11 +75,14 @@ We welcome contributions, feedback, and suggestions to improve this project.
 - Encountered a bug or unexpected behavior? Open an issue on GitHub. Just make sure that your issue hasn't been reported yet by checking existing issues before opening a new one.
 - Contributions (e.g., code improvements, new features, documentation) are welcome via pull requests. When contributing, describe your changes clearly and provide sufficient context to help us understand your work.
 
+# Important note
+The model selection procedures implemented in LazyModeler are provided for convenience and exploratory analysis. Users should be aware that statistical inference reported from a model chosen in a data-driven way may be anti-conservative (e.g., p-values may appear smaller than they truly are, confidence intervals narrower). This issue is known as post-selection inference. Specialized methods have been developed to address it (e.g., Lee et al., 2016), but they are not yet widely available for all model classes supported by LazyModeler.
+
 # References
-Bartoń, Kamil. 2024. *MuMIn: Multi-Model Inference*.
+Bartoń, K. (2024). *MuMIn: Multi-Model Inference*.
 <https://CRAN.R-project.org/package=MuMIn>.
 
-Bates, D., M. Maechler, B. Bolker, and S. Walker. 2024.
+Bates, D., Maechler, M., Bolker, B., and Walker,S. (2024).
 “<span class="nocase">lme4 - Linear mixed-effects models using ’Eigen’
 and S4</span>.” <https://github.com/lme4/lme4/>.
 
@@ -96,8 +99,8 @@ Crawley, M. J. (2007). The R Book (p. 942). John Wiley & Sons, Ltd. <https://doi
 
 Crawley, M. J. (2015). Statistics: an introduction using R (sec. ed., p. 339). John Wiley & Sons. ISBN: 1118448960
 
-Dormann, Carsten F, Jane Elith, Sven Bacher, Carsten Buchmann, Gudrun
-Carl, Gabriel Carré, Jaime R. García Marquéz, et al. 2013.
+Dormann, C. F., Elith, J., Bacher, S., Buchmann, C.,
+Carl, G., Carré, G., García Marquéz, J. R, et al. (2013).
 “<span class="nocase">Collinearity: a review of methods to deal with it
 and a simulation study evaluating their performance</span>.” *Ecography*
 36 (1): 27–46. <https://doi.org/10.1111/j.1600-0587.2012.07348.x>.
@@ -106,22 +109,26 @@ Forstmeier, W., & Schielzeth, H. (2011). Cryptic multiple hypotheses testing in 
 overestimated effect sizes and the winner’s curse. Behavioral Ecology and Sociobiology,
 65(1), 47–55. <https://doi.org/10.1007/s00265-010-1038-5>.
 
-Garnier, Simon, Ross, Noam, Rudis, Robert, Camargo, et al. 2024.
+Garnier, S., Ross, N., Rudis, B., Filipovic-Pierucci, A., et al. (2024).
 *<span class="nocase">viridis(Lite)</span> - Colorblind-Friendly Color
 Maps for r*. <https://doi.org/10.5281/zenodo.4679423>.
 
 Hastie, T. (2023). gam: Generalized Additive Models. <https://cran.r-project.org/web/>.
 
-Kuznetsova, Alexandra, Per B. Brockhoff, and Rune H. B. Christensen.
-2017. “<span class="nocase">lmerTest</span> Package: Tests in Linear
+Kuznetsova, A., Brockhoff, P. B., & Christensen, R. H. B.
+(2017). “<span class="nocase">lmerTest</span> Package: Tests in Linear
 Mixed Effects Models.” *Journal of Statistical Software* 82 (13): 1–26.
 <https://doi.org/10.18637/jss.v082.i13>.
+
+Lee, J. D., Sun, D. L., Sun, Y., & Taylor, J. E. (2016). Exact post-selection inference, 
+with application to the lasso. *Annals of Statistics* 44: 907–27. 
+<https://doi.org/10.1214/15-AOS1371>.
 
 Li, J. (2023). Overview of high dimensional linear regression models. Theoretical and Natural
 Science, 5(1), 656–661. <https://doi.org/10.54254/2753-8818/5/20230427>.
 
-Lüdecke, Daniel, Mattan S. Ben-Shachar, Indrajeet Patil, Philip
-Waggoner, and Dominique Makowski. 2021. “Performance: An r Package for
+Lüdecke, D., Ben-Shachar, M. S., Patil, I.,
+Waggoner, P., & Makowski, D. (2021). “Performance: An r Package for
 Assessment, Comparison and Testing of Statistical Models.” *Journal of
 Open Source Software* 6 (60): 3139.
 <https://doi.org/10.21105/joss.03139>.
@@ -141,11 +148,11 @@ Réale, D., Dochtermann, N. A., Garamszegi, L. Z., & Araya‐Ajoy, Y. G. (2020).
 of linear mixed‐effects models to violations of distributional assumptions. Methods in
 Ecology and Evolution, 11(9), 1141–1152. <https://doi.org/10.1111/2041-210X.13434>.
 
-Wei, Taiyun, and Viliam, Simko. 2021. *R Package ’Corrplot’:
+Wei, T., & Viliam, S. (2021). *R Package ’Corrplot’:
 Visualization of a Correlation Matrix*.
 <https://github.com/taiyun/corrplot>.
 
-Wicke, S., Müller, K. F., DePamphilis, C. W., Quandt, D., Bellot, S., & Schneeweiss, G.M. (2016).
+Wicke, S., Müller, K. F., DePamphilis, C. W., Quandt, D., Bellot, S., & Schneeweiss, G. M. (2016).
 Mechanistic model of evolutionary rate variation en route to a nonphotosynthetic lifestyle in plants.
 Proceedings of the National Academy of Sciences of the United States of America, 113(32), 9045-9050.
 <https://doi.org/10.1073/pnas.1607576113>.
@@ -155,8 +162,8 @@ D’Agostino McGowan, Romain François, Garrett Grolemund, et al. 2019.
 “Welcome to the <span class="nocase">tidyverse</span>.” *Journal of Open
 Source Software* 4 (43): 1686. <https://doi.org/10.21105/joss.01686>.
 
-Zeileis, Achim, Jason C. Fisher, Kurt Hornik, Ross Ihaka, Claire D.
-McWhite, Paul Murrell, Reto Stauffer, and Claus O. Wilke. 2020.
+Zeileis, A., Fisher, J. C., Hornik, K., Ihaka,R.,
+McWhite, C. D., Murrell, P., Stauffer, R., & Wilke, C. O. 2020.
 “<span class="nocase">colorspace</span>: A Toolbox for Manipulating and
 Assessing Colors and Palettes.” *Journal of Statistical Software* 96
 (1): 1–49. <https://doi.org/10.18637/jss.v096.i01>.
