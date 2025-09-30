@@ -87,14 +87,16 @@ backward_simplify_model=TRUE, trace=TRUE)
 
 ![(a) Model quality check and (b,c) exemplary output plots of significant relationships.](assets/figure2.png)
 
+\newpage
 # Conclusions
 
 In summary, `LazyModeler` streamlines the process of building, simplifying, and visualizing regression models in R. By automating key steps such as autocorrelation removal, model selection, quality assessment, and output generation, it significantly reduces manual effort. The package is especially valuable for researchers dealing with large and complex datasets who seek a reproducible and statistically sound regression modeling workflow. We anticipate that `LazyModeler` will serve as a practical and accessible tool for both novice and experienced users in the scientific community.
 
-\newpage
+
 # Important Note
 
 The model selection procedures implemented in LazyModeler are provided for convenience and exploratory analysis, and reflect practices recommended in widely used applied statistics literature (e.g.,  [@Crawley2007; @Crawley2015]). Users should be aware, however, that statistical inference reported from a model chosen in a data-driven way may be anti-conservative (e.g., p-values may appear smaller than they truly are, confidence intervals narrower). This issue is known as post-selection inference. Specialized methods have been developed to address it (e.g.,  [@Lee2016]), but they are not yet broadly applicable across the full range of model classes supported by LazyModeler.
+
 
 # Code Availability
 
