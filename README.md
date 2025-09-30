@@ -76,7 +76,8 @@ We welcome contributions, feedback, and suggestions to improve this project.
 - Contributions (e.g., code improvements, new features, documentation) are welcome via pull requests. When contributing, describe your changes clearly and provide sufficient context to help us understand your work.
 
 # Important note
-The model selection procedures implemented in LazyModeler are provided for convenience and exploratory analysis. Users should be aware that statistical inference reported from a model chosen in a data-driven way may be anti-conservative (e.g., p-values may appear smaller than they truly are, confidence intervals narrower). This issue is known as post-selection inference. Specialized methods have been developed to address it (e.g., Lee et al., 2016), but they are not yet widely available for all model classes supported by LazyModeler.
+The model selection procedures implemented in LazyModeler are provided for convenience and exploratory analysis, and reflect practices recommended in widely used applied statistics literature [@Crawley2007; @Crawley2015]. Users should be aware, however, that statistical inference reported from a model chosen in a data-driven way may be anti-conservative (e.g., p-values may appear smaller than they truly are, confidence intervals narrower). This issue is known as post-selection inference. Specialized methods have been developed to address it, for instance [@Lee2016], but they are not yet broadly applicable across the full range of model classes supported by LazyModeler.
+
 
 # References
 Bartoń, K. (2024). *MuMIn: Multi-Model Inference*.
