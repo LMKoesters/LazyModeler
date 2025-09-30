@@ -1,6 +1,6 @@
 # LazyModeler
 
-`LazyModeler` is a statistical package for the programming language R that allows users to easily perform regression modeling. It includes removal of autocorrelated variables, choice between several types of (non)linear regression models, standard stepwise model simplification, various model quality checks, plotting of coefficient estimates and relationships, and output generation.
+`LazyModeler` is a statistical package for the programming language R that enables users to easily perform regression modeling. It includes removal of autocorrelated variables, choice between several types of (non)linear regression models, standard stepwise model simplification, various model quality checks, plotting of coefficient estimates and relationships, and output generation.
 
 # Statement of need
 
