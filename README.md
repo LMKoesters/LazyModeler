@@ -48,20 +48,33 @@ summary(plants)
 # testing dataset (subset) based on Karbstein et al. 2021
 #(https://onlinelibrary.wiley.com/doi/10.1111/mec.15919)
 
-results_example <- optimize_model(plants, quote(sexual_seed_prop ~
-altitude + latitude_gps_n + longitude_gps_e + (solar_radiation +
-annual_mean_temperature + isothermality)^2 + I(isothermality^2) +
-habitat + ploidy),  autocorrelation_cols = c("solar_radiation",
-"annual_mean_temperature", "isothermality", "altitude",
-"latitude_gps_n", "longitude_gps_e"), automatic_removal=TRUE,
-autocorrelation_threshold = 0.8, correlation_method="spearman",
-model_type = "glm", model_family = "quasibinomial",
-assessment_methods=c("anova"), simplification_direction="backward",
-omit.na="overall", scale_predictor=TRUE,
-plot_quality_assessment="performance", round_p=3,
-cor_use="complete.obs", plot_relationships=TRUE, jitter_plots=TRUE,
-plot_type="violinplot",  stat_test="wilcox",
-backward_simplify_model=TRUE, trace=TRUE)
+results_example <- optimize_model(plants,
+              quote(sexual_seed_prop ~
+              altitude + latitude_gps_n + longitude_gps_e +
+              (solar_radiation + annual_mean_temperature +
+              isothermality)^2 + I(isothermality^2) +
+              habitat + ploidy),
+              autocorrelation_cols = c("solar_radiation",
+              "annual_mean_temperature", "isothermality", "altitude",
+              "latitude_gps_n", "longitude_gps_e"),
+              automatic_removal=TRUE,
+              autocorrelation_threshold = 0.8,
+              correlation_method="spearman",
+              model_type = "glm",
+              model_family = "quasibinomial",
+              assessment_methods=c("anova"),
+              simplification_direction="backward",
+              omit.na="overall",
+              scale_predictor=TRUE,
+              plot_quality_assessment="performance",
+              round_p=3,
+              cor_use="complete.obs",
+              plot_relationships=TRUE,
+              jitter_plots=TRUE,
+              plot_type="violinplot",
+              stat_test="wilcox",
+              backward_simplify_model=TRUE,
+              trace=TRUE)
 ```
 
 ![Navigating through the output. For example, (a) simply click on dataframe button highlighted with a red arrow to (b) illustrate the final model output.](paper/assets/figure1.png)
