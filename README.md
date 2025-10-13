@@ -76,7 +76,7 @@ We welcome contributions, feedback, and suggestions to improve this project.
 - Contributions (e.g., code improvements, new features, documentation) are welcome via pull requests. When contributing, describe your changes clearly and provide sufficient context to help us understand your work.
 
 # Important note
-The model selection procedures implemented in LazyModeler are provided for convenience and exploratory analysis, and reflect practices recommended in widely used applied statistics literature [@Crawley2007; @Crawley2015]. Users should be aware, however, that statistical inference reported from a model chosen in a data-driven way may be anti-conservative (e.g., p-values may appear smaller than they truly are, confidence intervals narrower). This issue is known as post-selection inference. Specialized methods have been developed to address it, for instance [@Lee2016], but they are not yet broadly applicable across the full range of model classes supported by LazyModeler.
+The model selection procedures implemented in LazyModeler are provided for convenience and exploratory analysis, and reflect practices recommended in widely used applied statistics literature [@Crawley2007; @Crawley2015]. Users should be aware, however, that statistical inference reported from a model chosen in a data-driven way may be anti-conservative (e.g., p-values may appear smaller than they truly are, confidence intervals narrower). This issue is known as post-selection inference (PSI). Specialized methods have been developed to address it, for instance [@Lee2016], but they are not yet broadly applicable across the full range of model classes supported by LazyModeler. We have implemented PSI for (generalized) linear regression models based on the 'selcorr' R package [@Cattaneo2021], but users are free to use the retained model from LazyModeler for more sophisticated PSI analyses.
 
 
 # References
@@ -95,6 +95,9 @@ Pyšek, P., Stein, A., Winter, M., Barcelona, J. F., Fuentes, N., Inderjit, Karg
 Kartesz, J., Kuprijanov, A., Nishino, M., Nickrent, D., … Weigelt, P. (2023). Global models
 and predictions of plant diversity based on advanced machine learning techniques. New
 Phytologist, 237(4), 1432–1445. <https://doi.org/10.1111/nph.1853>.
+
+Cattaneo, M. (2021). selcorr: Post-Selection Inference for Generalized Linear Models. R package version 1.0. 
+https://CRAN.R-project.org/package=selcorr
 
 Crawley, M. J. (2007). The R Book (p. 942). John Wiley & Sons, Ltd. <https://doi.org/10.1251002/9780470515075126>
 
