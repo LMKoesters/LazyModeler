@@ -1,3 +1,12 @@
+<p align="right" style="margin-top: 0; margin-bottom: 15px;">
+  <a href="https://github.com/LMKoesters/LazyModeler">
+    <img src="https://github.com/LMKoesters/LazyModeler/blob/main/logo_lazymodeler.png?raw=true" 
+         alt="LazyModeler Logo" 
+         width="300" 
+         style="border: 1px solid #ddd; border-radius: 12px; box-shadow: 2px 2px 8px rgba(0,0,0,0.15);">
+  </a>
+</p>
+
 # LazyModeler
 
 `LazyModeler` is a statistical package for the programming language R that enables users to easily perform regression modeling. It includes removal of autocorrelated variables, choice between several types of (non)linear regression models, standard stepwise model simplification, various model quality checks, plotting of coefficient estimates and relationships, and output generation.
