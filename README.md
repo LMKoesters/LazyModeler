@@ -1,11 +1,11 @@
-<p align="right" style="margin-top: 0; margin-bottom: 15px;">
+<div align="center" style="display: flex; justify-content: space-between; align-items: center;">
   <a href="https://github.com/LMKoesters/LazyModeler">
     <img src="https://github.com/LMKoesters/LazyModeler/blob/main/logo_lazymodeler.png?raw=true" 
          alt="LazyModeler Logo" 
-         width="300" 
-         style="border: 1px solid #ddd; border-radius: 12px; box-shadow: 2px 2px 8px rgba(0,0,0,0.15);">
+         width="400" 
+         style="border-radius: 10px;">
   </a>
-</p>
+</div>
 
 # LazyModeler
 
