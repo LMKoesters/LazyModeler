@@ -82,9 +82,15 @@ Optimize model by removing autocorrelations and variables that do not significan
 }
 \examples{
 data("plants");
-optimize_model(plants, quote(sexual_seed_prop ~ altitude + latitude_gps_n + longitude_gps_e + (solar_radiation + annual_mean_temperature + isothermality)^2 + I(isothermality^2) + habitat + ploidy), 
-autocorrelation_cols = c("solar_radiation", "annual_mean_temperature", "isothermality", "altitude", "latitude_gps_n", "longitude_gps_e"), 
-automatic_removal=TRUE, autocorrelation_threshold = 0.8, correlation_method="spearman", model_type = "glm", model_family = "quasibinomial", 
-evaluation_methods=c("anova"), simplification_direction="backward", omit.na="overall", scale_predictor=TRUE, plot_quality_assessment="performance", 
-round_p=3, cor_use="complete.obs", plot_relationships=TRUE, jitter_plots=TRUE, plot_type="boxplot", stat_test="wilcox", backward_simplify_model=TRUE, trace=TRUE)
+optimize_model(plants, quote(sexual_seed_prop ~ altitude + latitude_gps_n + longitude_gps_e + 
+(solar_radiation + annual_mean_temperature + isothermality)^2 + 
+I(isothermality^2) + habitat + ploidy), 
+autocorrelation_cols = c("solar_radiation", "annual_mean_temperature", "isothermality", 
+"altitude", "latitude_gps_n", "longitude_gps_e"), 
+automatic_removal=TRUE, autocorrelation_threshold = 0.8, correlation_method="spearman", 
+model_type = "glm", model_family = "quasibinomial", 
+evaluation_methods=c("anova"), simplification_direction="backward", omit.na="overall", 
+scale_predictor=TRUE, plot_quality_assessment="performance", 
+round_p=3, cor_use="complete.obs", plot_relationships=TRUE, jitter_plots=TRUE, plot_type="boxplot", 
+stat_test="wilcox", backward_simplify_model=TRUE, trace=TRUE)
 }

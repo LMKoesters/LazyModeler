@@ -4,12 +4,14 @@
 \alias{remove_nas}
 \title{Remove NAs}
 \usage{
-remove_nas(df, term)
+remove_nas(df, term, model_type)
 }
 \arguments{
 \item{df}{Dataframe with response and predictors as columns}
 
 \item{term}{The formula to be used with the model. Can be either quote() or formula()}
+
+\item{model_type}{The model to be used (options: (g/n)(l/a)m(er), default: glm)}
 }
 \value{
 List containing the final regression model, the significant and marginally significant model variables and the selection history if trace is TRUE

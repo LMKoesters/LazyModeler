@@ -12,7 +12,7 @@ simplify_model(
   ...,
   model_family = "binomial",
   direction = "both",
-  categorical_vars = NA,
+  categorical_vars = c(),
   backward_simplify_model = TRUE,
   trace = FALSE,
   omit.na = "overall"
@@ -50,9 +50,11 @@ Simplify or expand a regression model given the data and model parameters
 \examples{
 data("plants");
 
-simplify_model(plants, "glm", quote(sexual_seed_prop ~ altitude + solar_radiation + annual_mean_temperature + 
-isothermality + I(isothermality^2) + habitat + ploidy + solar_radiation:annual_mean_temperature + 
-solar_radiation:isothermality + annual_mean_temperature:isothermality),
+simplify_model(plants, "glm", quote(sexual_seed_prop ~ altitude + solar_radiation + 
+annual_mean_temperature + isothermality + I(isothermality^2) + habitat + ploidy +
+solar_radiation:annual_mean_temperature + solar_radiation:isothermality +
+annual_mean_temperature:isothermality),
 c("anova"), model_family='quasibinomial', direction='backward',
-categorical_vars=c('habitat', 'ploidy'), backward_simplify_model=TRUE, trace=TRUE, omit.na='overall')
+categorical_vars=c('habitat', 'ploidy'), backward_simplify_model=TRUE, trace=TRUE, 
+omit.na='overall')
 }

@@ -41,5 +41,9 @@ final_model = glm(sexual_seed_prop ~ altitude + solar_radiation +
 annual_mean_temperature + isothermality + habitat + ploidy + 
 solar_radiation:isothermality, family=model_family, data=plants)
 models_overview = coef(summary(final_model))
-slightly_expanded_model_summary(models_overview, quote(sexual_seed_prop), quote(sexual_seed_prop ~ altitude + solar_radiation + annual_mean_temperature + isothermality + I(isothermality^2) + habitat + ploidy + solar_radiation:annual_mean_temperature + solar_radiation:isothermality + annual_mean_temperature:isothermality), categorical_check, 3, plants)
+slightly_expanded_model_summary(models_overview, quote(sexual_seed_prop), 
+quote(sexual_seed_prop ~ altitude + solar_radiation + annual_mean_temperature + 
+isothermality + I(isothermality^2) + habitat + ploidy + solar_radiation:annual_mean_temperature + 
+solar_radiation:isothermality + annual_mean_temperature:isothermality), categorical_check, 
+3, plants)
 }
