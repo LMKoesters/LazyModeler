@@ -7,11 +7,11 @@
 plot_effect_size(models_overview)
 }
 \arguments{
-\item{models_overview}{Custom model summary (see function \code{\link[=expanded_model_summary]{expanded_model_summary()}})}
+\item{models_overview}{Custom model summary (see function \code{\link[=expanded_model_summary]{expanded_model_summary()}}).}
 }
 \value{
-A plot of the effect sizes of the variables listed within the model summary
+A plot of the effect sizes of the variables listed within the model summary.
 }
 \description{
-Plot effect sizes of model variables
+Plot effect sizes of model variables.
 }

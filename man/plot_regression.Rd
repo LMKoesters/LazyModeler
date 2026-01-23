@@ -17,27 +17,30 @@ plot_regression(
 )
 }
 \arguments{
-\item{regression_model}{The (simplified) regression model}
+\item{regression_model}{The (simplified) regression model.}
 
-\item{models_overview}{Custom model summary (see \code{\link[=expanded_model_summary]{expanded_model_summary()}})}
+\item{models_overview}{Custom model summary (see \code{\link[=expanded_model_summary]{expanded_model_summary()}}).}
 
-\item{model_type}{Type of regression model (e.g., 'glm')}
+\item{model_type}{Type of regression model (e.g., 'glm').}
 
-\item{model_family}{Model family used for glm calculation (default: gaussian)}
+\item{model_family}{Model family used for glm calculation.
+Default: gaussian.}
 
-\item{plot_type}{Whether to plot as boxplot or violin plot for categorical variables (default: boxplot)}
+\item{plot_type}{Whether to plot as boxplot or violin plot for
+categorical variables. Default: boxplot.}
 
-\item{jitter_plots}{Whether to use jitter when generating dotplots (default: FALSE)}
+\item{jitter_plots}{Whether to use jitter when generating dotplots. Default: FALSE.}
 
-\item{test}{Test to be used for pairwise significance testing for categorical variables. Either wilcox or t.test (default: wilcox)}
+\item{test}{Test to be used for pairwise significance testing for
+categorical variables. Either wilcox or t.test. Default: wilcox.}
 
-\item{round_p}{Convenience parameter for automatic rounding of p-values}
+\item{round_p}{Convenience parameter for automatic rounding of p-values.}
 
-\item{plot_curve}{Whether to plot regression plot curve using geom_smooth}
+\item{plot_curve}{Whether to plot regression plot curve using geom_smooth.}
 }
 \value{
-Regression plots of variables listed within the model summary
+Regression plots of variables listed within the model summary.
 }
 \description{
-Plot regression of model variables
+Plot regression of model variables.
 }

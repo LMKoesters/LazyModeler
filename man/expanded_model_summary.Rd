@@ -4,20 +4,22 @@
 \alias{expanded_model_summary}
 \title{Expansion of model summary}
 \usage{
-expanded_model_summary(df, model_type, regression_model, categorical_vars)
+expanded_model_summary(df, model_summary, categorical_vars)
 }
 \arguments{
 \item{df}{Dataframe with response and predictors as columns}
 
-\item{model_type}{The model to be used (options: (g/n)(l/a)m(er), default: glm)}
+\item{model_summary}{Summary of model. Either summary(model)$p.table
+or stats::coef(summary(model)).}
 
-\item{regression_model}{Regression model}
-
-\item{categorical_vars}{List of categorical variables within the model (base names, i.e., names of columns)}
+\item{categorical_vars}{List of categorical variables within the model
+(base names, i.e., names of columns)}
 }
 \value{
-Expanded summary of a regression model with added information on base variables and variable type
+Expanded summary of a regression model with added
+information on base variables and variable type
 }
 \description{
-Expand model summary by adding column names and information on interaction groups
+Expand model summary by adding column names and
+information on interaction groups
 }

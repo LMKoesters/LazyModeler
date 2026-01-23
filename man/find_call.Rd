@@ -9,14 +9,17 @@ find_call(term, pred_full = NA, return = "all", df_cols = NA)
 \arguments{
 \item{term}{The formula to be used with the model. Can be either quote() or formula()}
 
-\item{pred_full}{Only needed for 'match' and 'negative'. The term to search for within the formula}
+\item{pred_full}{Only needed for 'match' and 'negative'.
+The term to search for within the formula}
 
-\item{return}{Can be 'all', 'atomic', 'interactions', 'main_effects', 'negative', or 'match'. Default: 'all'}
+\item{return}{Can be 'all', 'atomic', 'interactions', 'main_effects',
+'negative', or 'match'. Default: 'all'}
 
 \item{df_cols}{Only needed if return == 'atomic'}
 }
 \value{
-The extracted part(s) of the model formula matching a given pattern. Can be either a call or a vector
+The extracted part(s) of the model formula matching a given pattern.
+Can be either a call or a vector
 }
 \description{
 Extract part of model formula

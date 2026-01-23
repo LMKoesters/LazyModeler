@@ -4,7 +4,7 @@ Title: LazyModeler: An R package for automatic simplification, check, and visual
 Version: 0.2.3
 Authors@R: 
     c(person(given = "Lara",
-             family = "Koesters",
+             family = "Kösters",
              role = c("aut", "cre"),
              email = "lkoesters@bgc-jena.mpg.de",
              comment = c(ORCID = "0000-0002-7913-2377")),
@@ -23,6 +23,7 @@ Imports:
     dplyr,
     formula.tools,
     ggplot2,
+    ggrepel,
     graphics,
     grDevices,
     lme4,
@@ -33,6 +34,7 @@ Imports:
     performance,
     purrr,
     rlang,
+    selcorr,
     stats,
     stringr,
     tibble,

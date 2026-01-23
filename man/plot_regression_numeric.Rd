@@ -20,33 +20,33 @@ plot_regression_numeric(
 )
 }
 \arguments{
-\item{predictor_full}{Numeric/mixed variable to plot}
+\item{predictor_full}{Numeric/mixed variable to plot.}
 
-\item{regression_model}{The (simplified) regression model}
+\item{regression_model}{The (simplified) regression model.}
 
-\item{df}{Dataframe object extracted from model}
+\item{df}{Dataframe object extracted from model.}
 
-\item{term}{The formula to be used with the model}
+\item{term}{The formula to be used with the model.}
 
-\item{models_overview}{Custom model summary (see \code{\link[=slightly_expanded_model_summary]{slightly_expanded_model_summary()}})}
+\item{models_overview}{Custom model summary (see \code{\link[=smaller_expanded_model_summary]{smaller_expanded_model_summary()}}).}
 
-\item{response_str}{Response as string}
+\item{response_str}{Response as string.}
 
-\item{regression_plots}{A list storing regression plots}
+\item{regression_plots}{A list storing regression plots.}
 
-\item{jitter}{Whether to use jitter when generating dotplots}
+\item{jitter}{Whether to use jitter when generating dotplots.}
 
-\item{plot_curve}{Whether to plot regression plot curve using geom_smooth}
+\item{plot_curve}{Whether to plot regression plot curve using geom_smooth.}
 
-\item{round_p}{Convenience parameter for automatic rounding of p-values}
+\item{round_p}{Convenience parameter for automatic rounding of p-values.}
 
-\item{model_family}{Model family used for glm calculation}
+\item{model_family}{Model family used for model calculation.}
 
-\item{model_type}{Type of regression model (e.g., 'glm')}
+\item{model_type}{Type of regression model (e.g., 'glm').}
 }
 \value{
-Regression plots of variables listed within the model summary
+Returns regression plots of variables listed within the model summary.
 }
 \description{
-Plot numeric/mixed regression of model variables
+Plot numeric/mixed regression of model variables.
 }

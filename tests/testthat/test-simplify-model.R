@@ -10,15 +10,12 @@ test_that("simplify_model fits a model and returns expected components", {
     categorical_vars=c('f1'),
     backward_simplify_model = TRUE,
     trace = TRUE,
-    omit.na = "overall"
+    omit_na = "overall"
   )
 
-  expect_type(res, "list")
-  expect_type(res$backward, "list")
-  expect_type(res$forward, "list")
-  
-  expect_true(any(c("final_model", "significant_variables", "marginally_significant_variables", "history") %in% names(res$backward)))
-  expect_true(any(c("final_model", "significant_variables", "marginally_significant_variables", "history") %in% names(res$forward)))
+  expect_equal(c("forward", "backward"), names(res))
+  expect_equal(c("final_model", "significant_variables", "marginally_significant_variables", "history"), names(res$backward))
+  expect_equal(c("final_model", "significant_variables", "marginally_significant_variables", "history"), names(res$forward))
 })
 
 test_that("simplification removes non-informative terms", {
@@ -96,7 +93,7 @@ test_that("NA handling works", {
       direction = "backward",
       backward_simplify_model = TRUE,
       trace = FALSE,
-      omit.na = "none"
+      omit_na = "none"
     ),
     regexp = "Unknown|option|omit"
   )
@@ -110,7 +107,7 @@ test_that("NA handling works", {
       direction = "backward",
       backward_simplify_model = TRUE,
       trace = FALSE,
-      omit.na = "overall"
+      omit_na = "overall"
     )
   )
 })

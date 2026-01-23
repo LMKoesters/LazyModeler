@@ -1,6 +1,6 @@
 test_that("optimize_model returns expected top-level structure", {
   d <- make_tiny_data()
-  
+
   res <- optimize_model(
     df = d,
     term = quote(y ~ x1 + x2 + x3 + f1),
@@ -11,15 +11,19 @@ test_that("optimize_model returns expected top-level structure", {
     model_type = "lm",
     evaluation_methods = c("aic"),
     simplification_direction = "backward",
-    omit.na = "overall",
+    omit_na = "overall",
     scale_predictor = FALSE,
     plot_quality_assessment = "baseR",
     plot_relationships = FALSE,
     trace = FALSE
   )
-  
-  expect_type(res, "list")
-  expect_true(any(grepl("model|final|summary|plots|autocorr", names(res), ignore.case = TRUE)))
+
+  expect_equal(names(res),
+               c("autocorrelations", "models_with_info"))
+  expect_equal(names(res$models_with_info),
+               c("backward"))
+  expect_equal(names(res$models_with_info$backward),
+               c("overview", "final_model", "plots"))
 })
 
 test_that("optimize_model updates formula when autocorrelations removed", {

@@ -15,46 +15,79 @@ simplify_model(
   categorical_vars = c(),
   backward_simplify_model = TRUE,
   trace = FALSE,
-  omit.na = "overall"
+  omit_na = "overall"
 )
 }
 \arguments{
 \item{df}{Dataframe with response and predictors as columns}
 
-\item{model_type}{The model to be used (options: (g/n)(l/a)m(er))}
+\item{model_type}{The model to be used.
+Options: (g/n)(l/a)m(er)}
 
-\item{term}{The formula to be used with the model. Can be either quote() or formula()}
+\item{term}{The formula to be used with the model.
+Can be either quote() or formula()}
 
-\item{evaluation_methods}{Methods to be used for model evaluation (options: anova, aic, aicc, bic)}
+\item{evaluation_methods}{Methods to be used for model evaluation.
+Options: anova, aic, aicc, bic}
 
 \item{...}{Parameters to be directly used with model call}
 
-\item{model_family}{The family used for glm calculation (default: gaussian)}
+\item{model_family}{The family used for model calculation.
+Default: gaussian}
 
-\item{direction}{Mode of stepwise model improvement. Either 'forward' (i.e., forward selection), or 'backward' (i.e., backward simplification), or 'both' (default: both)}
+\item{direction}{Mode of stepwise model improvement.
+Either 'forward' (i.e., forward selection),
+or 'backward' (i.e., backward simplification),
+or 'both' (default: both).}
 
-\item{categorical_vars}{List of categorical variables within the model (base names, i.e., names of columns)}
+\item{categorical_vars}{List of categorical variables within the model
+(base names, i.e., names of columns)}
 
-\item{backward_simplify_model}{If FALSE, the model and information on significant and marginally significant variables are returned without any improvements}
+\item{backward_simplify_model}{If FALSE, the model and information on significant and
+marginally significant variables are returned without any improvements}
 
-\item{trace}{Store and return model selection history (default: FALSE)}
+\item{trace}{Store and return model selection history.
+Default: FALSE}
 
-\item{omit.na}{Either 'overall' or 'stepwise'. If 'overall', NAs are removed before modeling. If 'stepwise', NAs are removed per step based on the variables in the current formula}
+\item{omit_na}{Either 'overall' or 'stepwise'.
+If 'overall', NAs are removed before modeling.
+If 'stepwise', NAs are removed per step based on
+the variables in the current formula}
 }
 \value{
-List of results from forward and/or backward model selection. Backward/forward result will have the following structure: List containing the final regression model, the significant and marginally significant model variables and the selection history if trace is TRUE
+List of results from forward and/or backward model selection.
+Backward/forward result will have the following structure:
+List containing the final regression model, the significant and
+marginally significant model variables and, if trace is TRUE,
+the selection history
 }
 \description{
 Simplify or expand a regression model given the data and model parameters
 }
 \examples{
-data("plants");
+# setup
+data("plants")
 
-simplify_model(plants, "glm", quote(sexual_seed_prop ~ altitude + solar_radiation + 
-annual_mean_temperature + isothermality + I(isothermality^2) + habitat + ploidy +
-solar_radiation:annual_mean_temperature + solar_radiation:isothermality +
-annual_mean_temperature:isothermality),
-c("anova"), model_family='quasibinomial', direction='backward',
-categorical_vars=c('habitat', 'ploidy'), backward_simplify_model=TRUE, trace=TRUE, 
-omit.na='overall')
+# generate a glm model with the provided term and simplify it
+# by applying backward simplification
+simplify_model(plants,
+  "glm",
+  quote(sexual_seed_prop ~ altitude +
+    solar_radiation +
+    annual_mean_temperature +
+    isothermality +
+    I(isothermality^2) +
+    habitat +
+    ploidy +
+    solar_radiation:annual_mean_temperature +
+    solar_radiation:isothermality +
+    annual_mean_temperature:isothermality),
+  c("anova"),
+  model_family = "quasibinomial",
+  direction = "backward",
+  categorical_vars = c("habitat", "ploidy"),
+  backward_simplify_model = TRUE,
+  trace = TRUE,
+  omit_na = "overall"
+)
 }

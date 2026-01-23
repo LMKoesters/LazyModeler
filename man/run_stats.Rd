@@ -7,17 +7,20 @@
 run_stats(df, response, predictor, test = "wilcox")
 }
 \arguments{
-\item{df}{Dataframe with response and predictors as columns}
+\item{df}{Dataframe with response and predictors as columns.}
 
 \item{response}{Character string representing the response/y variable (column name)}
 
 \item{predictor}{Character string representing the predictor/x variable (column name)}
 
-\item{test}{Test to be used for pairwise significance testing for categorical variables. Either wilcox or t.test.}
+\item{test}{Test to be used for pairwise significance testing for categorical variables.
+Either wilcox or t.test.}
 }
 \value{
-Output of the statistical test and the updated dataframe with letters indicating significant differences between traits of a categorical variable
+Output of the statistical test and the updated dataframe with letters
+indicating significant differences between traits of a categorical variable
 }
 \description{
-Calculate pairwise statistics for given categorical variable and add letters indicating significant differences
+Calculate pairwise statistics for given categorical variable and
+add letters indicating significant differences
 }

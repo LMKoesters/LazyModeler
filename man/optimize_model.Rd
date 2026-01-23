@@ -17,80 +17,154 @@ optimize_model(
   model_family = "gaussian",
   evaluation_methods = c("anova"),
   simplification_direction = "both",
-  omit.na = "overall",
+  omit_na = "overall",
   scale_predictor = FALSE,
   plot_quality_assessment = "baseR",
   plot_relationships = FALSE,
   jitter_plots = FALSE,
   plot_type = "boxplot",
   stat_test = "wilcox",
+  use_psi = FALSE,
+  psi_k = 2,
+  psi_boot_repl = 100,
+  psi_p_threshold = 0.05,
+  psi_label_size = 2.5,
   round_p = 5,
   backward_simplify_model = TRUE,
   trace = FALSE
 )
 }
 \arguments{
-\item{df}{Dataframe with response and predictors as columns}
+\item{df}{Dataframe with response and predictors as columns.}
 
-\item{term}{The formula to be used with the model. Can be either quote() or formula()}
+\item{term}{The formula to be used with the model. Can be either quote() or formula().}
 
 \item{...}{Arguments given directly to model call}
 
-\item{autocorrelation_cols}{Sorted list of columns in dataframe to be considered when removing autocorrelations. Should be sorted by priority. Last element gets eliminated first}
+\item{autocorrelation_cols}{Sorted list of columns in dataframe to be considered when
+removing autocorrelations. Should be sorted by priority.
+Last element gets eliminated first.}
 
-\item{automatic_removal}{Whether to automatically remove autocorrelations}
+\item{automatic_removal}{Whether to automatically remove autocorrelations.}
 
-\item{autocorrelation_threshold}{Threshold at which two variables are considered autocorrelated}
+\item{autocorrelation_threshold}{Threshold at which two variables are considered autocorrelated.}
 
-\item{correlation_method}{The method used for correlation calculation}
+\item{correlation_method}{The method used for correlation calculation.}
 
-\item{cor_use}{Parameter 'use' for 'cor' method. Describes handling of missing values}
+\item{cor_use}{Parameter 'use' for 'cor' method.
+Describes handling of missing values.}
 
-\item{model_type}{Model type to be used (options: (g/n)(l/a)m(er), default: glm)}
+\item{model_type}{Model type to be used.
+Options: (g/n)(l/a)m(er), default: glm.}
 
-\item{model_family}{Model family used for glm calculation (default: gaussian)}
+\item{model_family}{Model family used for model calculation.
+Default: gaussian.}
 
-\item{evaluation_methods}{Methods to be used for model evaluation (options: anova, aic, aicc, bic, default: anova)}
+\item{evaluation_methods}{Methods to be used for model evaluation.
+Options: anova, aic, aicc, bic, default: anova.}
 
-\item{simplification_direction}{Mode of stepwise model improvement. Either 'forward' (i.e., forward selection), or 'backward' (i.e., backward simplification), or 'both' (default: both)}
+\item{simplification_direction}{Mode of stepwise model improvement.
+Either 'forward' (i.e., forward selection),
+or 'backward' (i.e., backward simplification),
+or 'both' (default: both).}
 
-\item{omit.na}{Either 'overall' or 'stepwise'. If 'overall', NAs are removed before modeling. If 'stepwise', NAs are removed per step based on the variables in the current formula}
+\item{omit_na}{Either 'overall' or 'stepwise'.
+If 'overall', NAs are removed before modeling.
+If 'stepwise', NAs are removed per step based on
+the variables in the current formula.}
 
-\item{scale_predictor}{Whether to apply scaling to predictor variables}
+\item{scale_predictor}{Whether to apply scaling to predictor variables.}
 
-\item{plot_quality_assessment}{Module to use for plots for model quality assessment (options: performance, baseR)}
+\item{plot_quality_assessment}{Module to use for plots for model quality assessment.
+Options: performance, baseR.}
 
-\item{plot_relationships}{Whether to plot a) regression, b) effect size, and c) estimates}
+\item{plot_relationships}{Whether to plot a) regression, b) effect size, and c) estimates.}
 
-\item{jitter_plots}{Whether geom_point plots should use to jitter}
+\item{jitter_plots}{Whether geom_point plots should use to jitter.}
 
-\item{plot_type}{Either 'boxplot' or 'violin'. Used to plot regression plots for categorical variables (default: 'boxplot')}
+\item{plot_type}{Either 'boxplot' or 'violin'.
+Used to plot regression plots for categorical variables.
+Default: 'boxplot'.}
 
-\item{stat_test}{Either 't.test' or 'wilcox'. Used to calculate statistics for regression plots of categorical variables (default: 'wilcox')}
+\item{stat_test}{Either 't.test' or 'wilcox'.
+Used to calculate statistics for regression plots of categorical variables.
+Default: 'wilcox'.}
 
-\item{round_p}{Convenience parameter for automatic rounding of p-values}
+\item{use_psi}{Whether to apply post-selection inference to optimized model.
+Only applicable to lm and glm models.}
 
-\item{backward_simplify_model}{If FALSE, the model and information on significant and marginally significant variables are returned without backward simplification (default: TRUE)}
+\item{psi_k}{The multiple of the number of degrees of freedom used as
+penalty in the post-selection inference model selection.
+The default k = 2 corresponds to the AIC.}
+
+\item{psi_boot_repl}{A number or list of bootstrap replicates.
+The default is no bootstrapping.}
+
+\item{psi_p_threshold}{P-value threshold to be used for significance filtering.}
+
+\item{psi_label_size}{Size of test labels within post-selection inference plot.}
+
+\item{round_p}{Convenience parameter for automatic rounding of p-values.}
+
+\item{backward_simplify_model}{If FALSE, the model and information on significant and
+marginally significant variables are returned without
+backward simplification. Default: TRUE.}
 
 \item{trace}{Store and return model selection history (default: FALSE)}
 }
 \value{
-List with a) information on autocorrelated variables and b) final simplified/expanded models with further information (see function \code{\link[=simplify_model]{simplify_model()}} for further details)
+List with a) information on autocorrelated variables and b)
+final simplified/expanded models with further information
+(see function \code{\link[=simplify_model]{simplify_model()}} for further details)
 }
 \description{
-Optimize model by removing autocorrelations and variables that do not significantly predict response variable
+Optimize model by removing autocorrelations and variables
+that do not significantly predict response variable.
 }
 \examples{
-data("plants");
-optimize_model(plants, quote(sexual_seed_prop ~ altitude + latitude_gps_n + longitude_gps_e + 
-(solar_radiation + annual_mean_temperature + isothermality)^2 + 
-I(isothermality^2) + habitat + ploidy), 
-autocorrelation_cols = c("solar_radiation", "annual_mean_temperature", "isothermality", 
-"altitude", "latitude_gps_n", "longitude_gps_e"), 
-automatic_removal=TRUE, autocorrelation_threshold = 0.8, correlation_method="spearman", 
-model_type = "glm", model_family = "quasibinomial", 
-evaluation_methods=c("anova"), simplification_direction="backward", omit.na="overall", 
-scale_predictor=TRUE, plot_quality_assessment="performance", 
-round_p=3, cor_use="complete.obs", plot_relationships=TRUE, jitter_plots=TRUE, plot_type="boxplot", 
-stat_test="wilcox", backward_simplify_model=TRUE, trace=TRUE)
+# setup
+data("plants")
+
+# generate and optimize a glm model using the provided
+# dataframe and term. Check for correlations between the values
+# of the provided dataframe columns and remove autocorrelated variables.
+# Apply backward simplification to the model and plot the final model.
+optimize_model(
+  plants,
+  quote(sexual_seed_prop ~ altitude +
+    latitude_gps_n +
+    longitude_gps_e +
+    (solar_radiation +
+      annual_mean_temperature +
+      isothermality)^2 +
+    I(isothermality^2) +
+    habitat +
+    ploidy),
+  autocorrelation_cols = c(
+    "solar_radiation",
+    "annual_mean_temperature",
+    "isothermality",
+    "altitude",
+    "latitude_gps_n",
+    "longitude_gps_e"
+  ),
+  automatic_removal = TRUE,
+  autocorrelation_threshold = 0.8,
+  correlation_method = "spearman",
+  model_type = "glm",
+  model_family = "quasibinomial",
+  evaluation_methods = c("anova"),
+  simplification_direction = "backward",
+  omit_na = "overall",
+  scale_predictor = TRUE,
+  plot_quality_assessment = "performance",
+  round_p = 3,
+  cor_use = "complete.obs",
+  plot_relationships = TRUE,
+  jitter_plots = TRUE,
+  plot_type = "boxplot",
+  stat_test = "wilcox",
+  backward_simplify_model = TRUE,
+  trace = TRUE
+)
 }

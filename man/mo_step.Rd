@@ -24,23 +24,35 @@ mo_step(
 
 \item{vars}{List of model variables that are yet to be added/removed}
 
-\item{direction}{Mode of stepwise model improvement. Either 'forward' (i.e., forward selection), or 'backward' (i.e., backward simplification)}
+\item{direction}{Mode of stepwise model improvement.
+Either 'forward' (i.e., forward selection),
+or 'backward' (i.e., backward simplification)}
 
-\item{evaluation_methods}{Methods to be used for model evaluation (options: anova, aic, aicc, bic, default: anova)}
+\item{evaluation_methods}{Methods to be used for model evaluation.
+Options: anova, aic, aicc, bic, default: anova.}
 
-\item{categorical_vars}{List of categorical variables within the model (base names, i.e., names of columns)}
+\item{categorical_vars}{List of categorical variables within the model
+(base names, i.e., names of columns)}
 
-\item{model_type}{The model to be used (options: (g/n)(l/a)m(er), default: glm)}
+\item{model_type}{The model to be used.
+Options: (g/n)(l/a)m(er), default: glm.}
 
-\item{blank_start}{Used for first run in forward model selection. Creates empty model}
+\item{blank_start}{Used for first run in forward model selection.
+Creates empty model.}
 
-\item{stepwise_omit}{If TRUE, NAs are removed per step based on the variables in the current formula}
+\item{stepwise_omit}{If TRUE, NAs are removed per step based on
+the variables in the current formula}
 
 \item{model_args}{Arguments given directly to model call}
 }
 \value{
-List containing a) information on whether model was simplified/expanded, b) the (new) current regression model, c) updated list of variables to be added/removed, d) added/removed variable, and e) summary of the model
+List containing a) information on whether model was simplified/expanded,
+b) the (new) current regression model,
+c) updated list of variables to be added/removed,
+d) added/removed variable, and
+e) summary of the model
 }
 \description{
-Used to either remove or add a variable to an already existing regression model
+Used to either remove or add a variable to
+an already existing regression model
 }

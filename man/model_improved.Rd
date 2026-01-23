@@ -17,15 +17,19 @@ model_improved(
 
 \item{old_regression_model}{Regression model 2}
 
-\item{evaluation_methods}{List of methods to use for model evaluation Options are: anova, aic, aicc, and bic}
+\item{evaluation_methods}{List of methods to use for model evaluation.
+Options are: anova, aic, aicc, and bic}
 
-\item{direction}{Mode of stepwise model improvement. Either 'forward' (i.e., forward selection), or 'backward' (i.e., backward simplification)}
+\item{direction}{Mode of stepwise model improvement.
+Either 'forward' (i.e., forward selection),
+or 'backward' (i.e., backward simplification).}
 
-\item{model_type}{The model to be used (options: (g/n)(l/a)m(er), default: glm)}
+\item{model_type}{The model to be used. Options: (g/n)(l/a)m(er), default: glm.}
 }
 \value{
 Boolean; TRUE if model 1 better fits the data than model 2
 }
 \description{
-Determine if model 1 better fits the data than model 2 given two models and evaluation methods (anova/aic/aicc/bic)
+Determine if model 1 better fits the data than model 2
+given two models and evaluation methods (anova/aic/aicc/bic)
 }

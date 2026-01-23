@@ -14,32 +14,43 @@ backward_simplification(
   model_family = "binomial",
   simplify_model = TRUE,
   trace = FALSE,
-  omit.na = "overall"
+  omit_na = "overall"
 )
 }
 \arguments{
 \item{df}{Dataframe with response and predictors as columns}
 
-\item{model_type}{The model to be used (options: (g/n)(l/a)m(er), default: glm)}
+\item{model_type}{The model to be used.
+Options: (g/n)(l/a)m(er), default: glm.}
 
-\item{term}{The formula to be used with the model. Can be either quote() or formula()}
+\item{term}{The formula to be used with the model.
+Can be either quote() or formula()}
 
-\item{evaluation_methods}{Methods to be used for model evaluation (options: anova, aic, aicc, bic, default: anova)}
+\item{evaluation_methods}{Methods to be used for model evaluation.
+Options: anova, aic, aicc, bic, default: anova.}
 
-\item{categorical_vars}{List of categorical variables within the model (base names, i.e., names of columns)}
+\item{categorical_vars}{List of categorical variables within the model
+(base names, i.e., names of columns)}
 
 \item{...}{Parameters to be directly used with model call}
 
-\item{model_family}{The family used for glm calculation (default: gaussian)}
+\item{model_family}{The family used for model calculation.
+Default: gaussian.}
 
-\item{simplify_model}{If FALSE, the model and information on significant and marginally significant variables are returned without any improvements}
+\item{simplify_model}{If FALSE, the model and information on significant and
+marginally significant variables are returned without any improvements.}
 
 \item{trace}{Store and return model selection history (default: FALSE)}
 
-\item{omit.na}{Either 'overall' or 'stepwise'. If 'overall', NAs are removed before modeling. If 'stepwise', NAs are removed per step based on the variables in the current formula}
+\item{omit_na}{Either 'overall' or 'stepwise'.
+If 'overall', NAs are removed before modeling.
+If 'stepwise', NAs are removed per step based on
+the variables in the current formula}
 }
 \value{
-List containing the final regression model, the significant and marginally significant model variables and the selection history if trace is TRUE
+List containing the final regression model,
+the significant and marginally significant model variables
+and, if trace is TRUE, the selection history
 }
 \description{
 Simplify the regression model by eliminating model variables one by one

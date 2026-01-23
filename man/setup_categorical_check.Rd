@@ -4,23 +4,28 @@
 \alias{setup_categorical_check}
 \title{Model variables categorical check}
 \usage{
-setup_categorical_check(df, categorical_vars, col = quote(coefficients))
+setup_categorical_check(
+  df,
+  categorical_vars,
+  col = quote(coefficients),
+  val_else = quote(NA_character_)
+)
 }
 \arguments{
 \item{df}{Dataframe with response and predictors as columns}
 
-\item{categorical_vars}{List of categorical variables within the model (base names, i.e., names of columns)}
+\item{categorical_vars}{List of categorical variables within the model
+(base names, i.e., names of columns)}
 
-\item{col}{Column to be used for check. Default is 'coefficients'}
+\item{col}{Column to be used for check. Default is "coefficients"}
+
+\item{val_else}{Value to be returned by default. Can be a dataframe column.}
 }
 \value{
-Language object with if/else statements to be applied to model summary with information on whether model variables are categorical
+Language object with if/else statements to be applied to
+model summary with information on whether model variables are categorical
 }
 \description{
-Helper method used for expanding the model summary by adding information on whether or not model variables are categorical
-}
-\examples{
-data("plants");
-
-setup_categorical_check(plants, c('habitat', 'ploidy'), col=quote(predictor))
+Helper method used for expanding the model summary
+by adding information on whether or not model variables are categorical
 }

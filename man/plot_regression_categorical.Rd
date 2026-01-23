@@ -21,9 +21,10 @@ plot_regression_categorical(
 
 \item{df}{Dataframe object extracted from model}
 
-\item{models_overview}{Custom model summary (see \code{\link[=slightly_expanded_model_summary]{slightly_expanded_model_summary()}})}
+\item{models_overview}{Custom model summary (see \code{\link[=smaller_expanded_model_summary]{smaller_expanded_model_summary()}})}
 
-\item{test}{Test to be used for pairwise significance testing for categorical variables. Either wilcox or t.test}
+\item{test}{Test to be used for pairwise significance testing
+for categorical variables. Either wilcox or t.test}
 
 \item{response_str}{Response as string}
 
@@ -36,7 +37,8 @@ plot_regression_categorical(
 \item{stat_results}{A list storing results of statistics}
 }
 \value{
-Regression plots of variables listed within the model summary + statistics
+Regression plots of variables listed within
+the model summary + statistics
 }
 \description{
 Plot categorical regression of model variables

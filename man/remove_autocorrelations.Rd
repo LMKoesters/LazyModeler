@@ -27,8 +27,12 @@ remove_autocorrelations(
 \item{correlation_method}{Method used for correlation calculation}
 }
 \value{
-Named list with a) a vector containing all removed predictors (empty if none were removed), and b) a dataframe containing autocorrelations and information on removed variables
+Named list with a) a vector containing all removed predictors
+(empty if none were removed), and
+b) a dataframe containing autocorrelations and
+information on removed variables
 }
 \description{
-Identify autocorrelated variables. Automatically remove autocorrelated variables if specified
+Identify autocorrelated variables.
+Automatically remove autocorrelated variables if specified
 }

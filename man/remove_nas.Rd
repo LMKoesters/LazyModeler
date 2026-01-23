@@ -11,10 +11,13 @@ remove_nas(df, term, model_type)
 
 \item{term}{The formula to be used with the model. Can be either quote() or formula()}
 
-\item{model_type}{The model to be used (options: (g/n)(l/a)m(er), default: glm)}
+\item{model_type}{The model to be used.
+Options: (g/n)(l/a)m(er))}
 }
 \value{
-List containing the final regression model, the significant and marginally significant model variables and the selection history if trace is TRUE
+List containing the final regression model,
+the significant and marginally significant model variables
+and the selection history if trace is TRUE
 }
 \description{
 Small helper method to remove NAs from dataframe given model formula

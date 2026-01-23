@@ -19,49 +19,93 @@ plot_model_features(
 \arguments{
 \item{regression_model}{The (simplified) regression model}
 
-\item{models_overview}{Custom model summary (see \code{\link[=slightly_expanded_model_summary]{slightly_expanded_model_summary()}})}
+\item{models_overview}{Custom model summary (see \code{\link[=smaller_expanded_model_summary]{smaller_expanded_model_summary()}})}
 
 \item{model_type}{Type of regression model (e.g., 'glm')}
 
-\item{model_family}{Model family used for glm calculation (default: gaussian)}
+\item{model_family}{Model family used for model calculation.
+Default: gaussian.}
 
-\item{plot_type}{Whether to plot as boxplot or violin plot for categorical variables (default: boxplot)}
+\item{plot_type}{Whether to plot as boxplot or violin plot
+for categorical variables. Default: boxplot.}
 
-\item{jitter_plots}{Whether to use jitter when generating geom_point plots (default: FALSE)}
+\item{jitter_plots}{Whether to use jitter when generating geom_point plots.
+Default: FALSE.}
 
-\item{test}{Test to be used for pairwise significance testing for categorical variables. Either wilcox or t.test (default: wilcox)}
+\item{test}{Test to be used for pairwise significance testing for
+categorical variables. Either wilcox or t.test. Default: wilcox.}
 
 \item{round_p}{Convenience parameter for automatic rounding of p-values}
 
-\item{remove_insignificant}{Used to exclude insignificant relationships from both estimate and effect size plots and omit curves from regression plots (default: FALSE)}
+\item{remove_insignificant}{Used to exclude insignificant relationships from both estimate
+and effect size plots and omit curves from regression plots.
+Default: FALSE.}
 }
 \value{
-A list of plots (estimate, regression, and effect size) and statistics for categorical variables
+A list of plots (estimate, regression, and effect size)
+and statistics for categorical variables.
 }
 \description{
 Plot estimate, regression and effect size
 }
 \examples{
-data("plants");
+# setup
+library(dplyr)
+data("plants")
+model_type <- "glm"
+model_family <- "quasibinomial"
 
-model_type = 'glm'
-model_family = 'quasibinomial'
-categorical_check = setup_categorical_check(plants, c('habitat', 'ploidy'), col=quote(predictor))
-final_model = glm(sexual_seed_prop ~ altitude + solar_radiation + annual_mean_temperature + 
-isothermality + habitat + ploidy + solar_radiation:isothermality, family=model_family, data=plants)
+# generate an example glm model for plotting
+final_model <- glm(
+  sexual_seed_prop ~ altitude +
+    solar_radiation +
+    annual_mean_temperature +
+    isothermality +
+    habitat +
+    ploidy +
+    solar_radiation:isothermality,
+  family = model_family,
+  data = plants
+)
 
-models_overview = coef(summary(final_model))
-models_overview = slightly_expanded_model_summary(models_overview, quote(sexual_seed_prop), 
-quote(sexual_seed_prop ~ altitude + solar_radiation + annual_mean_temperature + isothermality + 
-I(isothermality^2) + habitat + ploidy + solar_radiation:annual_mean_temperature + 
-solar_radiation:isothermality + annual_mean_temperature:isothermality), categorical_check, 
-3, plants)
-models_overview = models_overview |>
-dplyr::mutate(effect_direction = dplyr::case_when(
-Estimate < 0 ~ 'negative',
-TRUE ~ 'positive'
-))
+# generate extended model summary with information on predictor columns
+# and variable types
+models_overview <- stats::coef(summary(final_model))
+models_overview <- LazyModeler::smaller_expanded_model_summary(
+  models_overview,
+  quote(sexual_seed_prop),
+  quote(sexual_seed_prop ~ altitude +
+    solar_radiation +
+    annual_mean_temperature +
+    isothermality +
+    I(isothermality^2) +
+    habitat +
+    ploidy +
+    solar_radiation:annual_mean_temperature +
+    solar_radiation:isothermality +
+    annual_mean_temperature:isothermality),
+  c("habitat", "ploidy"),
+  quote(predictor),
+  3,
+  plants
+)
+models_overview <- models_overview \%>\%
+  mutate(effect_direction = case_when(
+    Estimate < 0 ~ "negative",
+    TRUE ~ "positive"
+  ))
 
-plot_model_features(final_model, models_overview, model_type, model_family, plot_type='boxplot', 
-jitter_plots=TRUE, test='wilcox', round_p=3, remove_insignificant=FALSE)
+# plot the model's features including plotting of estimates,
+# numeric and categorical variables using boxplots where possible
+plot_model_features(
+  final_model,
+  models_overview,
+  model_type,
+  model_family,
+  plot_type = "boxplot",
+  jitter_plots = TRUE,
+  test = "wilcox",
+  round_p = 3,
+  remove_insignificant = FALSE
+)
 }
