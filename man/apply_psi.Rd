@@ -10,6 +10,7 @@ apply_psi(
   model_type,
   model_family,
   term,
+  categorical_vars,
   models_overview,
   boot_repl = 100,
   k = 2,
@@ -24,11 +25,15 @@ apply_psi(
 \item{model_type}{The model to be used.
 Options: glm or lm.}
 
-\item{model_family}{The family used for model calculation.}
+\item{model_family}{A character string describing the family used for model calculation.
+See \link[stats:family]{stats::family} for options.}
 
 \item{term}{The call to be used with the model.}
 
-\item{models_overview}{Output of \code{\link[=smaller_expanded_model_summary]{smaller_expanded_model_summary()}}.}
+\item{categorical_vars}{List of categorical variables within the model
+(base names, i.e., names of columns)}
+
+\item{models_overview}{Output of \code{\link[=expand_model_summary]{expand_model_summary()}}.}
 
 \item{boot_repl}{A number or list of bootstrap replicates.
 The default is no bootstrapping.}

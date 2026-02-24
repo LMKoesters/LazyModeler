@@ -3,7 +3,7 @@ test_that("optimize_model returns expected top-level structure", {
 
   res <- optimize_model(
     df = d,
-    term = quote(y ~ x1 + x2 + x3 + f1),
+    term = quote(y ~ x1 + x2 + x3 + f1 + I(x1^2)),
     autocorrelation_cols = c("x1", "x2", "x3"),
     automatic_removal = TRUE,
     autocorrelation_threshold = 0.8,

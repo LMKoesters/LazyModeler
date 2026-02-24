@@ -7,7 +7,7 @@
 setup_categorical_check(
   df,
   categorical_vars,
-  col = quote(coefficients),
+  col = quote(predictor),
   val_else = quote(NA_character_)
 )
 }
@@ -17,7 +17,7 @@ setup_categorical_check(
 \item{categorical_vars}{List of categorical variables within the model
 (base names, i.e., names of columns)}
 
-\item{col}{Column to be used for check. Default is "coefficients"}
+\item{col}{Column to be used for check. Default is "predictor"}
 
 \item{val_else}{Value to be returned by default. Can be a dataframe column.}
 }

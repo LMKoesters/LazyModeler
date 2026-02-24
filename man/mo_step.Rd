@@ -35,7 +35,7 @@ Options: anova, aic, aicc, bic, default: anova.}
 (base names, i.e., names of columns)}
 
 \item{model_type}{The model to be used.
-Options: (g/n)(l/a)m(er), default: glm.}
+Options: (g)lm, (g)lmer, nlmer, and gam. Default: glm.}
 
 \item{blank_start}{Used for first run in forward model selection.
 Creates empty model.}
@@ -51,6 +51,8 @@ b) the (new) current regression model,
 c) updated list of variables to be added/removed,
 d) added/removed variable, and
 e) summary of the model
+if categorical: f1low, f1high, f1shallow,... -> f1 smallest p-value
+if part of interaction: x1 -> smallest p-value across x1;x1:x2;...
 }
 \description{
 Used to either remove or add a variable to

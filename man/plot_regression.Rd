@@ -19,12 +19,12 @@ plot_regression(
 \arguments{
 \item{regression_model}{The (simplified) regression model.}
 
-\item{models_overview}{Custom model summary (see \code{\link[=expanded_model_summary]{expanded_model_summary()}}).}
+\item{models_overview}{Custom model summary (see \code{\link[=expand_model_summary]{expand_model_summary()}}).}
 
 \item{model_type}{Type of regression model (e.g., 'glm').}
 
-\item{model_family}{Model family used for glm calculation.
-Default: gaussian.}
+\item{model_family}{A character string describing the family used for model calculation.
+See \link[stats:family]{stats::family} for options.}
 
 \item{plot_type}{Whether to plot as boxplot or violin plot for
 categorical variables. Default: boxplot.}

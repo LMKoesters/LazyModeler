@@ -28,7 +28,7 @@ plot_regression_numeric(
 
 \item{term}{The formula to be used with the model.}
 
-\item{models_overview}{Custom model summary (see \code{\link[=smaller_expanded_model_summary]{smaller_expanded_model_summary()}}).}
+\item{models_overview}{Custom model summary (see \code{\link[=expand_model_summary]{expand_model_summary()}}).}
 
 \item{response_str}{Response as string.}
 
@@ -40,7 +40,8 @@ plot_regression_numeric(
 
 \item{round_p}{Convenience parameter for automatic rounding of p-values.}
 
-\item{model_family}{Model family used for model calculation.}
+\item{model_family}{A character string describing the family used for model calculation.
+See \link[stats:family]{stats::family} for options.}
 
 \item{model_type}{Type of regression model (e.g., 'glm').}
 }

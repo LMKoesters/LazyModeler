@@ -43,9 +43,16 @@ install.packages("PATH_TO_TARBALL/LazyModeler-v.0.2.0.tar.gz", repos = NULL, typ
 ```
 
 # Example
+To get to know the package and its main function `optimize_model()`, we provide a testing dataset. This dataset contains information on European plant specimens, including geolocation, habitat, and ploidy (Karbstein et al. 2021). The corresponding data types are numeric (floats and integers) as well as categorical, offering a range of combinations for the user to test.
+
+A common usage requires an input dataframe as well as a starting term for the model. The term needs to be provided as a `quote()` and can encompass transformed variables and interactions (note: we currently only allow for 2-way interactions). If the user wants to check for autocorrelations, they can provide a list of coefficients (in the form of dataframe columns) that must be sorted by their relevance in descending order. If an autocorrelation is detected and the parameter `automatic_removal=TRUE` is set, the coefficient further down the list is removed first.
+
+To calculate the model, the user can provide the type of linear model to calculate (default: "glm"), and the family (default: "gaussian"). The user can also decide on the simplification direction ("forward" for forward selection, "backward" for backward simplification, or "both"). If no simplification is desired, setting `simplification_direction = "backward"` plus `backward_simplify_model = FALSE` yields the original model without simplification.
+
+The following example generates and optimizes a generalized linear model using the provided plant dataset and a term that includes geographic, ecological and genetic information. The pipeline checks for correlations between the values of the provided dataframe columns and removes autocorrelated variables. The autocorrelation-cleaned term is then used for backward simplification of the model. Finally, the information on the coefficients of the simplified model is plotted. To access the final model, the user can navigate to `models_with_info` within the result, then either to`forward` or `backward` depending on the chosen selection/simplification procedure, and then to `final_model`. The plots are stored alongside the model within `plots` - these plots cover the result of `performance::check_model()`, as well as the regression, estimate, and effect size plots.
+
 
 ``` r
-
 # import example data
 data(plants)
 
@@ -53,35 +60,43 @@ data(plants)
 str(plants)
 summary(plants)
 
-# testing dataset (subset) based on Karbstein et al. 2021
-# (https://onlinelibrary.wiley.com/doi/10.1111/mec.15919)
-
-results_example <- optimize_model(plants,
-    quote(sexual_seed_prop ~
-    altitude + latitude_gps_n + longitude_gps_e +
-    (solar_radiation + annual_mean_temperature +
-    isothermality)^2 + I(isothermality^2) +
-    habitat + ploidy),
-    autocorrelation_cols = c("solar_radiation",
-    "annual_mean_temperature", "isothermality", "altitude",
-    "latitude_gps_n", "longitude_gps_e"),
+results_example <- optimize_model(
+	df = plants,
+    term = quote(sexual_seed_prop ~
+			     altitude +
+			     latitude_gps_n +
+			     longitude_gps_e +
+			     (solar_radiation +
+				     annual_mean_temperature +
+				     isothermality)^2 +
+				 I(isothermality^2) +
+				 habitat +
+				 ploidy),
+    autocorrelation_cols = c(
+	    "solar_radiation",
+	    "annual_mean_temperature",
+	    "isothermality",
+	    "altitude",
+	    "latitude_gps_n",
+	    "longitude_gps_e"
+	),
     automatic_removal=TRUE,
     autocorrelation_threshold = 0.8,
     correlation_method="spearman",
+    cor_use="complete.obs",
     model_type = "glm",
     model_family = "quasibinomial",
-    assessment_methods=c("anova"),
+    evaluation_methods=c("anova"),
     simplification_direction="backward",
-    omit.na="overall",
+    backward_simplify_model=TRUE,
+    omit_na="overall",
     scale_predictor=TRUE,
     plot_quality_assessment="performance",
     round_p=3,
-    cor_use="complete.obs",
     plot_relationships=TRUE,
     jitter_plots=TRUE,
     plot_type="violinplot",
     stat_test="wilcox",
-    backward_simplify_model=TRUE,
     trace=TRUE)
 ```
 
@@ -115,12 +130,12 @@ Cai, L., Kreft, H., Taylor, A., Denelle, P., Schrader, J., Essl, F., Kleunen, M.
 Pyšek, P., Stein, A., Winter, M., Barcelona, J. F., Fuentes, N., Inderjit, Karger, D. N.,
 Kartesz, J., Kuprijanov, A., Nishino, M., Nickrent, D., … Weigelt, P. (2023). Global models
 and predictions of plant diversity based on advanced machine learning techniques. New
-Phytologist, 237(4), 1432–1445. <https://doi.org/10.1111/nph.1853>.
+Phytologist, 237(4), 1432–1445. <https://doi.org/10.1111/nph.18533>.
 
 Cattaneo, M. (2021). selcorr: Post-Selection Inference for Generalized Linear Models. R package version 1.0. 
 https://CRAN.R-project.org/package=selcorr
 
-Crawley, M. J. (2007). The R Book (p. 942). John Wiley & Sons, Ltd. <https://doi.org/10.1251002/9780470515075126>
+Crawley, M. J. (2007). The R Book (p. 942). John Wiley & Sons, Ltd. <https://doi.org/10.1002/9781118448908>
 
 Crawley, M. J. (2015). Statistics: an introduction using R (sec. ed., p. 339). John Wiley & Sons. ISBN: 1118448960
 
@@ -139,6 +154,11 @@ Garnier, S., Ross, N., Rudis, B., Filipovic-Pierucci, A., et al. (2024).
 Maps for r*. <https://doi.org/10.5281/zenodo.4679423>.
 
 Hastie, T. (2023). gam: Generalized Additive Models. <https://cran.r-project.org/web/>.
+
+Karbstein, K., Tomasello, S., and Hoda{\v c}, L., Lorberg, E., Daubert, M., H{\"o}randl, E.
+(2021). Moving beyond Assumptions: Polyploidy and Environmental Effects Explain a Geographical
+Parthenogenesis Scenario in European Plants. Molecular Ecology, 30 (11): 2659-2675.
+<https://doi.org/10.1111/mec.15919>.
 
 Kuznetsova, A., Brockhoff, P. B., & Christensen, R. H. B.
 (2017). “<span class="nocase">lmerTest</span> Package: Tests in Linear
@@ -159,7 +179,7 @@ Open Source Software* 6 (60): 3139.
 <https://doi.org/10.21105/joss.03139>.
 
 R Core Team. (2024). R: a language and environment for statistical computing. 
-R Foundation for Statistical Computing. <http://www.r-project.org/>
+R Foundation for Statistical Computing. <https://www.r-project.org/>
 
 Römermann, C., Bucher, S. F., Hahn, M., & Bernhardt-Römermann, M. (2016). Plant
 functional traits – fixed facts or variable depending on the season? Folia Geobotanica,

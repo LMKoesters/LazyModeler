@@ -13,9 +13,11 @@ test_that("remove_autocorrelations returns expected structure", {
   # check output type
   expect_type(res, "list")
   # check output structure
-  expect_true(all(c("removed_predictor_cols", "autocorrelations") %in% names(res)))
+  expect_true(all(c("removed_predictors", "autocorrelations") %in% names(res)))
   # check output type
-  expect_true(is.character(res$removed_predictor_cols) || is.null(res$removed_predictor_cols))
+  expect_true(is.character(res$removed_predictors))
+  # check that x2 was removed
+  expect_true("x2" %in% res$removed_predictors)
   # check output type
   expect_true(is.data.frame(res$autocorrelations))
 })
@@ -32,7 +34,7 @@ test_that("no autocorrelations -> removed_predictors empty", {
     automatic_removal = TRUE
   )
 
-  expect_true(length(res$removed_predictor_cols) == 0)
+  expect_true(length(res$removed_predictors) == 0)
 })
 
 test_that("automatic removal removes later variable according to priority order", {
@@ -46,8 +48,8 @@ test_that("automatic removal removes later variable according to priority order"
   )
 
   # check priority: x1 before x2 means that x2 should be removed
-  expect_true("x2" %in% res$removed_predictor_cols)
-  expect_false("x1" %in% res$removed_predictor_cols)
+  expect_true("x2" %in% res$removed_predictors)
+  expect_false("x1" %in% res$removed_predictors)
 })
 
 test_that("invalid inputs throw informative errors", {
@@ -90,7 +92,7 @@ test_that("check correct A == B; B == C; A != C removal", {
     autocorrelation_threshold = 0.7,
     correlation_method = "pearson",
     automatic_removal = TRUE
-  )$removed_predictor_cols
+  )$removed_predictors
 
   expect_true("xB" %in% res)
 })
@@ -105,7 +107,7 @@ test_that("check correct A == B; B == C; A == C removal", {
     autocorrelation_threshold = 0.7,
     correlation_method = "pearson",
     automatic_removal = TRUE
-  )$removed_predictor_cols
+  )$removed_predictors
 
   expect_true("xC" %in% res)
 })

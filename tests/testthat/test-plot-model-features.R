@@ -5,13 +5,12 @@ test_that("plot_model_features returns a named list of plots", {
   m_summary <- coef(summary(m))
   response_frm <- term[[2]]
   round_p <- 3
-  m_overview <- smaller_expanded_model_summary(m_summary,
-                                               response_frm,
-                                               term,
-                                               c('f1'),
-                                               quote(predictor),
-                                               round_p,
-                                               d)
+
+  m_overview <- expand_model_summary(m_summary,
+                                     term,
+                                     c("f1"),
+                                     d,
+                                     round_p)
 
   res <- plot_model_features(
     regression_model = m,
@@ -27,7 +26,12 @@ test_that("plot_model_features returns a named list of plots", {
   expect_true(length(names(res)) > 0)
 
   # plot object existing?
-  expect_true(any(vapply(res, function(x) inherits(x, c("ggplot","recordedplot","grob","gtable")) || is.function(x), logical(1))))
+  expect_true(
+    any(vapply(
+      res,
+      function(x) inherits(x, c("ggplot","recordedplot","grob","gtable")) || is.function(x), logical(1))
+      )
+    )
 })
 
 test_that("plot_model_features does not fail on simple model", {
@@ -37,13 +41,11 @@ test_that("plot_model_features does not fail on simple model", {
   m_summary <- coef(summary(m))
   response_frm <- term[[2]]
   round_p <- 3
-  m_overview <- smaller_expanded_model_summary(m_summary,
-                                               response_frm,
-                                               term,
-                                               c('f1', 'f2'),
-                                               quote(predictor),
-                                               round_p,
-                                               d)
+  m_overview <- expand_model_summary(m_summary,
+                                     term,
+                                     c('f1', 'f2'),
+                                     d,
+                                     round_p)
 
   expect_no_error(
     plot_model_features(regression_model = m,
@@ -65,13 +67,11 @@ test_that("plot_model_features works on mixed interaction with transform", {
   m_summary <- coef(summary(m))
   response_frm <- term[[2]]
   round_p <- 3
-  m_overview <- smaller_expanded_model_summary(m_summary,
-                                               response_frm,
-                                               term,
-                                               c('f1', 'f2'),
-                                               quote(predictor),
-                                               round_p,
-                                               d)
+  m_overview <- expand_model_summary(m_summary,
+                                     term,
+                                     c('f1', 'f2'),
+                                     d,
+                                     round_p)
 
   expect_no_error(
     plot_model_features(regression_model = m,

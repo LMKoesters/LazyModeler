@@ -10,12 +10,13 @@ generate_regression_model(df, model_type, term, model_family, ...)
 \item{df}{Dataframe with response and predictors as columns}
 
 \item{model_type}{The model to be used.
-Options: (g/n)(l/a)m(er), default: glm.}
+Options: (g)lm, (g)lmer, nlmer, and gam. Default: glm.}
 
 \item{term}{The formula to be used with the model.
 Can be either quote() or formula()}
 
-\item{model_family}{The family used for model calculation (default: gaussian)}
+\item{model_family}{A character string describing the family used for model calculation.
+See \link[stats:family]{stats::family} for options.}
 
 \item{...}{Arguments given to model call}
 }

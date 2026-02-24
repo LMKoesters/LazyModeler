@@ -4,8 +4,8 @@ test_that("simplify_model fits a model and returns expected components", {
   res <- simplify_model(
     df = d,
     model_type = "lm",
-    term = y ~ x1 + x2 + x3 + f1,
-    evaluation_methods = c("aic", "aicc", "bic"),
+    term = y ~ x1 + x2 + x3 + f1 + x1:f1,
+    evaluation_methods = c("aic", "aicc", "bic", "anova"),
     direction = "both",
     categorical_vars=c('f1'),
     backward_simplify_model = TRUE,
@@ -14,8 +14,10 @@ test_that("simplify_model fits a model and returns expected components", {
   )
 
   expect_equal(c("forward", "backward"), names(res))
-  expect_equal(c("final_model", "significant_variables", "marginally_significant_variables", "history"), names(res$backward))
-  expect_equal(c("final_model", "significant_variables", "marginally_significant_variables", "history"), names(res$forward))
+  expect_equal(c("final_model", "significant_variables", "marginally_significant_variables", "history"),
+               names(res$backward))
+  expect_equal(c("final_model", "significant_variables", "marginally_significant_variables", "history"),
+               names(res$forward))
 })
 
 test_that("simplification removes non-informative terms", {
@@ -118,6 +120,7 @@ test_that("simplify_model works for glm (binomial) and drops a noise term", {
   res <- simplify_model(
     df = d,
     model_type = "glm",
+    model_family = "binomial",
     term = y ~ x1 + x2 + f1,
     evaluation_methods = c("aic"),
     direction = "backward",
@@ -182,7 +185,7 @@ test_that("simplify_model works for lmer and returns a mixed model", {
     df = d,
     model_type = "lmer",
     term = y ~ x1 + x2 + x1:x2 + (1 | grp),
-    evaluation_methods = "aic",
+    evaluation_methods = c("aic"),
     direction = "both",
     backward_simplify_model = TRUE,
     trace = FALSE

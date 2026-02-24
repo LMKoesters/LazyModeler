@@ -6,15 +6,18 @@
 \usage{
 transform_variables(
   regression_model,
+  models_overview,
   df,
   term,
   predictor_full,
-  predictor_cols,
-  cols_are_numeric
+  main_effects,
+  pred_data_type
 )
 }
 \arguments{
 \item{regression_model}{The (simplified) regression model.}
+
+\item{models_overview}{Custom model summary (see \code{\link[=expand_model_summary]{expand_model_summary()}}).}
 
 \item{df}{Dataframe object extracted from model.}
 
@@ -22,9 +25,10 @@ transform_variables(
 
 \item{predictor_full}{Coefficient as stated in term.}
 
-\item{predictor_cols}{Columns in df representing predictor_full.}
+\item{main_effects}{Main effects included in predictor_full.}
 
-\item{cols_are_numeric}{Boolean information on whether predictor_cols are numeric.}
+\item{pred_data_type}{Information on whether main_effects are numeric.
+Either: "numeric", "categorical", or "mixed".}
 }
 \value{
 Returns list with a) dataframe with transformed variables,

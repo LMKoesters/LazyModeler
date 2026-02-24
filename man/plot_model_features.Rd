@@ -17,17 +17,17 @@ plot_model_features(
 )
 }
 \arguments{
-\item{regression_model}{The (simplified) regression model}
+\item{regression_model}{The (simplified) regression model.}
 
-\item{models_overview}{Custom model summary (see \code{\link[=smaller_expanded_model_summary]{smaller_expanded_model_summary()}})}
+\item{models_overview}{Custom model summary (see \code{\link[=expand_model_summary]{expand_model_summary()}}).}
 
-\item{model_type}{Type of regression model (e.g., 'glm')}
+\item{model_type}{Type of regression model (e.g., 'glm').}
 
-\item{model_family}{Model family used for model calculation.
-Default: gaussian.}
+\item{model_family}{A character string describing the family used for model calculation.
+See \link[stats:family]{stats::family} for options.}
 
 \item{plot_type}{Whether to plot as boxplot or violin plot
-for categorical variables. Default: boxplot.}
+for categorical variables. Default: "boxplot".}
 
 \item{jitter_plots}{Whether to use jitter when generating geom_point plots.
 Default: FALSE.}
@@ -35,7 +35,8 @@ Default: FALSE.}
 \item{test}{Test to be used for pairwise significance testing for
 categorical variables. Either wilcox or t.test. Default: wilcox.}
 
-\item{round_p}{Convenience parameter for automatic rounding of p-values}
+\item{round_p}{Convenience parameter for automatic rounding of p-values.
+Default: 5.}
 
 \item{remove_insignificant}{Used to exclude insignificant relationships from both estimate
 and effect size plots and omit curves from regression plots.
@@ -71,9 +72,8 @@ final_model <- glm(
 # generate extended model summary with information on predictor columns
 # and variable types
 models_overview <- stats::coef(summary(final_model))
-models_overview <- LazyModeler::smaller_expanded_model_summary(
+models_overview <- LazyModeler::expand_model_summary(
   models_overview,
-  quote(sexual_seed_prop),
   quote(sexual_seed_prop ~ altitude +
     solar_radiation +
     annual_mean_temperature +
@@ -85,9 +85,8 @@ models_overview <- LazyModeler::smaller_expanded_model_summary(
     solar_radiation:isothermality +
     annual_mean_temperature:isothermality),
   c("habitat", "ploidy"),
-  quote(predictor),
-  3,
-  plants
+  plants,
+  3
 )
 models_overview <- models_overview \%>\%
   mutate(effect_direction = case_when(

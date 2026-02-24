@@ -17,6 +17,7 @@ optimize_model(
   model_family = "gaussian",
   evaluation_methods = c("anova"),
   simplification_direction = "both",
+  backward_simplify_model = TRUE,
   omit_na = "overall",
   scale_predictor = FALSE,
   plot_quality_assessment = "baseR",
@@ -30,7 +31,6 @@ optimize_model(
   psi_p_threshold = 0.05,
   psi_label_size = 2.5,
   round_p = 5,
-  backward_simplify_model = TRUE,
   trace = FALSE
 )
 }
@@ -45,72 +45,82 @@ optimize_model(
 removing autocorrelations. Should be sorted by priority.
 Last element gets eliminated first.}
 
-\item{automatic_removal}{Whether to automatically remove autocorrelations.}
+\item{automatic_removal}{Whether to automatically remove autocorrelations. Default: FALSE.}
 
-\item{autocorrelation_threshold}{Threshold at which two variables are considered autocorrelated.}
+\item{autocorrelation_threshold}{Threshold at which two variables are considered autocorrelated.
+Default: 0.7.}
 
-\item{correlation_method}{The method used for correlation calculation.}
+\item{correlation_method}{The method used for correlation calculation.
+Default: "pearson".}
 
 \item{cor_use}{Parameter 'use' for 'cor' method.
-Describes handling of missing values.}
+Describes handling of missing values.
+Default: "complete.obs".}
 
 \item{model_type}{Model type to be used.
-Options: (g/n)(l/a)m(er), default: glm.}
+Options: (g)lm, (g)lmer, nlmer, and gam. Default: glm.}
 
-\item{model_family}{Model family used for model calculation.
-Default: gaussian.}
+\item{model_family}{A character string describing the family used for model calculation.
+See \link[stats:family]{stats::family} for options. Default: gaussian.}
 
 \item{evaluation_methods}{Methods to be used for model evaluation.
-Options: anova, aic, aicc, bic, default: anova.}
+Options: anova, aic, aicc, bic. Default: anova.}
 
 \item{simplification_direction}{Mode of stepwise model improvement.
-Either 'forward' (i.e., forward selection),
-or 'backward' (i.e., backward simplification),
-or 'both' (default: both).}
-
-\item{omit_na}{Either 'overall' or 'stepwise'.
-If 'overall', NAs are removed before modeling.
-If 'stepwise', NAs are removed per step based on
-the variables in the current formula.}
-
-\item{scale_predictor}{Whether to apply scaling to predictor variables.}
-
-\item{plot_quality_assessment}{Module to use for plots for model quality assessment.
-Options: performance, baseR.}
-
-\item{plot_relationships}{Whether to plot a) regression, b) effect size, and c) estimates.}
-
-\item{jitter_plots}{Whether geom_point plots should use to jitter.}
-
-\item{plot_type}{Either 'boxplot' or 'violin'.
-Used to plot regression plots for categorical variables.
-Default: 'boxplot'.}
-
-\item{stat_test}{Either 't.test' or 'wilcox'.
-Used to calculate statistics for regression plots of categorical variables.
-Default: 'wilcox'.}
-
-\item{use_psi}{Whether to apply post-selection inference to optimized model.
-Only applicable to lm and glm models.}
-
-\item{psi_k}{The multiple of the number of degrees of freedom used as
-penalty in the post-selection inference model selection.
-The default k = 2 corresponds to the AIC.}
-
-\item{psi_boot_repl}{A number or list of bootstrap replicates.
-The default is no bootstrapping.}
-
-\item{psi_p_threshold}{P-value threshold to be used for significance filtering.}
-
-\item{psi_label_size}{Size of test labels within post-selection inference plot.}
-
-\item{round_p}{Convenience parameter for automatic rounding of p-values.}
+Either "forward" (i.e., forward selection),
+or "backward" (i.e., backward simplification),
+or "both". Default: "both".}
 
 \item{backward_simplify_model}{If FALSE, the model and information on significant and
 marginally significant variables are returned without
 backward simplification. Default: TRUE.}
 
-\item{trace}{Store and return model selection history (default: FALSE)}
+\item{omit_na}{Either "overall" or "stepwise".
+If "overall", NAs are removed before modeling.
+If "stepwise", NAs are removed per step based on
+the variables in the current formula. Default: "overall".}
+
+\item{scale_predictor}{Whether to apply scaling to predictor variables. Default: FALSE.}
+
+\item{plot_quality_assessment}{Module to use for plots for model quality assessment.
+Options: "performance", "baseR". Default: "baseR".}
+
+\item{plot_relationships}{Whether to plot regression, effect size, and estimates.
+Default: FALSE.}
+
+\item{jitter_plots}{Whether geom_point plots should use to jitter.
+Default: FALSE.}
+
+\item{plot_type}{Either "boxplot" or "violin".
+Used to plot regression plots for categorical variables.
+Default: "boxplot".}
+
+\item{stat_test}{Either "t.test" or "wilcox".
+Used to calculate statistics for regression plots of categorical variables.
+Default: "wilcox".}
+
+\item{use_psi}{Whether to apply post-selection inference to optimized model.
+Only applicable to lm and glm models.
+Note that running post-selection inference may take some time.
+Default: FALSE.}
+
+\item{psi_k}{The multiple of the number of degrees of freedom used as
+penalty in the post-selection inference model selection.
+The default k = 2 corresponds to the AIC. Default: 2.}
+
+\item{psi_boot_repl}{A number or list of bootstrap replicates.
+The default is no bootstrapping. Default: 100.}
+
+\item{psi_p_threshold}{P-value threshold to be used for significance filtering.
+Default: 0.05.}
+
+\item{psi_label_size}{Size of test labels within post-selection inference plot.
+Default: 2.5.}
+
+\item{round_p}{Convenience parameter for automatic rounding of p-values.
+Default: 5.}
+
+\item{trace}{Store and return model selection history. Default: FALSE.}
 }
 \value{
 List with a) information on autocorrelated variables and b)
@@ -129,7 +139,7 @@ data("plants")
 # dataframe and term. Check for correlations between the values
 # of the provided dataframe columns and remove autocorrelated variables.
 # Apply backward simplification to the model and plot the final model.
-optimize_model(
+optimized_model_result <- optimize_model(
   plants,
   quote(sexual_seed_prop ~ altitude +
     latitude_gps_n +
@@ -155,6 +165,7 @@ optimize_model(
   model_family = "quasibinomial",
   evaluation_methods = c("anova"),
   simplification_direction = "backward",
+  backward_simplify_model = TRUE,
   omit_na = "overall",
   scale_predictor = TRUE,
   plot_quality_assessment = "performance",
@@ -164,7 +175,6 @@ optimize_model(
   jitter_plots = TRUE,
   plot_type = "boxplot",
   stat_test = "wilcox",
-  backward_simplify_model = TRUE,
   trace = TRUE
 )
 }

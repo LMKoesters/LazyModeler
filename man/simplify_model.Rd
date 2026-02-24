@@ -10,7 +10,7 @@ simplify_model(
   term,
   evaluation_methods,
   ...,
-  model_family = "binomial",
+  model_family = "gaussian",
   direction = "both",
   categorical_vars = c(),
   backward_simplify_model = TRUE,
@@ -22,7 +22,7 @@ simplify_model(
 \item{df}{Dataframe with response and predictors as columns}
 
 \item{model_type}{The model to be used.
-Options: (g/n)(l/a)m(er)}
+Options: (g)lm, (g)lmer, nlmer, and gam.}
 
 \item{term}{The formula to be used with the model.
 Can be either quote() or formula()}
@@ -32,8 +32,8 @@ Options: anova, aic, aicc, bic}
 
 \item{...}{Parameters to be directly used with model call}
 
-\item{model_family}{The family used for model calculation.
-Default: gaussian}
+\item{model_family}{A character string describing the family used for model calculation.
+See \link[stats:family]{stats::family} for options. Default: gaussian.}
 
 \item{direction}{Mode of stepwise model improvement.
 Either 'forward' (i.e., forward selection),
@@ -70,7 +70,7 @@ data("plants")
 
 # generate a glm model with the provided term and simplify it
 # by applying backward simplification
-simplify_model(plants,
+simplified_model_info <- simplify_model(plants,
   "glm",
   quote(sexual_seed_prop ~ altitude +
     solar_radiation +

@@ -3,7 +3,7 @@ test_that("Using PSI returns PSI model info", {
 
   res <- optimize_model(
     df = d,
-    term = quote(y ~ x1 + x2 + x3 + f1 + f1:x1),
+    term = quote(y ~ x1 + x2 + x3 + f1 + f1:x1 + I(x1^2)),
     autocorrelation_cols = c("x1", "x2", "x3"),
     automatic_removal = TRUE,
     autocorrelation_threshold = 0.8,
@@ -21,7 +21,7 @@ test_that("Using PSI returns PSI model info", {
 
   expect_type(res, "list")
   expect_named(res$models_with_info$backward,
-               c("overview", "final_model", "plots", "psi"))
+               c("overview", "final_model", "plots", "psi", "model_before_psi"))
   expect_named(res$models_with_info$backward$psi,
                c("result", "psi_model", "plot"))
 })

@@ -1,6 +1,6 @@
 Package: LazyModeler
 Type: Package
-Title: LazyModeler: An R package for automatic simplification, check, and visualization of regression models
+Title: Automatic Simplification, Check, and Visualization of Regression Models
 Version: 0.2.4
 Authors@R: 
     c(person(given = "Lara",
@@ -12,10 +12,12 @@ Authors@R:
              family = "Karbstein",
              role = "aut",
              comment = c(ORCID = "0000-0003-1424-6557")))
-Description: LazyModeler allows users to easily perform regression modeling. It includes removal of autocorrelated variables, choice between several types of (non)linear regression models, standard stepwise model simplification, various model quality checks, plotting of coefficient estimates and relationships, and output generation.
-RoxygenNote: 7.3.2
+Maintainer: Lara Kösters <lkoesters@bgc-jena.mpg.de>
+Description: Pipeline for easy performance of regression modeling. It includes removal of autocorrelated variables, choice between several types of (non)linear regression models, standard stepwise model simplification, various model quality checks, plotting of coefficient estimates and relationships, and output generation.
+RoxygenNote: 7.3.3
 Encoding: UTF-8
 LazyData: true
+BugReports: https://github.com/LMKoesters/LazyModeler/issues
 Depends: R (>= 4.1.0)
 Imports: 
     colorspace,
@@ -33,6 +35,7 @@ Imports:
     nlme,
     performance,
     purrr,
+    reformulas,
     rlang,
     selcorr,
     stats,
@@ -46,3 +49,4 @@ Suggests:
 Config/testthat/edition: 3
 License: GPL (>= 3)
 Roxygen: list(markdown = TRUE)
+Config/rcmdcheck/ignore-inconsequential-notes: true

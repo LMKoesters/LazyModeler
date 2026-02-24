@@ -29,12 +29,13 @@ NULL
 #'  b) a dataframe containing autocorrelations and
 #'  information on removed variables
 remove_autocorrelations <- function(
-    df,
-    coefficients,
-    ...,
-    automatic_removal = TRUE,
-    autocorrelation_threshold = 0.7,
-    correlation_method = "pearson") {
+  df,
+  coefficients,
+  ...,
+  automatic_removal = TRUE,
+  autocorrelation_threshold = 0.7,
+  correlation_method = "pearson"
+) {
   if (autocorrelation_threshold >= 1.0 || autocorrelation_threshold <= 0.0) {
     stop(
       stringr::str_interp(
@@ -114,6 +115,7 @@ remove_autocorrelations <- function(
           idx_bigger = sort(c(.data$idx1, .data$idx2))[[2]],
           comb = paste(.data$idx_smaller, .data$idx_bigger, sep = "|")
         ) %>%
+        dplyr::ungroup() %>%
         dplyr::arrange(dplyr::desc(.data$idx_bigger))
 
       for (i in seq_len(nrow(autocorrelations))) {
@@ -192,7 +194,7 @@ remove_autocorrelations <- function(
   }
 
   list(
-    "removed_predictor_cols" = removed_coefficients,
+    "removed_predictors" = removed_coefficients,
     "autocorrelations" = autocorrelations[
       ,
       c("coefficientA", "coefficientB", "correlation", "p_value", "note")
@@ -210,37 +212,34 @@ remove_autocorrelations <- function(
 #'  List of categorical variables within the model
 #'  (base names, i.e., names of columns)
 #' @param col
-#'  Column to be used for check. Default is "coefficients"
+#'  Column to be used for check. Default is "predictor"
 #' @param val_else
 #'  Value to be returned by default. Can be a dataframe column.
 #' @return
 #'  Language object with if/else statements to be applied to
 #'  model summary with information on whether model variables are categorical
 setup_categorical_check <- function(
-    df,
-    categorical_vars,
-    col = quote(coefficients),
-    val_else = quote(NA_character_)) {
-  if (length(categorical_vars) > 0) {
-    categorical_check <- c()
-    for (cat_var in categorical_vars) {
-      cat_vals <- as.character(unique(df[[cat_var]]))
-      categorical_check <- append(categorical_check, purrr::map(
-        cat_vals,
-        ~ quo(stringr::str_detect(
-          !!col,
-          stringr::regex(paste0(!!cat_var, !!.x, "(?![a-z0-9_\\-#])"))
-        ) ~ !!cat_var)
-      ))
-    }
-
-    categorical_check <- c(
-      categorical_check,
-      rlang::quo(TRUE ~ as.character(!!val_else))
-    )
-  } else {
-    categorical_check <- list(rlang::quo(TRUE ~ as.character(!!val_else)))
+  df,
+  categorical_vars,
+  col = quote(predictor),
+  val_else = quote(NA_character_)
+) {
+  categorical_check <- c()
+  for (cat_var in categorical_vars) {
+    cat_vals <- as.character(unique(df[[cat_var]]))
+    categorical_check <- append(categorical_check, purrr::map(
+      cat_vals,
+      ~ quo(stringr::str_detect(
+        !!col,
+        stringr::regex(paste0(!!cat_var, !!.x, "(?![a-z0-9_\\-#])"))
+      ) ~ !!cat_var)
+    ))
   }
+
+  categorical_check <- c(
+    categorical_check,
+    rlang::quo(TRUE ~ as.character(!!val_else))
+  )
 
   categorical_check
 }
@@ -259,9 +258,10 @@ setup_categorical_check <- function(
 #' @return
 #'  Regression model with added assessments based on assessment methods provided
 add_assessments <- function(
-    regression_model,
-    evaluation_methods,
-    is_lmer = FALSE) {
+  regression_model,
+  evaluation_methods,
+  is_lmer = FALSE
+) {
   if ("aic" %in% evaluation_methods) {
     if (is_lmer) {
       attr(regression_model, "aic") <- stats::AIC(regression_model)
@@ -303,15 +303,17 @@ add_assessments <- function(
 #'  Either 'forward' (i.e., forward selection),
 #'  or 'backward' (i.e., backward simplification).
 #' @param model_type
-#'  The model to be used. Options: (g/n)(l/a)m(er), default: glm.
+#'  The model to be used. Options: (g)lm, (g)lmer, nlmer, and gam.
+#'  Default: glm.
 #' @return
 #'  Boolean; TRUE if model 1 better fits the data than model 2
 model_improved <- function(
-    regression_model,
-    old_regression_model,
-    evaluation_methods,
-    direction,
-    model_type) {
+  regression_model,
+  old_regression_model,
+  evaluation_methods,
+  direction,
+  model_type
+) {
   if ("anova" %in% evaluation_methods) {
     if (model_type == "gam") {
       anova_res <- mgcv::anova.gam(regression_model, old_regression_model)
@@ -373,166 +375,6 @@ model_improved <- function(
   TRUE
 }
 
-#' Expansion of model summary
-#'
-#' Expand model summary by adding column names and
-#' information on interaction groups
-#' @param df
-#'  Dataframe with response and predictors as columns
-#' @param model_summary
-#'  Summary of model. Either summary(model)$p.table
-#'  or stats::coef(summary(model)).
-#' @param categorical_vars
-#'  List of categorical variables within the model
-#'  (base names, i.e., names of columns)
-#' @return
-#'  Expanded summary of a regression model with added
-#'  information on base variables and variable type
-expanded_model_summary <- function(
-    df,
-    model_summary,
-    categorical_vars) {
-  df_cols <- colnames(df)
-
-  remove_transform <- function(this_coeff) {
-    if (is.call(str2lang(this_coeff))) {
-      for (el in df_cols) {
-        ptrn <- stringr::str_interp("(?<!:)${el}(?![a-z0-9_\\-#:])")
-        if (stringr::str_detect(
-          this_coeff,
-          stringr::regex(ptrn, ignore_case = TRUE)
-        )) {
-          return(el)
-        }
-      }
-    }
-
-    this_coeff
-  }
-
-  model_summary <- as.data.frame(model_summary)
-  p_col <- intersect(
-    c("Pr(>|t|)", "Pr(>|z|)", "Corrected_p"),
-    colnames(model_summary)
-  )
-  if (length(p_col) == 1) {
-    model_summary <- model_summary %>% dplyr::select(tidyr::all_of(p_col))
-  } else {
-    stop(stringr::str_interp("Not able to calculate p-values."))
-  }
-
-  p_values_model <- model_summary %>%
-    dplyr::rename(p_values = tidyr::all_of(p_col)) %>%
-    tibble::rownames_to_column(var = "coefficients") %>%
-    dplyr::filter(.data$coefficients != "(Intercept)") %>%
-    dplyr::mutate(is_interaction = dplyr::case_when(
-      stringr::str_detect(.data$coefficients, ":") ~ TRUE,
-      TRUE ~ FALSE
-    )) %>%
-    dplyr::mutate(
-      inter_var1 = dplyr::case_when(
-        is_interaction ~ purrr::map_chr(
-          stringr::str_extract(coefficients, "^[^:]+"),
-          remove_transform
-        )
-      ),
-      inter_var2 = dplyr::case_when(
-        is_interaction ~ purrr::map_chr(
-          stringr::str_extract(coefficients, "[^:]+$"),
-          remove_transform
-        )
-      )
-    ) %>%
-    dplyr::mutate(
-      inter_var1 = dplyr::case_when(
-        !!!setup_categorical_check(
-          df, categorical_vars, quote(inter_var1),
-          quote(inter_var1)
-        )
-      ),
-      inter_var2 = dplyr::case_when(
-        !!!setup_categorical_check(
-          df, categorical_vars, quote(inter_var2),
-          quote(inter_var2)
-        )
-      )
-    ) %>%
-    dplyr::mutate(
-      inter_var1 = dplyr::case_when(
-        is_interaction & is.na(.data$inter_var1) ~
-          stringr::str_extract(.data$coefficients, "^[^:]+"),
-        TRUE ~ .data$inter_var1
-      ),
-      inter_var2 = dplyr::case_when(
-        is_interaction & is.na(.data$inter_var2) ~
-          stringr::str_extract(.data$coefficients, "[^:]+$"),
-        TRUE ~ .data$inter_var2
-      )
-    ) %>%
-    dplyr::mutate(cat_var = dplyr::case_when(
-      !!!setup_categorical_check(df, categorical_vars)
-    )) %>%
-    dplyr::mutate(var_type = ifelse(
-      is.na(.data$cat_var),
-      "cont",
-      "cat"
-    )) %>%
-    dplyr::mutate(cat_var = ifelse(
-      is.na(.data$cat_var),
-      .data$coefficients,
-      .data$cat_var
-    )) %>%
-    dplyr::mutate(
-      cat_var = dplyr::case_when(
-        is_interaction ~ paste0(.data$inter_var1, ":", .data$inter_var2),
-        TRUE ~ as.character(.data$cat_var)
-      ),
-      inter_var1 = ifelse(is.na(.data$inter_var1),
-        .data$cat_var,
-        .data$inter_var1
-      ),
-      inter_var2 = ifelse(is.na(.data$inter_var2),
-        .data$cat_var,
-        .data$inter_var2
-      )
-    ) %>%
-    dplyr::mutate(cat_var = ifelse(grepl(
-      ")[0-9]+$",
-      .data$coefficients
-    ), gsub(
-      "[0-9]+$", "",
-      .data$coefficients
-    ), .data$cat_var))
-
-  p_values_model <- p_values_model %>%
-    dplyr::rowwise() %>%
-    dplyr::mutate(smallest_p_value = min(p_values_model[
-      (p_values_model["inter_var1"] == .data$cat_var) |
-        (p_values_model["inter_var2"] == .data$cat_var) |
-        (p_values_model["cat_var"] == .data$cat_var),
-      "p_values"
-    ]))
-
-  non_sign_interactions <- p_values_model[
-    ((p_values_model$p_values > 0.1) |
-      (is.na(p_values_model$p_values))) &
-      (p_values_model$is_interaction),
-    "coefficients"
-  ]
-
-  if (nrow(non_sign_interactions) > 0) {
-    p_values_model <- p_values_model %>%
-      dplyr::arrange(
-        dplyr::desc(.data$is_interaction),
-        dplyr::desc(.data$smallest_p_value)
-      )
-  } else {
-    p_values_model <- p_values_model %>%
-      dplyr::arrange(dplyr::desc(.data$smallest_p_value))
-  }
-
-  p_values_model
-}
 
 #' Generate regression model
 #'
@@ -542,12 +384,13 @@ expanded_model_summary <- function(
 #'  Dataframe with response and predictors as columns
 #' @param model_type
 #'  The model to be used.
-#'  Options: (g/n)(l/a)m(er), default: glm.
+#'  Options: (g)lm, (g)lmer, nlmer, and gam. Default: glm.
 #' @param term
 #'  The formula to be used with the model.
 #'  Can be either quote() or formula()
 #' @param model_family
-#'  The family used for model calculation (default: gaussian)
+#'  A character string describing the family used for model calculation.
+#'  See [stats::family] for options.
 #' @param ...
 #'  Arguments given to model call
 #' @return
@@ -640,7 +483,7 @@ generate_regression_model <- function(df, model_type, term, model_family, ...) {
 #'  Dataframe with response and predictors as columns
 #' @param model_type
 #'  The model to be used.
-#'  Options: (g/n)(l/a)m(er), default: glm.
+#'  Options: (g)lm, (g)lmer, nlmer, and gam. Default: glm.
 #' @param term
 #'  The formula to be used with the model.
 #'  Can be either quote() or formula().
@@ -653,7 +496,8 @@ generate_regression_model <- function(df, model_type, term, model_family, ...) {
 #'  List of categorical variables within the model
 #'  (base names, i.e., names of columns)
 #' @param model_family
-#'  The family used for model calculation. Default: gaussian.
+#'  A character string describing the family used for model calculation.
+#'  See [stats::family] for options. Default: gaussian.
 #' @param trace
 #'  Store and return model selection history. Default: FALSE.
 #' @param omit_na
@@ -666,15 +510,16 @@ generate_regression_model <- function(df, model_type, term, model_family, ...) {
 #'  the significant and marginally significant model
 #'  variables and the selection history if trace is TRUE
 forward_selection <- function(
-    df,
-    model_type,
-    term,
-    evaluation_methods,
-    categorical_vars,
-    ...,
-    model_family = "binomial",
-    trace = FALSE,
-    omit_na = "overall") {
+  df,
+  model_type,
+  term,
+  evaluation_methods,
+  categorical_vars,
+  ...,
+  model_family = "gaussian",
+  trace = FALSE,
+  omit_na = "overall"
+) {
   errors <- c()
   single_vars <- c()
   interactions <- c()
@@ -684,7 +529,7 @@ forward_selection <- function(
   if (omit_na == "overall") df <- remove_nas(df, term, model_type)
 
   # remove random effect from single_vars because it included in start term
-  random_effects <- lapply(lme4::findbars(term), function(y) deparse(y))
+  random_effects <- lapply(reformulas::findbars(term), function(y) deparse(y))
   if (length(random_effects) > 0) {
     d <- paste(". ~ (", paste(random_effects, sep = " + "), ")")
   } else {
@@ -717,7 +562,8 @@ forward_selection <- function(
   for (vars in list(single_vars, interactions)) {
     simplify <- TRUE
     while (simplify) {
-      res <- mo_step(df,
+      res <- mo_step(
+        df,
         regression_model,
         vars,
         "forward",
@@ -747,19 +593,18 @@ forward_selection <- function(
     model_sum <- stats::coef(summary(regression_model))
   }
 
-  model_summary <- expanded_model_summary(
+  model_summary <- expand_model_summary(
+    model_summary = model_sum,
+    term = stats::formula(regression_model),
+    categorical_vars = categorical_vars,
     df,
-    model_sum,
-    categorical_vars
   )
-  main_effects <- model_summary[
-    model_summary$is_interaction,
-    c("inter_var1", "inter_var2")
-  ]
-  main_effects <- c(main_effects$inter_var1, main_effects$inter_var2)
+
+  main_effects <- c(model_summary$main_effect1, model_summary$main_effect2)
+  main_effects <- main_effects[!is.na(main_effects)]
 
   for (main_effect in main_effects) {
-    if (!(main_effect %in% model_summary$coefficients)) {
+    if (!(main_effect %in% model_summary$predictor)) {
       if (model_type == "lmer") {
         # update formula
         model_args$formula <- stats::update(
@@ -801,19 +646,19 @@ forward_selection <- function(
   out <- list(
     final_model = regression_model,
     significant_variables = model_summary[
-      model_summary$p_values < 0.05,
-      "coefficients"
+      model_summary$p_value < 0.05,
+      "predictor"
     ],
     marginally_significant_variables = model_summary[
-      (model_summary$p_values < 0.1) & (model_summary$p_values >= 0.05),
-      "coefficients"
+      (model_summary$p_value < 0.1) & (model_summary$p_value >= 0.05),
+      "predictor"
     ]
   )
 
   if (trace) out$history <- history
   out$errors <- errors
 
-  return(out)
+  out
 }
 
 #' Take step in model simplification/selection
@@ -838,7 +683,7 @@ forward_selection <- function(
 #'  (base names, i.e., names of columns)
 #' @param model_type
 #'  The model to be used.
-#'  Options: (g/n)(l/a)m(er), default: glm.
+#'  Options: (g)lm, (g)lmer, nlmer, and gam. Default: glm.
 #' @param blank_start
 #'  Used for first run in forward model selection.
 #'  Creates empty model.
@@ -854,16 +699,17 @@ forward_selection <- function(
 #'  d) added/removed variable, and
 #'  e) summary of the model
 mo_step <- function(
-    df,
-    regression_model,
-    vars,
-    direction,
-    evaluation_methods,
-    categorical_vars,
-    model_type,
-    blank_start = FALSE,
-    stepwise_omit = FALSE,
-    model_args = NA) {
+  df,
+  regression_model,
+  vars,
+  direction,
+  evaluation_methods,
+  categorical_vars,
+  model_type,
+  blank_start = FALSE,
+  stepwise_omit = FALSE,
+  model_args = NA
+) {
   errors <- c()
   is_lmer <- model_type == "lmer" || model_type == "glmer"
   final_model <- NA
@@ -1060,10 +906,11 @@ mo_step <- function(
       }
     }
 
-    model_summary <- expanded_model_summary(
-      df,
-      model_sum,
-      categorical_vars
+    model_summary <- expand_model_summary(
+      model_summary = model_sum,
+      term = stats::formula(regression_model_updated),
+      categorical_vars = categorical_vars,
+      df = df,
     )
 
     regression_model_updated <- add_assessments(
@@ -1083,18 +930,31 @@ mo_step <- function(
       )
     }
 
-    if (
-      ((direction == "forward") &&
-        (model_summary[1, "smallest_p_value"] > 0.1)) ||
-        (!blank_start && !model_has_improved)) {
+    if (((direction == "forward") &&
+      (model_summary[1, "smallest_p_value"] > 0.1)) ||
+      (!blank_start && !model_has_improved)) {
       reason <- "the p-value was not significant"
       next
     }
-    this_p_value <- model_summary[
-      model_summary$cat_var == var,
-    ][["smallest_p_value"]]
-    if (length(this_p_value) > 1) this_p_value <- this_p_value[1]
 
+    this_p_value <- NA
+    if (direction == "forward") {
+      # get smallest p-value of added variable
+      #' if categorical: f1low, f1high, f1shallow,... -> f1 smallest p-value
+      #' if part of interaction: x1 -> smallest p-value across x1;x1:x2;...
+      this_p_value <- model_summary[
+        (model_summary$predictor == var) |
+          ((model_summary$main_effect1 == var) &
+            (is.na(model_summary$main_effect2))),
+        "smallest_p_value"
+      ]
+      if (length(this_p_value) > 1) this_p_value <- this_p_value[[1]]
+    }
+
+    # check if variable should be added/removed
+    # this is either the case with backward simplification
+    # or when the p-value of the added variable is the smallest encountered
+    # across all add-able variables
     if ((direction == "backward") || (this_p_value < min_p_value)) {
       final_model <- regression_model_updated
       adjusted_var <- var
@@ -1137,7 +997,7 @@ mo_step <- function(
 #'  Dataframe with response and predictors as columns
 #' @param model_type
 #'  The model to be used.
-#'  Options: (g/n)(l/a)m(er)
+#'  Options: (g)lm, (g)lmer, nlmer, and gam.
 #' @param term
 #'  The formula to be used with the model.
 #'  Can be either quote() or formula()
@@ -1147,8 +1007,8 @@ mo_step <- function(
 #' @param ...
 #'  Parameters to be directly used with model call
 #' @param model_family
-#'  The family used for model calculation.
-#'  Default: gaussian
+#'  A character string describing the family used for model calculation.
+#'  See [stats::family] for options. Default: gaussian.
 #' @param direction
 #'  Mode of stepwise model improvement.
 #'  Either 'forward' (i.e., forward selection),
@@ -1180,7 +1040,7 @@ mo_step <- function(
 #'
 #' # generate a glm model with the provided term and simplify it
 #' # by applying backward simplification
-#' simplify_model(plants,
+#' simplified_model_info <- simplify_model(plants,
 #'   "glm",
 #'   quote(sexual_seed_prop ~ altitude +
 #'     solar_radiation +
@@ -1202,17 +1062,18 @@ mo_step <- function(
 #' )
 #' @export
 simplify_model <- function(
-    df,
-    model_type,
-    term,
-    evaluation_methods,
-    ...,
-    model_family = "binomial",
-    direction = "both",
-    categorical_vars = c(),
-    backward_simplify_model = TRUE,
-    trace = FALSE,
-    omit_na = "overall") {
+  df,
+  model_type,
+  term,
+  evaluation_methods,
+  ...,
+  model_family = "gaussian",
+  direction = "both",
+  categorical_vars = c(),
+  backward_simplify_model = TRUE,
+  trace = FALSE,
+  omit_na = "overall"
+) {
   if (!(omit_na %in% c("overall", "stepwise"))) {
     stop(
       sprintf(
@@ -1289,7 +1150,7 @@ simplify_model <- function(
 #'  The formula to be used with the model. Can be either quote() or formula()
 #' @param model_type
 #'  The model to be used.
-#'  Options: (g/n)(l/a)m(er))
+#'  Options: (g)lm, (g)lmer, nlmer, and gam.
 #' @return
 #'  List containing the final regression model,
 #'  the significant and marginally significant model variables
@@ -1314,7 +1175,7 @@ remove_nas <- function(df, term, model_type) {
 #'  Dataframe with response and predictors as columns
 #' @param model_type
 #'  The model to be used.
-#'  Options: (g/n)(l/a)m(er), default: glm.
+#'  Options: (g)lm, (g)lmer, nlmer, and gam. Default: glm.
 #' @param term
 #'  The formula to be used with the model.
 #'  Can be either quote() or formula()
@@ -1327,8 +1188,8 @@ remove_nas <- function(df, term, model_type) {
 #' @param ...
 #'  Parameters to be directly used with model call
 #' @param model_family
-#'  The family used for model calculation.
-#'  Default: gaussian.
+#'  A character string describing the family used for model calculation.
+#'  See [stats::family] for options. Default: gaussian.
 #' @param simplify_model
 #'  If FALSE, the model and information on significant and
 #'  marginally significant variables are returned without any improvements.
@@ -1344,16 +1205,17 @@ remove_nas <- function(df, term, model_type) {
 #'  the significant and marginally significant model variables
 #'  and, if trace is TRUE, the selection history
 backward_simplification <- function(
-    df,
-    model_type,
-    term,
-    evaluation_methods,
-    categorical_vars,
-    ...,
-    model_family = "binomial",
-    simplify_model = TRUE,
-    trace = FALSE,
-    omit_na = "overall") {
+  df,
+  model_type,
+  term,
+  evaluation_methods,
+  categorical_vars,
+  ...,
+  model_family = "gaussian",
+  simplify_model = TRUE,
+  trace = FALSE,
+  omit_na = "overall"
+) {
   if (omit_na == "overall") df <- remove_nas(df, term, model_type)
 
   errors <- c()
@@ -1381,21 +1243,22 @@ backward_simplification <- function(
   } else {
     model_sum <- stats::coef(summary(regression_model))
   }
-  model_summary <- expanded_model_summary(
-    df,
-    model_sum,
-    categorical_vars
+  model_summary <- expand_model_summary(
+    model_summary = model_sum,
+    term = stats::formula(regression_model),
+    categorical_vars = categorical_vars,
+    df = df
   )
 
   if ((model_summary[1, "smallest_p_value"] < 0.1) || (!simplify_model)) {
     # All p-values are below p<0.1 --> accept the original model
     out$significant_variables <- model_summary[
-      model_summary$p_values < 0.05,
-      "coefficients"
+      model_summary$p_value < 0.05,
+      "predictor"
     ]
     out$marginally_significant_variables <- model_summary[
-      (model_summary$p_values < 0.1) & (model_summary$p_values >= 0.05),
-      "coefficients"
+      (model_summary$p_value < 0.1) & (model_summary$p_value >= 0.05),
+      "predictor"
     ]
     out$final_model <- regression_model
   } else {
@@ -1410,7 +1273,10 @@ backward_simplification <- function(
         df,
         regression_model,
         unique(
-          model_summary[model_summary["smallest_p_value"] > 0.1, ][["cat_var"]]
+          model_summary[
+            model_summary["smallest_p_value"] > 0.1,
+            "predictor_term"
+          ]
         ),
         "backward",
         evaluation_methods,
@@ -1441,10 +1307,11 @@ backward_simplification <- function(
           } else {
             model_sum <- stats::coef(summary(regression_model))
           }
-          model_summary <- expanded_model_summary(
-            df,
-            model_sum,
-            categorical_vars
+          model_summary <- expand_model_summary(
+            model_summary = model_sum,
+            term = stats::formula(regression_model),
+            categorical_vars = categorical_vars,
+            df = df
           )
         } else {
           model_summary <- res$model_summary
@@ -1456,6 +1323,7 @@ backward_simplification <- function(
         }
       }
     }
+
     var_cnt <- length(find_call(term, return = "fixed"))
     if ((var_cnt > 2) && (stats::formula(regression_model) == term)) {
       warning(
@@ -1471,12 +1339,12 @@ backward_simplification <- function(
 
     out$final_model <- regression_model
     out$significant_variables <- model_summary[
-      model_summary$p_values < 0.05,
-      "coefficients"
+      model_summary$p_value < 0.05,
+      "predictor"
     ]
     out$marginally_significant_variables <- model_summary[
-      (model_summary$p_values < 0.1) & (model_summary$p_values >= 0.05),
-      "coefficients"
+      (model_summary$p_value < 0.1) & (model_summary$p_value >= 0.05),
+      "predictor"
     ]
     if (trace) out$history <- history
   }
@@ -1509,7 +1377,7 @@ find_call <- function(term, pred_full = NA, return = "all", df_cols = NA) {
   if (return == "all") { # return as is
     out <- term_labels
   } else if (return == "fixed") {
-    randoms <- lme4::findbars(stats::as.formula(term))
+    randoms <- reformulas::findbars(stats::as.formula(term))
     vars <- term_labels
     response <- formula.tools::lhs(stats::as.formula(term))
     if (length(response) > 1) {
@@ -1521,10 +1389,10 @@ find_call <- function(term, pred_full = NA, return = "all", df_cols = NA) {
       out <- vars[vars != response]
     }
   } else if (return == "random") {
-    return(as.character(lme4::findbars(stats::as.formula(term))))
+    return(as.character(reformulas::findbars(stats::as.formula(term))))
   } else if (return == "atomic") {
     # return column names of fixed effects, i.e., remove transforms
-    randoms <- lme4::findbars(stats::as.formula(term))
+    randoms <- reformulas::findbars(stats::as.formula(term))
     vars <- all.vars(stats::as.formula(term))
     response <- formula.tools::lhs(stats::as.formula(term))
     if (length(response) > 1) {
@@ -1556,7 +1424,7 @@ find_call <- function(term, pred_full = NA, return = "all", df_cols = NA) {
 
   out_v <- list()
   for (x in out) out_v <- append(out_v, parse(text = x)[[1]])
-  return(unique(out_v))
+  unique(out_v)
 }
 
 #' Determine regression model family
@@ -1602,20 +1470,17 @@ determine_model_family <- function(df, response_frm) {
 #'  information on interaction groups.
 #' @param model_summary
 #'  Initial model summary.
-#' @param response_frm
-#'  Response formula.
 #' @param term
 #'  The formula to be used with the model.
 #'  Can be either quote() or formula().
 #' @param categorical_vars
 #'  List of categorical variables within the model
-#'  (base names, i.e., names of columns)
-#' @param col
-#'  Column to be used for categorical check.
-#' @param round_p
-#'  Convenience parameter for automatic rounding of p-values.
+#'  (base names, i.e., names of columns).
 #' @param df
 #'  Dataframe with response and predictors as columns.
+#' @param round_p
+#'  Convenience parameter for automatic rounding of p-values.
+#'  Default: 3.
 #' @return
 #'  Expanded summary of a regression model with added information
 #'  on base variables, variable types and significance levels.
@@ -1639,9 +1504,8 @@ determine_model_family <- function(df, response_frm) {
 #' # generate an extended model summary with information on predictor columns
 #' # and variable types
 #' models_overview <- stats::coef(summary(final_model))
-#' smaller_expanded_model_summary(
+#' expand_model_summary(
 #'   models_overview,
-#'   quote(sexual_seed_prop),
 #'   quote(sexual_seed_prop ~ altitude +
 #'     solar_radiation +
 #'     annual_mean_temperature +
@@ -1653,25 +1517,137 @@ determine_model_family <- function(df, response_frm) {
 #'     solar_radiation:isothermality +
 #'     annual_mean_temperature:isothermality),
 #'   c("habitat", "ploidy"),
-#'   quote(predictor),
-#'   3,
-#'   plants
+#'   plants,
+#'   3
 #' )
 #' @export
-smaller_expanded_model_summary <- function(
-    model_summary,
-    response_frm,
-    term,
-    categorical_vars,
-    col,
-    round_p,
-    df) {
-  categorical_check <- setup_categorical_check(
-    df,
-    categorical_vars,
-    col
-  )
+expand_model_summary <- function(
+  model_summary,
+  term,
+  categorical_vars,
+  df,
+  round_p = 3
+) {
+  df_cols <- colnames(df)
+  response_frm <- term[[2]]
 
+  # define function to find main effects
+  find_main_effect <- function(this_coeff) {
+    if (grepl("^I\\(.+\\^[0-9]+\\)", this_coeff)) {
+      this_coeff_small <- stringr::str_extract(
+        this_coeff, "(?<=I\\().+(?=\\^[0-9])"
+      )
+
+      if (is.call(str2lang(this_coeff_small))) {
+        # transformed var -> no main effect
+        return(this_coeff_small)
+      } else {
+        for (el in df_cols) {
+          ptrn <- stringr::str_interp("(?<!:)${el}(?![a-z0-9_\\-#:])")
+          if (stringr::str_detect(
+            this_coeff,
+            stringr::regex(ptrn, ignore_case = TRUE)
+          )) {
+            return(el)
+          }
+        }
+      }
+    }
+
+    this_coeff
+  }
+
+  get_pred_type <- function(coef1, coef2) {
+    is_numeric <- c()
+
+    for (coef in c(coef1, coef2)) {
+      if (!is.na(coef)) {
+        if (coef %in% df_cols) {
+          is_numeric <- c(is_numeric, is.numeric(df[[coef]]))
+        } else {
+          for (el in df_cols) {
+            ptrn <- stringr::str_interp("(?<!:)${el}(?![a-z0-9_\\-#:])")
+            if (stringr::str_detect(
+              coef,
+              stringr::regex(ptrn, ignore_case = TRUE)
+            )) {
+              is_numeric <- c(is_numeric, is.numeric(df[[el]]))
+            }
+          }
+        }
+      }
+    }
+
+    if (length(unique(is_numeric)) == 1) {
+      if (is_numeric[[1]] == TRUE) {
+        "numeric"
+      } else {
+        "categorical"
+      }
+    } else {
+      "mixed"
+    }
+  }
+
+  get_min_p <- function(coef, coef_type) {
+    if (coef_type == "numeric") {
+      min_p <- min(
+        expanded_model_summary[
+          (expanded_model_summary$predictor == coef) |
+            (((!is.na(expanded_model_summary$main_effect1)) &
+              (expanded_model_summary$main_effect1 == coef)) |
+              ((!is.na(expanded_model_summary$main_effect2)) &
+                (expanded_model_summary$main_effect2 == coef))),
+          "p_value"
+        ]
+      )
+    } else if (coef_type == "categorical") {
+      min_p <- min(
+        expanded_model_summary[
+          (expanded_model_summary$predictor == coef) |
+            (expanded_model_summary$main_effect1 == coef),
+          "p_value"
+        ]
+      )
+    } else {
+      min_p <- 0.0
+    }
+
+    min_p
+  }
+
+  elim_cat_trait <- function(predictor, main_effect1, main_effect2) {
+    pred_wo_trait <- stringr::str_replace(
+      predictor,
+      sprintf(
+        "(?<=\\:|^)[^\\:]*%s[^\\:]*(?=\\:|$)",
+        main_effect2
+      ),
+      main_effect2
+    )
+
+    pred_wo_trait <- stringr::str_replace(
+      pred_wo_trait,
+      sprintf(
+        "(?<=\\:|^)[^\\:]*%s[^\\:]*(?=\\:|$)",
+        main_effect2
+      ),
+      main_effect2
+    )
+    pred_wo_trait
+  }
+
+  # define p-value column
+  model_summary <- as.data.frame(model_summary)
+  p_col <- intersect(
+    c("Pr(>|t|)", "Pr(>|z|)", "Corrected_p"),
+    colnames(model_summary)
+  )
+  if (length(p_col) != 1) {
+    stop(stringr::str_interp("Not able to calculate p-values."))
+  }
+
+  # connect categorical trait values to traits
   cat_traits <- c()
   for (cat_var in categorical_vars) {
     for (cat_trait in paste(cat_var, unique(df[, cat_var]), sep = "")) {
@@ -1679,146 +1655,133 @@ smaller_expanded_model_summary <- function(
     }
   }
 
-  models_overview <- as.data.frame(model_summary) %>%
+  expanded_model_summary <- model_summary %>%
     tibble::rownames_to_column(var = "predictor") %>%
     dplyr::filter(.data$predictor != "(Intercept)") %>%
     dplyr::mutate(
       response = paste(response_frm),
       .before = "predictor"
     ) %>%
+    dplyr::rename(p_value = tidyr::all_of(p_col)) %>%
     dplyr::mutate(
-      predictor_col = dplyr::case_when(!!!categorical_check),
-      .after = "predictor"
-    ) %>%
-    dplyr::mutate(
-      var_type = ifelse(
-        is.na(.data$predictor_col), "numeric", "categorical"
+      is_interaction = dplyr::case_when(
+        stringr::str_detect(.data$predictor, ":") ~ TRUE,
+        TRUE ~ FALSE
       ),
-      .after = "predictor_col"
-    ) %>%
-    dplyr::mutate(predictor_col = ifelse(
-      is.na(.data$predictor_col),
-      .data$predictor,
-      .data$predictor_col
-    ), .after = "predictor")
-  p_value_col <- utils::tail(colnames(models_overview)[-1], n = 1)
+      main_effect1 = {
+        # remove transforms
+        pred1 <- dplyr::case_when(
+          .data$is_interaction ~ purrr::map_chr(
+            stringr::str_extract(predictor, "^[^:]+"),
+            find_main_effect
+          ),
+          TRUE ~ purrr::map_chr(
+            predictor,
+            find_main_effect
+          )
+        )
 
-  split_frm <- find_call(term, return = "atomic", df_cols = colnames(df))
-
-  for (pred in models_overview[, "predictor"]) {
-    if (is.call(str2lang(pred))) {
-      # either interaction or transform or both
-      if (grepl(":", pred)) {
-        # interaction (maybe incl. transform)
-        interaction_coeffs <- c()
-
-        leftover_coeffs <- str2lang(pred)
-        while (length(leftover_coeffs) == 3) {
-          this_coeff <- leftover_coeffs[[3]]
-          leftover_coeffs <- leftover_coeffs[[2]]
-
-          # check if this_coeff is transformed
-          if (is.call(this_coeff)) {
-            for (el in split_frm) {
-              ptrn <- stringr::str_interp(
-                "(?<!:)${deparse(el)}(?![a-z0-9_\\-#:])"
-              )
-              if (stringr::str_detect(
-                deparse(this_coeff),
-                stringr::regex(ptrn, ignore_case = TRUE)
-              )) {
-                interaction_coeffs <- append(c(deparse(el)), interaction_coeffs)
-              }
-            }
-          } else if (deparse(this_coeff) %in% models_overview[
-            models_overview["var_type"] == "categorical",
-            "predictor"
-          ]) {
-            interaction_coeffs <- append(
-              models_overview[
-                models_overview["predictor"] == deparse(this_coeff),
-                "predictor_col"
-              ],
-              interaction_coeffs
-            )
-          } else {
-            interaction_coeffs <- append(
-              c(deparse(this_coeff)),
-              interaction_coeffs
-            )
-          }
-        }
-
-        # process last coefficient in interaction
-        if (is.call(leftover_coeffs)) {
-          for (el in split_frm) {
-            ptrn <- stringr::str_interp(
-              "(?<!:)${deparse(el)}(?![a-z0-9_\\-#:])"
-            )
-
-            if (stringr::str_detect(
-              deparse(leftover_coeffs),
-              stringr::regex(ptrn, ignore_case = TRUE)
-            )) {
-              interaction_coeffs <- append(c(deparse(el)), interaction_coeffs)
-            }
-          }
+        # reduce categories to column names
+        if (length(categorical_vars) == 0) {
+          as.character(pred1)
         } else {
-          interaction_coeffs <- append(
-            c(deparse(leftover_coeffs)),
-            interaction_coeffs
+          dplyr::case_when(
+            !!!setup_categorical_check(
+              df, categorical_vars, quote(pred1),
+              quote(pred1)
+            )
           )
         }
+      },
+      main_effect2 = {
+        pred2 <- dplyr::case_when(
+          is_interaction ~ purrr::map_chr(
+            stringr::str_extract(predictor, "[^:]+$"),
+            find_main_effect
+          )
+        )
 
-        # check if var_type needs to be updated to mixed
-        var_types <- c()
-        for (i in seq_along(interaction_coeffs)) {
-          coeff <- interaction_coeffs[[i]]
-          if (coeff %in% names(cat_traits)) {
-            var_type <- "categorical"
-            interaction_coeffs[[i]] <- cat_traits[[coeff]]
-          } else {
-            var_type <- "numeric"
-          }
-          var_types <- append(var_types, var_type)
+        # reduce categories to column names
+        if (length(categorical_vars) == 0) {
+          as.character(pred2)
+        } else {
+          dplyr::case_when(
+            !!!setup_categorical_check(
+              df, categorical_vars, quote(pred2),
+              quote(pred2)
+            )
+          )
         }
-
-        models_overview[
-          models_overview["predictor"] == pred, "predictor_col"
-        ] <- paste(interaction_coeffs, collapse = ":")
-
-        if (length(unique(var_types) > 1)) {
-          models_overview[
-            models_overview["predictor"] == pred, "var_type"
-          ] <- "mixed"
-        }
-      } else {
-        # only transform
-        for (el in split_frm) {
-          ptrn <- stringr::str_interp("(?<!:)${deparse(el)}(?![a-z0-9_\\-#:])")
-          if (stringr::str_detect(
-            pred,
-            stringr::regex(ptrn, ignore_case = TRUE)
-          )) {
-            models_overview[
-              models_overview["predictor"] == pred, "predictor_col"
-            ] <- deparse(el)
-          }
+      },
+      pred_type = purrr::map2_chr(
+        .data$main_effect1,
+        .data$main_effect2,
+        get_pred_type
+      ),
+      significance = dplyr::case_when(
+        p_value < 0.001 ~ "***",
+        p_value < 0.01 ~ "**",
+        p_value < 0.05 ~ "*",
+        TRUE ~ "ns"
+      )
+    ) %>%
+    dplyr::mutate_if(is.numeric, round, digits = round_p) %>%
+    dplyr::rowwise() %>%
+    dplyr::mutate(
+      predictor_term = {
+        if (.data$pred_type == "numeric") {
+          .data$predictor
+        } else if (.data$pred_type == "categorical") {
+          .data$main_effect1
+        } else {
+          elim_cat_trait(
+            .data$predictor,
+            .data$main_effect1,
+            .data$main_effect2
+          )
         }
       }
-    }
+    ) %>%
+    dplyr::ungroup() %>%
+    as.data.frame()
+
+  expanded_model_summary <- expanded_model_summary %>%
+    dplyr::mutate(
+      smallest_p_value = dplyr::case_when(
+        .data$pred_type == "categorical" ~ purrr::map2_dbl(
+          .data$main_effect1,
+          .data$pred_type,
+          get_min_p
+        ),
+        .data$pred_type == "numeric" & .data$predictor == .data$main_effect1 ~
+          purrr::map2_dbl(
+            .data$predictor,
+            .data$pred_type,
+            get_min_p
+          ),
+        TRUE ~ .data$p_value
+      )
+    )
+
+
+  non_sign_interactions <- expanded_model_summary[
+    ((expanded_model_summary$p_value > 0.1) |
+      (is.na(expanded_model_summary$p_value))) &
+      (expanded_model_summary$is_interaction),
+  ]
+
+  if (nrow(non_sign_interactions) > 0) {
+    expanded_model_summary <- expanded_model_summary %>%
+      dplyr::arrange(
+        dplyr::desc(.data$is_interaction),
+        dplyr::desc(.data$smallest_p_value)
+      )
+  } else {
+    expanded_model_summary <- expanded_model_summary %>%
+      dplyr::arrange(dplyr::desc(.data$smallest_p_value))
   }
 
-  models_overview <- models_overview %>%
-    dplyr::mutate_if(is.numeric, round, digits = round_p) %>%
-    dplyr::mutate(significance = dplyr::case_when(
-      !!ensym(p_value_col) < 0.001 ~ "***",
-      !!ensym(p_value_col) < 0.01 ~ "**",
-      !!ensym(p_value_col) < 0.05 ~ "*",
-      TRUE ~ "ns"
-    ))
-
-  models_overview
+  expanded_model_summary
 }
 
 
@@ -1837,72 +1800,82 @@ smaller_expanded_model_summary <- function(
 #'  removing autocorrelations. Should be sorted by priority.
 #'  Last element gets eliminated first.
 #' @param automatic_removal
-#'  Whether to automatically remove autocorrelations.
+#'  Whether to automatically remove autocorrelations. Default: FALSE.
 #' @param autocorrelation_threshold
 #'  Threshold at which two variables are considered autocorrelated.
+#'  Default: 0.7.
 #' @param correlation_method
 #'  The method used for correlation calculation.
+#'  Default: "pearson".
 #' @param cor_use
 #'  Parameter 'use' for 'cor' method.
 #'  Describes handling of missing values.
+#'  Default: "complete.obs".
 #' @param model_type
 #'  Model type to be used.
-#'  Options: (g/n)(l/a)m(er), default: glm.
+#'  Options: (g)lm, (g)lmer, nlmer, and gam. Default: glm.
 #' @param model_family
-#'  Model family used for model calculation.
-#'  Default: gaussian.
+#'  A character string describing the family used for model calculation.
+#'  See [stats::family] for options. Default: gaussian.
 #' @param evaluation_methods
 #'  Methods to be used for model evaluation.
-#'  Options: anova, aic, aicc, bic, default: anova.
+#'  Options: anova, aic, aicc, bic. Default: anova.
 #' @param simplification_direction
 #'  Mode of stepwise model improvement.
-#'  Either 'forward' (i.e., forward selection),
-#'  or 'backward' (i.e., backward simplification),
-#'  or 'both' (default: both).
-#' @param omit_na
-#'  Either 'overall' or 'stepwise'.
-#'  If 'overall', NAs are removed before modeling.
-#'  If 'stepwise', NAs are removed per step based on
-#'  the variables in the current formula.
-#' @param scale_predictor
-#'  Whether to apply scaling to predictor variables.
-#' @param plot_quality_assessment
-#'  Module to use for plots for model quality assessment.
-#'  Options: performance, baseR.
-#' @param plot_relationships
-#'  Whether to plot a) regression, b) effect size, and c) estimates.
-#' @param jitter_plots
-#'  Whether geom_point plots should use to jitter.
-#' @param plot_type
-#'  Either 'boxplot' or 'violin'.
-#'  Used to plot regression plots for categorical variables.
-#'  Default: 'boxplot'.
-#' @param stat_test
-#'  Either 't.test' or 'wilcox'.
-#'  Used to calculate statistics for regression plots of categorical variables.
-#'  Default: 'wilcox'.
-#' @param use_psi
-#'  Whether to apply post-selection inference to optimized model.
-#'  Only applicable to lm and glm models.
-#' @param psi_k
-#'  The multiple of the number of degrees of freedom used as
-#'  penalty in the post-selection inference model selection.
-#'  The default k = 2 corresponds to the AIC.
-#' @param psi_boot_repl
-#'  A number or list of bootstrap replicates.
-#'  The default is no bootstrapping.
-#' @param psi_p_threshold
-#'  P-value threshold to be used for significance filtering.
-#' @param psi_label_size
-#'  Size of test labels within post-selection inference plot.
-#' @param round_p
-#'  Convenience parameter for automatic rounding of p-values.
+#'  Either "forward" (i.e., forward selection),
+#'  or "backward" (i.e., backward simplification),
+#'  or "both". Default: "both".
 #' @param backward_simplify_model
 #'  If FALSE, the model and information on significant and
 #'  marginally significant variables are returned without
 #'  backward simplification. Default: TRUE.
+#' @param omit_na
+#'  Either "overall" or "stepwise".
+#'  If "overall", NAs are removed before modeling.
+#'  If "stepwise", NAs are removed per step based on
+#'  the variables in the current formula. Default: "overall".
+#' @param scale_predictor
+#'  Whether to apply scaling to predictor variables. Default: FALSE.
+#' @param plot_quality_assessment
+#'  Module to use for plots for model quality assessment.
+#'  Options: "performance", "baseR". Default: "baseR".
+#' @param plot_relationships
+#'  Whether to plot regression, effect size, and estimates.
+#'  Default: FALSE.
+#' @param jitter_plots
+#'  Whether geom_point plots should use to jitter.
+#'  Default: FALSE.
+#' @param plot_type
+#'  Either "boxplot" or "violin".
+#'  Used to plot regression plots for categorical variables.
+#'  Default: "boxplot".
+#' @param stat_test
+#'  Either "t.test" or "wilcox".
+#'  Used to calculate statistics for regression plots of categorical variables.
+#'  Default: "wilcox".
+#' @param use_psi
+#'  Whether to apply post-selection inference to optimized model.
+#'  Only applicable to lm and glm models.
+#'  Note that running post-selection inference may take some time.
+#'  Default: FALSE.
+#' @param psi_k
+#'  The multiple of the number of degrees of freedom used as
+#'  penalty in the post-selection inference model selection.
+#'  The default k = 2 corresponds to the AIC. Default: 2.
+#' @param psi_boot_repl
+#'  A number or list of bootstrap replicates.
+#'  The default is no bootstrapping. Default: 100.
+#' @param psi_p_threshold
+#'  P-value threshold to be used for significance filtering.
+#'  Default: 0.05.
+#' @param psi_label_size
+#'  Size of test labels within post-selection inference plot.
+#'  Default: 2.5.
+#' @param round_p
+#'  Convenience parameter for automatic rounding of p-values.
+#'  Default: 5.
 #' @param trace
-#'  Store and return model selection history (default: FALSE)
+#'  Store and return model selection history. Default: FALSE.
 #' @return
 #'  List with a) information on autocorrelated variables and b)
 #'  final simplified/expanded models with further information
@@ -1915,7 +1888,7 @@ smaller_expanded_model_summary <- function(
 #' # dataframe and term. Check for correlations between the values
 #' # of the provided dataframe columns and remove autocorrelated variables.
 #' # Apply backward simplification to the model and plot the final model.
-#' optimize_model(
+#' optimized_model_result <- optimize_model(
 #'   plants,
 #'   quote(sexual_seed_prop ~ altitude +
 #'     latitude_gps_n +
@@ -1941,6 +1914,7 @@ smaller_expanded_model_summary <- function(
 #'   model_family = "quasibinomial",
 #'   evaluation_methods = c("anova"),
 #'   simplification_direction = "backward",
+#'   backward_simplify_model = TRUE,
 #'   omit_na = "overall",
 #'   scale_predictor = TRUE,
 #'   plot_quality_assessment = "performance",
@@ -1950,38 +1924,38 @@ smaller_expanded_model_summary <- function(
 #'   jitter_plots = TRUE,
 #'   plot_type = "boxplot",
 #'   stat_test = "wilcox",
-#'   backward_simplify_model = TRUE,
 #'   trace = TRUE
 #' )
 #' @export
 optimize_model <- function(
-    df,
-    term,
-    ...,
-    autocorrelation_cols = NA,
-    automatic_removal = FALSE,
-    autocorrelation_threshold = 0.7,
-    correlation_method = "pearson",
-    cor_use = "complete.obs",
-    model_type = "glm",
-    model_family = "gaussian",
-    evaluation_methods = c("anova"),
-    simplification_direction = "both",
-    omit_na = "overall",
-    scale_predictor = FALSE,
-    plot_quality_assessment = "baseR",
-    plot_relationships = FALSE,
-    jitter_plots = FALSE,
-    plot_type = "boxplot",
-    stat_test = "wilcox",
-    use_psi = FALSE,
-    psi_k = 2,
-    psi_boot_repl = 100,
-    psi_p_threshold = 0.05,
-    psi_label_size = 2.5,
-    round_p = 5,
-    backward_simplify_model = TRUE,
-    trace = FALSE) {
+  df,
+  term,
+  ...,
+  autocorrelation_cols = NA,
+  automatic_removal = FALSE,
+  autocorrelation_threshold = 0.7,
+  correlation_method = "pearson",
+  cor_use = "complete.obs",
+  model_type = "glm",
+  model_family = "gaussian",
+  evaluation_methods = c("anova"),
+  simplification_direction = "both",
+  backward_simplify_model = TRUE,
+  omit_na = "overall",
+  scale_predictor = FALSE,
+  plot_quality_assessment = "baseR",
+  plot_relationships = FALSE,
+  jitter_plots = FALSE,
+  plot_type = "boxplot",
+  stat_test = "wilcox",
+  use_psi = FALSE,
+  psi_k = 2,
+  psi_boot_repl = 100,
+  psi_p_threshold = 0.05,
+  psi_label_size = 2.5,
+  round_p = 5,
+  trace = FALSE
+) {
   errors <- c()
   # check for autocorrelations
   if (!all(is.na(autocorrelation_cols))) {
@@ -2100,7 +2074,7 @@ optimize_model <- function(
     if (!all(is.na(autocorrelation_cols)) && (nrow(autocorrelations) > 0)) {
       ptrn <- sprintf(
         "(%s)(?![a-z0-9_\\-#])",
-        paste(autocorrelations_and_preds$removed_predictor_cols, collapse = "|")
+        paste(autocorrelations_and_preds$removed_predictors, collapse = "|")
       )
       if (!stringr::str_detect(
         frm_str,
@@ -2198,14 +2172,12 @@ optimize_model <- function(
 
     if ((model_type %in% c("glm", "lm")) && use_psi) {
       final_model_before_psi <- final_model
-      models_overview_for_psi <- smaller_expanded_model_summary(
+      models_overview_for_psi <- expand_model_summary(
         stats::coef(summary(final_model)),
-        response_frm,
         term,
         categorical_vars,
-        quote(predictor),
-        round_p,
-        df
+        df,
+        round_p
       )
 
       psi_result <- apply_psi(
@@ -2214,6 +2186,7 @@ optimize_model <- function(
         model_type,
         model_family,
         term,
+        categorical_vars,
         models_overview_for_psi,
         boot_repl = psi_boot_repl,
         k = psi_k,
@@ -2277,7 +2250,14 @@ optimize_model <- function(
             }
           )
         } else {
-          plot(performance::check_model(final_model))
+          withCallingHandlers(
+            plot(performance::check_model(final_model)),
+            message = function(w) {
+              if (grepl("unknown labels", w$message)) {
+                tryInvokeRestart("muffleMessage")
+              }
+            }
+          )
         }
         checked_model <- grDevices::recordPlot()
         grDevices::dev.off()
@@ -2294,27 +2274,23 @@ optimize_model <- function(
       if (model_type == "gam") {
         models_overview <- summary(final_model)$p.table
         models_overview_s <- summary(final_model)$s.table
-        models_overview_s <- smaller_expanded_model_summary(
+        models_overview_s <- expand_model_summary(
           models_overview_s,
-          response_frm,
           term,
           categorical_vars,
-          quote(predictor),
-          round_p,
-          df
+          df,
+          round_p
         )
       } else {
         models_overview <- stats::coef(summary(final_model))
       }
 
-      models_overview <- smaller_expanded_model_summary(
+      models_overview <- expand_model_summary(
         models_overview,
-        response_frm,
         term,
         categorical_vars,
-        quote(predictor),
-        round_p,
-        df
+        df,
+        round_p
       )
       models_overview <- models_overview %>%
         dplyr::mutate(effect_direction = dplyr::case_when(
@@ -2359,11 +2335,14 @@ optimize_model <- function(
       dplyr::rename(
         Response = "response",
         Predictor = "predictor",
-        `Variable Type` = "var_type",
+        `Variable Type` = "pred_type",
         Significance = "significance",
         `Effect Direction` = "effect_direction"
       ) %>%
-      dplyr::select(-"predictor_col")
+      dplyr::select(-c(
+        "main_effect1",
+        "main_effect2"
+      ))
 
     if (model_type == "gam") {
       models_overview <- list(
@@ -2398,17 +2377,17 @@ optimize_model <- function(
 #'
 #' Plot estimate, regression and effect size
 #' @param regression_model
-#'  The (simplified) regression model
+#'  The (simplified) regression model.
 #' @param models_overview
-#'  Custom model summary (see [LazyModeler::smaller_expanded_model_summary()])
+#'  Custom model summary (see [LazyModeler::expand_model_summary()]).
 #' @param model_type
-#'  Type of regression model (e.g., 'glm')
+#'  Type of regression model (e.g., 'glm').
 #' @param model_family
-#'  Model family used for model calculation.
-#'  Default: gaussian.
+#'  A character string describing the family used for model calculation.
+#'  See [stats::family] for options.
 #' @param plot_type
 #'  Whether to plot as boxplot or violin plot
-#'  for categorical variables. Default: boxplot.
+#'  for categorical variables. Default: "boxplot".
 #' @param jitter_plots
 #'  Whether to use jitter when generating geom_point plots.
 #'  Default: FALSE.
@@ -2416,7 +2395,8 @@ optimize_model <- function(
 #'  Test to be used for pairwise significance testing for
 #'  categorical variables. Either wilcox or t.test. Default: wilcox.
 #' @param round_p
-#'  Convenience parameter for automatic rounding of p-values
+#'  Convenience parameter for automatic rounding of p-values.
+#'  Default: 5.
 #' @param remove_insignificant
 #'  Used to exclude insignificant relationships from both estimate
 #'  and effect size plots and omit curves from regression plots.
@@ -2447,9 +2427,8 @@ optimize_model <- function(
 #' # generate extended model summary with information on predictor columns
 #' # and variable types
 #' models_overview <- stats::coef(summary(final_model))
-#' models_overview <- LazyModeler::smaller_expanded_model_summary(
+#' models_overview <- LazyModeler::expand_model_summary(
 #'   models_overview,
-#'   quote(sexual_seed_prop),
 #'   quote(sexual_seed_prop ~ altitude +
 #'     solar_radiation +
 #'     annual_mean_temperature +
@@ -2461,9 +2440,8 @@ optimize_model <- function(
 #'     solar_radiation:isothermality +
 #'     annual_mean_temperature:isothermality),
 #'   c("habitat", "ploidy"),
-#'   quote(predictor),
-#'   3,
-#'   plants
+#'   plants,
+#'   3
 #' )
 #' models_overview <- models_overview %>%
 #'   mutate(effect_direction = case_when(
@@ -2486,15 +2464,16 @@ optimize_model <- function(
 #' )
 #' @export
 plot_model_features <- function(
-    regression_model,
-    models_overview,
-    model_type,
-    model_family,
-    plot_type = "boxplot",
-    jitter_plots = FALSE,
-    test = "wilcox",
-    round_p = 5,
-    remove_insignificant = FALSE) {
+  regression_model,
+  models_overview,
+  model_type,
+  model_family,
+  plot_type = "boxplot",
+  jitter_plots = FALSE,
+  test = "wilcox",
+  round_p = 5,
+  remove_insignificant = FALSE
+) {
   if (remove_insignificant) {
     models_overview_ns <- models_overview[
       models_overview$significance != "ns",
@@ -2526,14 +2505,14 @@ plot_model_features <- function(
     model_plots[["effect_size_plot"]] <- plot_effect_size(models_overview_ns)
   }
 
-  return(model_plots)
+  model_plots
 }
 
 #' Plot regression model estimate
 #'
 #' Plot estimate, regression and effect size
 #' @param models_overview
-#'  Custom model summary (see [LazyModeler::smaller_expanded_model_summary()])
+#'  Custom model summary (see [LazyModeler::expand_model_summary()])
 #' @param regression_model
 #'  The (simplified) regression model
 #' @param model_type
@@ -2549,8 +2528,8 @@ plot_estimate <- function(models_overview, regression_model, model_type) {
 
   new_rows <- lapply(
     unique(models_overview[
-      models_overview["var_type"] == "categorical",
-      "predictor_col"
+      models_overview["pred_type"] == "categorical",
+      "main_effect1"
     ]),
     function(cat_var) {
       cat_var_states <- unique(df[[cat_var]])
@@ -2560,7 +2539,7 @@ plot_estimate <- function(models_overview, regression_model, model_type) {
       )
       data.frame(
         predictor = paste0(cat_var, reference),
-        predictor_col = cat_var,
+        main_effect1 = cat_var,
         Estimate = 0,
         `Std. Error` = 0,
         significance = "ref",
@@ -2571,12 +2550,12 @@ plot_estimate <- function(models_overview, regression_model, model_type) {
   models_overview <- dplyr::bind_rows(models_overview, do.call(rbind, new_rows))
   models_overview <- models_overview %>%
     dplyr::arrange(
-      dplyr::desc(.data$predictor_col),
+      dplyr::desc(.data$main_effect1),
       dplyr::desc(.data$predictor)
     ) %>%
     dplyr::mutate(
       formatted_predictor = dplyr::case_when(
-        (.data$significance != "ref") & (.data$var_type == "categorical") ~
+        (.data$significance != "ref") & (.data$pred_type == "categorical") ~
           paste0("italic(", .data$predictor, ")"),
         TRUE ~ .data$predictor
       ),
@@ -2629,7 +2608,7 @@ plot_estimate <- function(models_overview, regression_model, model_type) {
 #' @param df
 #'  Dataframe object extracted from model
 #' @param models_overview
-#'  Custom model summary (see [LazyModeler::smaller_expanded_model_summary()])
+#'  Custom model summary (see [LazyModeler::expand_model_summary()])
 #' @param test
 #'  Test to be used for pairwise significance testing
 #'  for categorical variables. Either wilcox or t.test
@@ -2647,27 +2626,28 @@ plot_estimate <- function(models_overview, regression_model, model_type) {
 #'  Regression plots of variables listed within
 #'  the model summary + statistics
 plot_regression_categorical <- function(
-    cat_var,
-    df,
-    models_overview,
-    test,
-    response_str,
-    response_col,
-    plot_type,
-    regression_plots,
-    stat_results) {
+  cat_var,
+  df,
+  models_overview,
+  test,
+  response_str,
+  response_col,
+  plot_type,
+  regression_plots,
+  stat_results
+) {
   models_overview_group <- models_overview %>%
-    dplyr::filter(.data$predictor_col == cat_var) %>%
+    dplyr::filter(.data$main_effect1 == cat_var) %>%
     dplyr::mutate(factor_group = stringr::str_remove(
       .data$predictor,
-      .data$predictor_col
+      .data$main_effect1
     ))
 
   new_rows <- lapply(
     unique(
       models_overview_group[
-        models_overview_group["var_type"] == "categorical",
-        "predictor_col"
+        models_overview_group["pred_type"] == "categorical",
+        "main_effect1"
       ]
     ), function(cat_var) {
       cat_var_states <- unique(df[[cat_var]])
@@ -2677,7 +2657,7 @@ plot_regression_categorical <- function(
       data.frame(
         response = models_overview_group[1, "response"],
         predictor = paste0(cat_var, reference),
-        predictor_col = cat_var,
+        main_effect1 = cat_var,
         Estimate = 0,
         significance = "ref",
         stringsAsFactors = FALSE
@@ -2725,7 +2705,7 @@ plot_regression_categorical <- function(
       ggplot2::scale_fill_viridis_d(option = "G") +
       ggplot2::geom_text(
         ggplot2::aes(x = !!cat_var, label = .data$letter),
-        y = max(df[!is.na(df[response_str]), response_str]) * 1.1,
+        y = max(df[!is.na(df[response_str]), response_str]) * 1.15,
         check_overlap = TRUE
       ) +
       ggplot2::geom_text(
@@ -2735,7 +2715,7 @@ plot_regression_categorical <- function(
       ) +
       ggplot2::ylim(
         min(df[!is.na(df[response_str]), response_str]),
-        max(df[!is.na(df[response_str]), response_str]) * 1.1
+        max(df[!is.na(df[response_str]), response_str]) * 1.15
       )
   } else { # single vars
     p <- ggplot2::ggplot(
@@ -2772,7 +2752,7 @@ plot_regression_categorical <- function(
 #' @param term
 #'  The formula to be used with the model.
 #' @param models_overview
-#'  Custom model summary (see [LazyModeler::smaller_expanded_model_summary()]).
+#'  Custom model summary (see [LazyModeler::expand_model_summary()]).
 #' @param response_str
 #'  Response as string.
 #' @param regression_plots
@@ -2784,24 +2764,26 @@ plot_regression_categorical <- function(
 #' @param round_p
 #'  Convenience parameter for automatic rounding of p-values.
 #' @param model_family
-#'  Model family used for model calculation.
+#'  A character string describing the family used for model calculation.
+#'  See [stats::family] for options.
 #' @param model_type
 #'  Type of regression model (e.g., 'glm').
 #' @return
 #'  Returns regression plots of variables listed within the model summary.
 plot_regression_numeric <- function(
-    predictor_full,
-    regression_model,
-    df,
-    term,
-    models_overview,
-    response_str,
-    regression_plots,
-    jitter,
-    plot_curve,
-    round_p,
-    model_family,
-    model_type) {
+  predictor_full,
+  regression_model,
+  df,
+  term,
+  models_overview,
+  response_str,
+  regression_plots,
+  jitter,
+  plot_curve,
+  round_p,
+  model_family,
+  model_type
+) {
   if ("Estimate" %in% colnames(models_overview)) {
     estimate <- round(
       models_overview[
@@ -2813,58 +2795,50 @@ plot_regression_numeric <- function(
   } else {
     estimate <- "NA"
   }
+
   sign <- models_overview[
     models_overview["predictor"] == predictor_full,
     "significance"
   ]
-  predictor_cols_str <- models_overview[
-    models_overview["predictor"] == predictor_full,
-    "predictor_col"
-  ]
-
-  # get predictor columns
-  # (i.e. either one or two depending on whether there's an interaction)
-  predictor_cols <- vector()
-  for (predictor_col in colnames(df)) {
-    if ("Estimate" %in% colnames(models_overview)) {
-      ptrn <- stringr::str_interp("\\Q${predictor_col}\\E(?=$|\\:)")
-    } else {
-      ptrn <- stringr::str_interp("\\(?\\Q${predictor_col}\\E\\)?(?=$|\\:)")
-    }
-
-    if (stringr::str_detect(predictor_cols_str, stringr::regex(ptrn))) {
-      predictor_cols <- append(predictor_cols, predictor_col)
-    }
-  }
 
   # check if columns are numeric
-  cols_are_numeric <- sapply(predictor_cols, function(pr) is.numeric(df[, pr]))
-  numeric_col_exists <- any(cols_are_numeric)
+  predictor_data_type <- models_overview[
+    models_overview$predictor == predictor_full,
+    "pred_type"
+  ][[1]]
+
+  pred_main_effects <- c(models_overview[
+    models_overview$predictor == predictor_full,
+    c("main_effect1", "main_effect2")
+  ])
+  pred_main_effects <- pred_main_effects[!is.na(pred_main_effects)]
 
   transformed_vars <- transform_variables(
     regression_model,
+    models_overview,
     df,
     term,
     predictor_full,
-    predictor_cols,
-    cols_are_numeric
+    pred_main_effects,
+    predictor_data_type
   )
 
   df <- transformed_vars$df
   predictor_full <- transformed_vars$predictor_full
   preds_w_tr <- transformed_vars$preds_w_tr
   col_name <- transformed_vars$col_name
+  
+  response_sym <- parse(text = response_str)[[1]]
 
-  if ((length(predictor_cols) == 1) || (all(cols_are_numeric))) {
+  if ((length(pred_main_effects) == 1) || (predictor_data_type == "numeric")) {
     # either one variable or only continuous variables
-    if (length(predictor_cols) == 1) {
+    if (length(pred_main_effects) == 1) {
       x <- predictor_full
     } else {
       x <- col_name
     }
 
     x <- parse(text = x)[[1]]
-    response_str <- parse(text = response_str)[[1]]
 
     if (stringr::str_detect(deparse(x), stringr::regex("I\\(.+\\^2\\)"))) {
       x_base <- stringr::str_extract(
@@ -2882,13 +2856,16 @@ plot_regression_numeric <- function(
       df[[new_x]] <- as.numeric(df[[new_x]])
     } else if (stringr::str_detect(deparse(x), ":")) {
       new_x <- gsub(":", "_", deparse(x))
+      df <- as.data.frame(stats::model.matrix(regression_model))
       df <- df %>%
         dplyr::rename(!!new_x := deparse(x))
+      df[[response_str]] <- as.data.frame(
+        stats::model.frame(regression_model)
+        )[,response_str]
       x <- parse(text = new_x)[[1]]
-      df[[new_x]] <- as.numeric(df[[new_x]])
     }
 
-    p <- ggplot2::ggplot(data = df, ggplot2::aes(x = !!x, y = !!response_str)) +
+    p <- ggplot2::ggplot(data = df, ggplot2::aes(x = !!x, y = !!response_sym)) +
       ggplot2::geom_point(
         color = "white",
         fill = "#21918c",
@@ -2906,14 +2883,14 @@ plot_regression_numeric <- function(
         fill = "#21918c"
       )
     }
-  } else if (numeric_col_exists) { # >1 variable with one continuous
+  } else if (predictor_data_type == "mixed") { # >1 variable with one continuous
     x <- sapply(preds_w_tr, function(pr) is.numeric(df[, pr]))
     sign_vars_sorted <- c(preds_w_tr[x], preds_w_tr[!x])
 
     x <- parse(text = sign_vars_sorted[1])[[1]]
     color <- parse(text = sign_vars_sorted[2])[[1]]
 
-    p <- ggplot2::ggplot(data = df, ggplot2::aes(x = !!x, y = !!response_str)) +
+    p <- ggplot2::ggplot(data = df, ggplot2::aes(x = !!x, y = !!response_sym)) +
       ggplot2::geom_point(ggplot2::aes(color = !!color), position = jitter) +
       ggplot2::scale_color_viridis_d(option = "G") +
       ggplot2::scale_fill_viridis_d(option = "G")
@@ -2931,6 +2908,7 @@ plot_regression_numeric <- function(
 
   x_max <- max(df[[deparse(x)]])
   x_min <- min(df[[deparse(x)]])
+
   est_len <- length(as.character(estimate))
 
   if (estimate > 0 || is.na(estimate)) {
@@ -2962,31 +2940,36 @@ plot_regression_numeric <- function(
 #'  according to full predictor name and term.
 #' @param regression_model
 #'  The (simplified) regression model.
+#' @param models_overview
+#'  Custom model summary (see [LazyModeler::expand_model_summary()]).
 #' @param df
 #'  Dataframe object extracted from model.
 #' @param term
 #'  The complete model term.
 #' @param predictor_full
 #'  Coefficient as stated in term.
-#' @param predictor_cols
-#'  Columns in df representing predictor_full.
-#' @param cols_are_numeric
-#'  Boolean information on whether predictor_cols are numeric.
+#' @param main_effects
+#'  Main effects included in predictor_full.
+#' @param pred_data_type
+#'  Information on whether main_effects are numeric.
+#'  Either: "numeric", "categorical", or "mixed".
 #' @return
 #'  Returns list with a) dataframe with transformed variables,
 #'  b) adjusted predictor_full corresponding to transformed
 #'  column name, c) a list with variables with transforms, and
 #'  d) the name of a generated column in case of a coefficient interaction.
 transform_variables <- function(regression_model,
+                                models_overview,
                                 df,
                                 term,
                                 predictor_full,
-                                predictor_cols,
-                                cols_are_numeric) {
+                                main_effects,
+                                pred_data_type) {
   preds_w_tr <- vector()
   col_name <- NA_character_
   # transform df variables according to formula
-  if ((length(predictor_cols) > 2) && (!all(cols_are_numeric))) {
+  if ((pred_data_type != "numeric") &&
+    (lengths(stringr::str_extract_all(predictor_full, ":")) > 1)) {
     warning(
       stringr::str_interp(
         "We don't allow for plotting of >2 interactions for
@@ -2994,12 +2977,22 @@ transform_variables <- function(regression_model,
       )
     )
     return()
-  } else if (length(predictor_cols) == 2) { # interaction
+  } else if (length(main_effects) == 2) { # interaction
     # retrieve categorical info if any
     cat_traits <- c()
-    for (cat_var in names(cols_are_numeric[!cols_are_numeric])) {
-      for (cat_trait in paste(cat_var, unique(df[, cat_var]), sep = "")) {
-        cat_traits[[cat_trait]] <- cat_var
+    for (main_effect in main_effects) {
+      pred_type <- models_overview[
+        (models_overview$main_effect1 == main_effect) |
+          (is.na(models_overview$main_effect2)),
+        "pred_type"
+      ][[1]]
+      if (pred_type == "categorical") {
+        for (cat_trait in paste(
+          main_effect, unique(df[, main_effect]),
+          sep = ""
+        )) {
+          cat_traits[[cat_trait]] <- main_effect
+        }
       }
     }
 
@@ -3009,26 +3002,24 @@ transform_variables <- function(regression_model,
     interaction_transformed <- complete_call[[1]] != ":"
 
     # === transform individual variables
-    for (i in 2:3) { # 2 and 3 are the positions in the call :)
-      pred_w_tr <- complete_call[[i]]
-
-      if (deparse(pred_w_tr) %in% names(cat_traits)) {
-        preds_w_tr[[length(preds_w_tr) + 1]] <- cat_traits[[deparse(pred_w_tr)]]
+    for (pred_w_tr in main_effects) {
+      if (pred_w_tr %in% names(cat_traits)) {
+        preds_w_tr[[length(preds_w_tr) + 1]] <- cat_traits[[pred_w_tr]]
       } else {
-        if (is.call(pred_w_tr)) {
-          new_col <- gsub("\\^|\\(|\\)", ".", deparse(pred_w_tr),
+        if (is.call(str2lang(pred_w_tr))) {
+          new_col <- gsub("\\^|\\(|\\)", ".", pred_w_tr,
             perl = TRUE
           )
-          df[new_col] <- with(df, eval(pred_w_tr))
+          df[new_col] <- with(df, eval(str2lang(pred_w_tr)))
         } else {
-          new_col <- deparse(pred_w_tr)
+          new_col <- pred_w_tr
         }
         preds_w_tr[[length(preds_w_tr) + 1]] <- new_col
       }
     }
 
     # === compute interaction if continuous
-    if (all(cols_are_numeric)) { # only continuous variables
+    if (pred_data_type == "numeric") { # only continuous variables
       col_name <- if (interaction_transformed) {
         stringr::str_interp("${preds_w_tr[[1]]}_${preds_w_tr[[2]]}")
       } else {
@@ -3038,7 +3029,7 @@ transform_variables <- function(regression_model,
     }
 
     # === check if transform needs to be applied for interaction
-    if (all(cols_are_numeric) && interaction_transformed) {
+    if ((pred_data_type == "numeric") && interaction_transformed) {
       # transform around interaction
       interaction_call <- deparse(complete_call[[2]])
       tr_inter_str <- gsub(
@@ -3059,11 +3050,12 @@ transform_variables <- function(regression_model,
     }
   } else if (stringr::str_detect(predictor_full, stringr::regex("s\\(.+\\)"))) {
     # no interaction + s() transform
-    df[stringr::str_interp("${predictor_cols[1]}_smooth")] <- stats::predict(
+    col_name <- stringr::str_extract(predictor_full, "(?<=\\().+(?=\\))")
+    df[stringr::str_interp("${col_name}_smooth")] <- stats::predict(
       regression_model,
       type = "terms"
     )[, predictor_full]
-    predictor_full <- stringr::str_interp("${predictor_cols[1]}_smooth")
+    predictor_full <- stringr::str_interp("${col_name}_smooth")
   }
 
   list(
@@ -3078,12 +3070,12 @@ transform_variables <- function(regression_model,
 #' @param regression_model
 #'  The (simplified) regression model.
 #' @param models_overview
-#'  Custom model summary (see [LazyModeler::expanded_model_summary()]).
+#'  Custom model summary (see [LazyModeler::expand_model_summary()]).
 #' @param model_type
 #'  Type of regression model (e.g., 'glm').
 #' @param model_family
-#'  Model family used for glm calculation.
-#'  Default: gaussian.
+#'  A character string describing the family used for model calculation.
+#'  See [stats::family] for options.
 #' @param plot_type
 #'  Whether to plot as boxplot or violin plot for
 #'  categorical variables. Default: boxplot.
@@ -3099,15 +3091,16 @@ transform_variables <- function(regression_model,
 #' @return
 #'  Regression plots of variables listed within the model summary.
 plot_regression <- function(
-    regression_model,
-    models_overview,
-    model_type,
-    model_family,
-    plot_type = "boxplot",
-    jitter_plots = FALSE,
-    test = "wilcox",
-    round_p = 5,
-    plot_curve = FALSE) {
+  regression_model,
+  models_overview,
+  model_type,
+  model_family,
+  plot_type = "boxplot",
+  jitter_plots = FALSE,
+  test = "wilcox",
+  round_p = 5,
+  plot_curve = FALSE
+) {
   if (jitter_plots) {
     jitter <- "jitter"
   } else {
@@ -3135,8 +3128,8 @@ plot_regression <- function(
   # plot categorical vars (if no interaction with numeric)
   for (cat_var in unique(
     models_overview[
-      models_overview$var_type == "categorical",
-      "predictor_col"
+      models_overview$pred_type == "categorical",
+      "main_effect1"
     ]
   )) {
     res <- plot_regression_categorical(
@@ -3155,11 +3148,14 @@ plot_regression <- function(
   }
 
   # for continuous or mixed variables
-  for (predictor_full in models_overview[
-    (models_overview$var_type == "numeric") |
-      (models_overview$var_type == "mixed"),
-    "predictor"
-  ]) {
+  relevant_predictors <- models_overview[
+    models_overview$pred_type %in% c("numeric", "mixed"),
+  ] %>%
+    dplyr::filter(
+      (.data$pred_type != "mixed") |
+        (!duplicated(.data$main_effect1, .data$main_effect2))
+    )
+  for (predictor_full in relevant_predictors$predictor) {
     regression_plots <- plot_regression_numeric(
       predictor_full,
       regression_model,
@@ -3183,7 +3179,7 @@ plot_regression <- function(
 #'
 #' Plot effect sizes of model variables.
 #' @param models_overview
-#'  Custom model summary (see function [LazyModeler::expanded_model_summary()]).
+#'  Custom model summary (see function [LazyModeler::expand_model_summary()]).
 #' @return
 #'  A plot of the effect sizes of the variables listed within the model summary.
 plot_effect_size <- function(models_overview) {
@@ -3259,7 +3255,8 @@ run_stats <- function(df, response, predictor, test = "wilcox") {
         dplyr::mutate(comb = paste(
           sort(c(.data$idx1, .data$idx2)),
           collapse = "|"
-        ))
+        )) %>%
+        dplyr::ungroup()
 
       letter <- "A"
       for (i in seq_len(nrow(df_sorted))) {
@@ -3386,11 +3383,15 @@ run_stats <- function(df, response, predictor, test = "wilcox") {
 #'  The model to be used.
 #'  Options: glm or lm.
 #' @param model_family
-#'  The family used for model calculation.
+#'  A character string describing the family used for model calculation.
+#'  See [stats::family] for options.
 #' @param term
 #'  The call to be used with the model.
+#' @param categorical_vars
+#'  List of categorical variables within the model
+#'  (base names, i.e., names of columns)
 #' @param models_overview
-#'  Output of [LazyModeler::smaller_expanded_model_summary()].
+#'  Output of [LazyModeler::expand_model_summary()].
 #' @param boot_repl
 #'  A number or list of bootstrap replicates.
 #'  The default is no bootstrapping.
@@ -3408,6 +3409,7 @@ apply_psi <- function(df,
                       model_type,
                       model_family,
                       term,
+                      categorical_vars,
                       models_overview,
                       boot_repl = 100,
                       k = 2,
@@ -3434,7 +3436,7 @@ apply_psi <- function(df,
     selcorr::selcorr(mod_num, boot.repl = boot_repl, k = k, quiet = TRUE),
     error = function(e) {
       warning(paste("selcorr() failed:", e$message))
-      return(NULL)
+      NULL
     }
   )
 
@@ -3509,35 +3511,22 @@ apply_psi <- function(df,
     dplyr::filter(.data$Coefficient != "(Intercept)")
 
   # map original term to coefficient in results df
-  models_overview <- models_overview %>%
+  models_overview_psi <- models_overview %>%
     dplyr::rowwise() %>%
     dplyr::mutate(selcorr_coeff = gsub("\\^|\\(|\\)|\\:", ".",
       .data$predictor,
       perl = TRUE
-    ))
-  result <- merge(result,
-    models_overview[, c("selcorr_coeff", "predictor_col", "predictor")],
+    )) %>%
+    dplyr::ungroup() %>%
+    as.data.frame()
+  result <- merge(
+    result,
+    models_overview_psi,
     all.x = TRUE,
     all.y = FALSE,
     by.x = "Coefficient",
     by.y = "selcorr_coeff"
   )
-
-  result_w_original_coefs <- result
-  row.names(result_w_original_coefs) <- result_w_original_coefs$predictor
-  model_summary <- expanded_model_summary(
-    df,
-    result_w_original_coefs,
-    c("ploidy")
-  )
-
-  result <- merge(result,
-    model_summary,
-    by.x = "predictor",
-    by.y = "coefficients",
-    all = TRUE
-  )
-  result[result$is_interaction, "Corrected_p"] <- 0.1
 
   # determine which coefficients to remove
   # making sure that categorical is evaluated based on smallest p-value
@@ -3548,13 +3537,13 @@ apply_psi <- function(df,
       (result$is_interaction),
   ]
   main_effects_to_keep <- unique(c(
-    interactions_to_keep$inter_var1,
-    interactions_to_keep$inter_var2
+    interactions_to_keep$main_effect1,
+    interactions_to_keep$main_effect2
   ))
 
   result <- result %>%
     dplyr::mutate(to_remove = dplyr::case_when(
-      .data$var_type == "cat" ~ ifelse(
+      .data$pred_type == "categorical" ~ ifelse(
         ((is.na(.data$Corrected_p)) |
           (.data$Corrected_p > 0.05)) &
           ((is.na(.data$smallest_p_value)) |
@@ -3563,7 +3552,7 @@ apply_psi <- function(df,
         FALSE
       ),
       !.data$is_interaction ~ ifelse(
-        !(.data$predictor_col %in% main_effects_to_keep) &
+        !(.data$main_effect1 %in% main_effects_to_keep) &
           ((is.na(.data$Corrected_p)) | (.data$Corrected_p > 0.05)),
         TRUE,
         FALSE
@@ -3572,13 +3561,63 @@ apply_psi <- function(df,
       TRUE ~ FALSE
     ))
 
-  # remove non-significant coefficients from term using mapping
-  result[result$var_type == "cat", "predictor"] <- result[
-    result$var_type == "cat",
-    "cat_var"
-  ]
-  for (coef in result[result$to_remove, "predictor"]) {
-    term <- stats::update(term, paste(". ~ . -", coef))
+  # remove non-significant coefficients from term
+  to_remove_rows <- result[result$to_remove, ] %>%
+    dplyr::filter(
+      (.data$pred_type != "mixed") |
+        (!duplicated(.data$main_effect1, .data$main_effect2))
+    )
+  single_var_rows <- result[!result$is_interaction, ]
+  if (nrow(to_remove_rows) > 0) {
+    for (i in seq_len(nrow(to_remove_rows))) {
+      i_row <- to_remove_rows[i, ]
+      if (i_row$is_interaction) {
+        if (i_row$pred_type == "mixed") {
+          predictor <- i_row$predictor
+          main_effect1 <- i_row$main_effect1
+          main_effect2 <- i_row$main_effect2
+
+          if ((main_effect1 %in% single_var_rows$main_effect1) &&
+            (single_var_rows[
+              single_var_rows$main_effect1 == main_effect1,
+              "pred_type"
+            ][[1]] == "categorical")) {
+            coef_to_remove <- stringr::str_replace(
+              predictor,
+              sprintf(
+                "(?<=\\:|^)[^\\:]*%s[^\\:]*(?=\\:|$)",
+                main_effect1
+              ),
+              main_effect1
+            )
+          } else if ((main_effect2 %in% single_var_rows$main_effect1) &&
+            (single_var_rows[
+              single_var_rows$main_effect1 == main_effect2,
+              "pred_type"
+            ][[1]] == "categorical")) {
+            coef_to_remove <- stringr::str_replace(
+              predictor,
+              sprintf(
+                "(?<=\\:|^)[^\\:]*%s[^\\:]*(?=\\:|$)",
+                main_effect2
+              ),
+              main_effect2
+            )
+          }
+        } else {
+          coef_to_remove <- i_row$predictor
+        }
+      } else if (i_row$pred_type == "categorical") {
+        coef_to_remove <- i_row$main_effect1
+      } else {
+        coef_to_remove <- i_row$predictor
+      }
+
+      term <- stats::update(
+        stats::as.formula(term),
+        paste(". ~ . -", coef_to_remove)
+      )
+    }
   }
 
   model_args <- list(

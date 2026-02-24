@@ -11,7 +11,7 @@ forward_selection(
   evaluation_methods,
   categorical_vars,
   ...,
-  model_family = "binomial",
+  model_family = "gaussian",
   trace = FALSE,
   omit_na = "overall"
 )
@@ -20,7 +20,7 @@ forward_selection(
 \item{df}{Dataframe with response and predictors as columns}
 
 \item{model_type}{The model to be used.
-Options: (g/n)(l/a)m(er), default: glm.}
+Options: (g)lm, (g)lmer, nlmer, and gam. Default: glm.}
 
 \item{term}{The formula to be used with the model.
 Can be either quote() or formula().}
@@ -33,7 +33,8 @@ Options: anova, aic, aicc, bic. Default: anova.}
 
 \item{...}{Parameters to be directly used with model call}
 
-\item{model_family}{The family used for model calculation. Default: gaussian.}
+\item{model_family}{A character string describing the family used for model calculation.
+See \link[stats:family]{stats::family} for options. Default: gaussian.}
 
 \item{trace}{Store and return model selection history. Default: FALSE.}
 

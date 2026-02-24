@@ -8,7 +8,7 @@ tags:
 - (non)linear regression models (LM, GLM, LMER, GLMER, GAM, or NLMER)
 - relationship plotting
 
-date: "30 September 2025"
+date: "23 February 2026"
 output: pdf_document
 authors:
 - name: Lara M. Kösters
@@ -43,20 +43,26 @@ Our R package `LazyModeler` addresses these issues by automating variable select
 
 # Overview and major functions
 
-`LazyModeler` automatizes all necessary steps needed for use of (non)linear regression models. It comprises three major functions that are included within the main function `optimize_model`.
+`LazyModeler` automatizes all necessary steps needed for use of (non)linear regression models. It comprises three major functions that are included within the main function `optimize_model()`.
 
-The first major function `remove_autocorrelations` checks for any autocorrelations (\|r\| \> 0.7) [@Dormann2013] given a list of variables sorted by relevance. Automatic removal of these autocorrelations is possible through the use of a function parameter. Removal will follow the order of the list of variables, ensuring that the user's expertise on the importance of features is respected. A named list is returned with a) a vector containing all removed predictors, and b) a dataframe listing autocorrelations and information on deleted variables.
+The first major function `remove_autocorrelations()` checks for any autocorrelations (\|r\| \> 0.7) [@Dormann2013] given a list of variables sorted by relevance. Automatic removal of these autocorrelations is possible through the use of a function parameter. Removal will follow the order of the list of variables, ensuring that the user's expertise on the importance of features is respected. A named list is returned with a) a vector containing all removed predictors, and b) a dataframe listing autocorrelations and information on deleted variables.
 
-The main function provides the model formula to the second major function `simplify_model`. If autocorrelations were detected, the formula is updated accordingly. The regression model is then calculated. Options for the models are: `lm`, `glm`, `lmer`, `glmer`, `gam`, or `nlmer`, with all possible distributions of the response variable being allowed. Stepwise backward simplification or forward model selection takes place using an iterative process where each time the metric(s) specified by the user are applied on the model to check whether further simplification/selection is needed. Main variables are kept when they are involved in interactions. Options for the metrics are: `aov`, `aic`, `aicc`, or `bic`. The final model is returned to the main function alongside its metadata as well as simplification history if requested by the user.
+The main function provides the model formula to the second major function `simplify_model()`. If autocorrelations were detected, the formula is updated accordingly. The regression model is then calculated. Options for the models are: `stats::lm()`, `stats::glm()`, `lmerTest::lmer()`, `lme4::glmer()`, `mgcv::gam()`,`nlme::nlme()`, or `stats::nls()`, with all possible distributions of the response variable being allowed. Stepwise backward simplification or forward model selection takes place using an iterative process where each time the metric(s) specified by the user are applied on the model to check whether further simplification/selection is needed. Main variables are kept when they are involved in interactions. Options for the metrics are: `mgcv::anova.gam()`, `stats::anova()`, `nlme::anova.lme()`, `stats::AIC()`, `MuMIn::AICc()`, or `stats::BIC()`. The final model is returned to the main function alongside its metadata as well as simplification history if requested by the user.
 
-Using the third major function `plot_model_features`, the final model then undergoes multiple visualization steps. Plots to assess model quality are created using the standard plot function available through base R, or model check included in the `performance` R package [@Luedecke2021]. Furthermore, the script produces regression, box, or violin plots for each numerical or categorical coefficient as well as plots depicting effects sizes and estimates. All generated plots are returned to the user within a named list. The main function additionally returns the output of both the model simplification/selection and autocorrelation functions as well as the summary of the final model.
+Using the third major function `plot_model_features()`, the final model then undergoes multiple visualization steps. Plots to assess model quality are created using the standard plot function available through base R, or model check included in the `performance` R package [@Luedecke2021]. Furthermore, the script produces regression, box, or violin plots for each numerical or categorical coefficient as well as plots depicting effects sizes and estimates. All generated plots are returned to the user within a named list. The main function additionally returns the output of both the model simplification/selection and autocorrelation functions as well as the summary of the final model.
 
-`LazyModeler` makes use of the R package `corrplot` [@Wei2021] to calculate correlations between variables, `lme4` [@Bates2024] and `lmerTest` [@Kuznetsova2017] for regression modeling, `tidyverse` [@Wickham2019] for data handling, and `MuMIn` [@Barton2024] for calculation of AICc scores. For generation of plots visualizing regression, effect size, and estimates, the script further leverages `tidyverse` and color palettes included in the `colorspace` [@Zeileis2020] and `viridis` [@Garnier2024] R packages.
+`LazyModeler` makes use of the R package `corrplot` [@Wei2021] to calculate correlations between variables, `lme4` [@Bates2024], `lmerTest` [@Kuznetsova2017], `mgcv` [@Wood2011], and `nlme` [@Pinheiro2025] for regression modeling and ANOVA testing, `tidyverse` [@Wickham2019] for data handling, and `MuMIn` [@Barton2024] for calculation of AICc scores. For generation of plots visualizing regression, effect size, and estimates, the script further leverages `tidyverse` and color palettes included in the `colorspace` [@Zeileis2020] and `viridis` [@Garnier2024] R packages.
 
 # Example
+To get to know the package and its main function `optimize_model()`, we provide a testing dataset. This dataset contains information on European plant specimens, including geolocation, habitat, and ploidy [@Karbstein2021]. The corresponding data types are numeric (floats and integers) as well as categorical, offering a range of combinations for the user to test.
+
+A common usage requires an input dataframe as well as a starting term for the model. The term needs to be provided as a `quote()` and can encompass transformed variables and interactions (note: we currently only allow for 2-way interactions). If the user wants to check for autocorrelations, they can provide a list of coefficients (in the form of dataframe columns) that must be sorted by their relevance in descending order. If an autocorrelation is detected and the parameter `automatic_removal=TRUE` is set, the coefficient further down the list is removed first.
+
+To calculate the model, the user can provide the type of linear model to calculate (default: "glm"), and the family (default: "gaussian"). The user can also decide on the simplification direction ("forward" for forward selection, "backward" for backward simplification, or "both"). If no simplification is desired, setting `simplification_direction = "backward"` plus `backward_simplify_model = FALSE` yields the original model without simplification.
+
+The following example generates and optimizes a generalized linear model using the provided plant dataset and a term that includes geographic, ecological and genetic information. The pipeline checks for correlations between the values of the provided dataframe columns and removes autocorrelated variables. The autocorrelation-cleaned term is then used for backward simplification of the model. Finally, the information on the coefficients of the simplified model is plotted. To access the final model, the user can navigate to `models_with_info` within the result, then either to`forward` or `backward` depending on the chosen selection/simplification procedure, and then to `final_model`. The plots are stored alongside the model within `plots` - these plots cover the result of `performance::check_model()`, as well as the regression, estimate, and effect size plots.
 
 ``` r
-
 # import example data
 data(plants)
 
@@ -64,35 +70,43 @@ data(plants)
 str(plants)
 summary(plants)
 
-# testing dataset (subset) based on Karbstein et al. 2021
-# (https://onlinelibrary.wiley.com/doi/10.1111/mec.15919)
-
-results_example <- optimize_model(plants,
-    quote(sexual_seed_prop ~
-    altitude + latitude_gps_n + longitude_gps_e +
-    (solar_radiation + annual_mean_temperature +
-    isothermality)^2 + I(isothermality^2) +
-    habitat + ploidy),
-    autocorrelation_cols = c("solar_radiation",
-    "annual_mean_temperature", "isothermality", "altitude",
-    "latitude_gps_n", "longitude_gps_e"),
+results_example <- optimize_model(
+	df = plants,
+    term = quote(sexual_seed_prop ~
+			     altitude +
+			     latitude_gps_n +
+			     longitude_gps_e +
+			     (solar_radiation +
+				     annual_mean_temperature +
+				     isothermality)^2 +
+				 I(isothermality^2) +
+				 habitat +
+				 ploidy),
+    autocorrelation_cols = c(
+	    "solar_radiation",
+	    "annual_mean_temperature",
+	    "isothermality",
+	    "altitude",
+	    "latitude_gps_n",
+	    "longitude_gps_e"
+	),
     automatic_removal=TRUE,
     autocorrelation_threshold = 0.8,
     correlation_method="spearman",
+    cor_use="complete.obs",
     model_type = "glm",
     model_family = "quasibinomial",
-    assessment_methods=c("anova"),
+    evaluation_methods=c("anova"),
     simplification_direction="backward",
-    omit.na="overall",
+    backward_simplify_model=TRUE,
+    omit_na="overall",
     scale_predictor=TRUE,
     plot_quality_assessment="performance",
     round_p=3,
-    cor_use="complete.obs",
     plot_relationships=TRUE,
     jitter_plots=TRUE,
     plot_type="violinplot",
     stat_test="wilcox",
-    backward_simplify_model=TRUE,
     trace=TRUE)
 ```
 

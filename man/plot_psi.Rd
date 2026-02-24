@@ -17,5 +17,6 @@ plot_psi(psi_df, p_threshold = 0.05, label_size = 2.5)
 Plot displaying p-values before and after post selection inference
 }
 \description{
-Plot p-values of model coefficients before and after post selection inference.
+Plot p-values of model coefficients before and
+after post selection inference.
 }
