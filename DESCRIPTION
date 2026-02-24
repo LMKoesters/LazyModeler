@@ -1,7 +1,7 @@
 Package: LazyModeler
 Type: Package
 Title: Automatic Simplification, Check, and Visualization of Regression Models
-Version: 0.2.4
+Version: 0.3.0
 Authors@R: 
     c(person(given = "Lara",
              family = "Kösters",
