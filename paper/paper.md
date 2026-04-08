@@ -8,7 +8,7 @@ tags:
 - (non)linear regression models (LM, GLM, LMER, GLMER, GAM, or NLMER)
 - relationship plotting
 
-date: "23 February 2026"
+date: "8 April 2026"
 output: pdf_document
 authors:
 - name: Lara M. Kösters
@@ -60,7 +60,7 @@ A common usage requires an input dataframe as well as a starting term for the mo
 
 To calculate the model, the user can provide the type of linear model to calculate (default: "glm"), and the family (default: "gaussian"). The user can also decide on the simplification direction ("forward" for forward selection, "backward" for backward simplification, or "both"). If no simplification is desired, setting `simplification_direction = "backward"` plus `backward_simplify_model = FALSE` yields the original model without simplification.
 
-The following example generates and optimizes a generalized linear model using the provided plant dataset and a term that includes geographic, ecological and genetic information. The pipeline checks for correlations between the values of the provided dataframe columns and removes autocorrelated variables. The autocorrelation-cleaned term is then used for backward simplification of the model. Finally, the information on the coefficients of the simplified model is plotted. To access the final model, the user can navigate to `models_with_info` within the result, then either to `forward` or `backward` depending on the chosen selection/simplification procedure, and then to `final_model`. The plots are stored alongside the model within `plots` - these plots cover the result of `performance::check_model()`, as well as the regression, estimate, and effect size plots.
+The following example generates and optimizes a generalized linear model using the provided plant dataset and a term that includes reproductive, geographic, ecological, and genetic information. The aim of the model is to identify the cytogenetic (ploidy), environmental (altitude, latitude_gps_n, longitude_gps_e, solar_radiation, annual_mean_temperature, isothermality) factors that determine the production of sexual seeds (sexual_seed_prop ) in the facultatively asexual model plant group _Ranunculus auricomus_ (Ranunculaceae). Please see [@Karbstein2021] for more details. The pipeline checks for correlations between the values of the provided dataframe columns and removes autocorrelated variables. The autocorrelation-cleaned term is then used for backward simplification of the model. Finally, the information on the coefficients of the simplified model is plotted. To access the final model, the user can navigate to `models_with_info` within the result, then either to `forward` or `backward` depending on the chosen selection/simplification procedure, and then to `final_model`. The plots are stored alongside the model within `plots` - these plots cover the result of `performance::check_model()`, as well as the regression, estimate, and effect size plots.
 
 ``` r
 # import example data
@@ -90,24 +90,24 @@ results_example <- optimize_model(
 	    "latitude_gps_n",
 	    "longitude_gps_e"
 	),
-    automatic_removal=TRUE,
+    automatic_removal = TRUE,
     autocorrelation_threshold = 0.8,
-    correlation_method="spearman",
-    cor_use="complete.obs",
+    correlation_method = "spearman",
+    cor_use = "complete.obs",
     model_type = "glm",
     model_family = "quasibinomial",
-    evaluation_methods=c("anova"),
-    simplification_direction="backward",
-    backward_simplify_model=TRUE,
-    omit_na="overall",
-    scale_predictor=TRUE,
-    plot_quality_assessment="performance",
-    round_p=3,
-    plot_relationships=TRUE,
-    jitter_plots=TRUE,
-    plot_type="violinplot",
-    stat_test="wilcox",
-    trace=TRUE)
+    evaluation_methods = c("anova"),
+    simplification_direction = "backward",
+    backward_simplify_model = TRUE,
+    omit_na = "overall",
+    scale_predictor = TRUE,
+    plot_quality_assessment = "performance",
+    round_p = 3,
+    plot_relationships = TRUE,
+    jitter_plots = TRUE,
+    plot_type = "violinplot",
+    stat_test = "wilcox",
+    trace = TRUE)
 ```
 
 ![Navigating through the output. For example, (a) simply click on dataframe button highlighted with a red arrow to (b) illustrate the final model output.](assets/figure1.png)
