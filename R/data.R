@@ -1,7 +1,7 @@
 #' Traits of 220 populations of the Ranunculus auricomus species complex
 #'
 #' A dataset containing the traits of 220
-#'  plant populations. The variables are as follows:
+#'  plant populations.
 #'
 #' @format A data frame with 220 rows and 13 variables:
 #' \itemize{

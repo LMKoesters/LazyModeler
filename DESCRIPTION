@@ -27,7 +27,6 @@ Imports:
     ggplot2,
     ggrepel,
     graphics,
-    grDevices,
     lme4,
     lmerTest,
     mgcv,
@@ -42,7 +41,8 @@ Imports:
     stringr,
     tibble,
     tidyr,
-    utils
+    utils,
+    withr
 Suggests: 
     see,
     testthat (>= 3.0.0)

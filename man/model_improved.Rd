@@ -24,8 +24,9 @@ Options are: anova, aic, aicc, and bic}
 Either 'forward' (i.e., forward selection),
 or 'backward' (i.e., backward simplification).}
 
-\item{model_type}{The model to be used. Options: (g)lm, (g)lmer, nlmer, and gam.
-Default: glm.}
+\item{model_type}{Model type to be used.
+Options: "lm", "glm", "lmer", "glmer",
+"nlmer", and "gam".}
 }
 \value{
 Boolean; TRUE if model 1 better fits the data than model 2

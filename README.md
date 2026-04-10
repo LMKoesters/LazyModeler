@@ -104,7 +104,7 @@ results_example <- optimize_model(
 Navigating through the output. For example, (a) simply click on dataframe button highlighted with a red arrow to (b) illustrate the final model output.
 
 ![(a) Model quality check and (b,c) exemplary output plots of significant relationships.](paper/assets/figure2.png)
-(a) Model quality check and (b,c) exemplary output plots of significant relationships.
+(a) Model quality check provided by `performance::model_check()` and (b,c) exemplary output plots of significant relationships.
 
 # Community guidelines
 We welcome contributions, feedback, and suggestions to improve this project.

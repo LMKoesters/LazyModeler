@@ -24,7 +24,9 @@ remove_autocorrelations(
 
 \item{autocorrelation_threshold}{Threshold at which two variables are considered autocorrelated}
 
-\item{correlation_method}{Method used for correlation calculation}
+\item{correlation_method}{The method used for correlation calculation.
+Either "spearman" or "pearson".
+Default: "pearson".}
 }
 \value{
 Named list with a) a vector containing all removed predictors

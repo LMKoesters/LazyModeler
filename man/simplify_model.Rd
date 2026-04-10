@@ -21,14 +21,15 @@ simplify_model(
 \arguments{
 \item{df}{Dataframe with response and predictors as columns}
 
-\item{model_type}{The model to be used.
-Options: (g)lm, (g)lmer, nlmer, and gam.}
+\item{model_type}{Model type to be used.
+Options: "lm", "glm", "lmer", "glmer",
+"nlmer", and "gam".}
 
 \item{term}{The formula to be used with the model.
 Can be either quote() or formula()}
 
 \item{evaluation_methods}{Methods to be used for model evaluation.
-Options: anova, aic, aicc, bic}
+Options: "anova", "aic", "aicc", "bic".}
 
 \item{...}{Parameters to be directly used with model call}
 

@@ -23,7 +23,7 @@ apply_psi(
 \item{regression_model}{A starter glm model with a complete term.}
 
 \item{model_type}{The model to be used.
-Options: glm or lm.}
+Options: "glm" or "lm".}
 
 \item{model_family}{A character string describing the family used for model calculation.
 See \link[stats:family]{stats::family} for options.}

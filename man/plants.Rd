@@ -26,6 +26,6 @@ data(plants)
 }
 \description{
 A dataset containing the traits of 220
-plant populations. The variables are as follows:
+plant populations.
 }
 \keyword{datasets}

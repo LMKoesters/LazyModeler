@@ -19,8 +19,9 @@ forward_selection(
 \arguments{
 \item{df}{Dataframe with response and predictors as columns}
 
-\item{model_type}{The model to be used.
-Options: (g)lm, (g)lmer, nlmer, and gam. Default: glm.}
+\item{model_type}{Model type to be used.
+Options: "lm", "glm", "lmer", "glmer",
+"nlmer", and "gam".}
 
 \item{term}{The formula to be used with the model.
 Can be either quote() or formula().}

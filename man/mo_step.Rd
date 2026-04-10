@@ -34,8 +34,9 @@ Options: anova, aic, aicc, bic, default: anova.}
 \item{categorical_vars}{List of categorical variables within the model
 (base names, i.e., names of columns)}
 
-\item{model_type}{The model to be used.
-Options: (g)lm, (g)lmer, nlmer, and gam. Default: glm.}
+\item{model_type}{Model type to be used.
+Options: "lm", "glm", "lmer", "glmer",
+"nlmer", and "gam".}
 
 \item{blank_start}{Used for first run in forward model selection.
 Creates empty model.}

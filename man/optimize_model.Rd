@@ -51,20 +51,23 @@ Last element gets eliminated first.}
 Default: 0.7.}
 
 \item{correlation_method}{The method used for correlation calculation.
+Either "spearman" or "pearson".
 Default: "pearson".}
 
-\item{cor_use}{Parameter 'use' for 'cor' method.
+\item{cor_use}{Parameter 'use' for 'cor()' method.
 Describes handling of missing values.
+See \code{\link[stats:cor]{stats::cor()}} for further information.
 Default: "complete.obs".}
 
 \item{model_type}{Model type to be used.
-Options: (g)lm, (g)lmer, nlmer, and gam. Default: glm.}
+Options: "lm", "glm", "lmer", "glmer",
+"nlmer", and "gam". Default: "glm".}
 
 \item{model_family}{A character string describing the family used for model calculation.
-See \link[stats:family]{stats::family} for options. Default: gaussian.}
+See \link[stats:family]{stats::family} for options. Default: "gaussian".}
 
 \item{evaluation_methods}{Methods to be used for model evaluation.
-Options: anova, aic, aicc, bic. Default: anova.}
+Options: "anova", "aic", "aicc", "bic". Default: "anova".}
 
 \item{simplification_direction}{Mode of stepwise model improvement.
 Either "forward" (i.e., forward selection),

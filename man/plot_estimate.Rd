@@ -11,7 +11,9 @@ plot_estimate(models_overview, regression_model, model_type)
 
 \item{regression_model}{The (simplified) regression model}
 
-\item{model_type}{Type of regression model (e.g., 'glm')}
+\item{model_type}{Model type to be used.
+Options: "lm", "glm", "lmer", "glmer",
+"nlmer", and "gam".}
 }
 \value{
 A plot of the estimates listed within the model summary

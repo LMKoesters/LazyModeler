@@ -47,7 +47,7 @@ Our R package `LazyModeler` addresses these issues by automating variable select
 
 The first major function `remove_autocorrelations()` checks for any autocorrelations (\|r\| \> 0.7) [@Dormann2013] given a list of variables sorted by relevance. Automatic removal of these autocorrelations is possible through the use of a function parameter. Removal will follow the order of the list of variables, ensuring that the user's expertise on the importance of features is respected. A named list is returned with a) a vector containing all removed predictors, and b) a dataframe listing autocorrelations and information on deleted variables.
 
-The main function provides the model formula to the second major function `simplify_model()`. If autocorrelations were detected, the formula is updated accordingly. The regression model is then calculated. Options for the models are: `stats::lm()`, `stats::glm()`, `lmerTest::lmer()`, `lme4::glmer()`, `mgcv::gam()`,`nlme::nlme()`, or `stats::nls()`, with all possible distributions of the response variable being allowed. Stepwise backward simplification or forward model selection takes place using an iterative process where each time the metric(s) specified by the user are applied on the model to check whether further simplification/selection is needed. Main variables are kept when they are involved in interactions. Options for the metrics are: `mgcv::anova.gam()`, `stats::anova()`, `nlme::anova.lme()`, `stats::AIC()`, `MuMIn::AICc()`, or `stats::BIC()`. The final model is returned to the main function alongside its metadata as well as simplification history if requested by the user.
+The main function provides the model formula to the second major function `simplify_model()`. If autocorrelations were detected, the formula is updated accordingly. The regression model is then calculated. Options for the models are: `stats::lm()`, `stats::glm()`, `lmerTest::lmer()`, `lme4::glmer()`, `mgcv::gam()`, `nlme::nlme()`, or `stats::nls()`, with all possible distributions of the response variable being allowed. Stepwise backward simplification or forward model selection takes place using an iterative process where each time the metric(s) specified by the user are applied on the model to check whether further simplification/selection is needed. Main variables are kept when they are involved in interactions. Options for the metrics are: `mgcv::anova.gam()`, `stats::anova()`, `nlme::anova.lme()`, `stats::AIC()`, `MuMIn::AICc()`, or `stats::BIC()`. The final model is returned to the main function alongside its metadata as well as simplification history if requested by the user.
 
 Using the third major function `plot_model_features()`, the final model then undergoes multiple visualization steps. Plots to assess model quality are created using the standard plot function available through base R, or model check included in the `performance` R package [@Luedecke2021]. Furthermore, the script produces regression, box, or violin plots for each numerical or categorical coefficient as well as plots depicting effects sizes and estimates. All generated plots are returned to the user within a named list. The main function additionally returns the output of both the model simplification/selection and autocorrelation functions as well as the summary of the final model.
 
@@ -60,7 +60,7 @@ A common usage requires an input dataframe as well as a starting term for the mo
 
 To calculate the model, the user can provide the type of linear model to calculate (default: "glm"), and the family (default: "gaussian"). The user can also decide on the simplification direction ("forward" for forward selection, "backward" for backward simplification, or "both"). If no simplification is desired, setting `simplification_direction = "backward"` plus `backward_simplify_model = FALSE` yields the original model without simplification.
 
-The following example generates and optimizes a generalized linear model using the provided plant dataset and a term that includes geographic, ecological and genetic information. The pipeline checks for correlations between the values of the provided dataframe columns and removes autocorrelated variables. The autocorrelation-cleaned term is then used for backward simplification of the model. Finally, the information on the coefficients of the simplified model is plotted. To access the final model, the user can navigate to `models_with_info` within the result, then either to `forward` or `backward` depending on the chosen selection/simplification procedure, and then to `final_model`. The plots are stored alongside the model within `plots` - these plots cover the result of `performance::check_model()`, as well as the regression, estimate, and effect size plots.
+The following example generates and optimizes a generalized linear model using the provided plant dataset and a term that includes geographic, ecological, and genetic information. The pipeline checks for correlations between the values of the provided dataframe columns and removes autocorrelated variables. The autocorrelation-cleaned term is then used for backward simplification of the model. Finally, the information on the coefficients of the simplified model is plotted. To access the final model, the user can navigate to `models_with_info` within the result, then either to `forward` or `backward` depending on the chosen selection/simplification procedure, and then to `final_model`. The plots are stored alongside the model within `plots` - these plots cover the result of `performance::check_model()`, as well as the regression, estimate, and effect size plots.
 
 ``` r
 # import example data
@@ -71,7 +71,7 @@ str(plants)
 summary(plants)
 
 results_example <- optimize_model(
-	df = plants,
+    df = plants,
     term = quote(sexual_seed_prop ~
 			     altitude +
 			     latitude_gps_n +
@@ -112,7 +112,7 @@ results_example <- optimize_model(
 
 ![Navigating through the output. For example, (a) simply click on dataframe button highlighted with a red arrow to (b) illustrate the final model output.](assets/figure1.png)
 
-![(a) Model quality check and (b,c) exemplary output plots of significant relationships.](assets/figure2.png)
+![(a) Model quality check provided by `performance::model_check()` and (b,c) exemplary output plots of significant relationships.](assets/figure2.png)
 
 
 \clearpage
@@ -123,7 +123,7 @@ In summary, `LazyModeler` streamlines the process of building, simplifying, and 
 
 # Important note
 
-The model selection procedures implemented in `LazyModeler` are provided for convenience and exploratory analysis, and reflect practices recommended in widely used applied statistics literature [@Crawley2007; @Crawley2015]. Users should be aware, however, that statistical inference reported from a model chosen in a data-driven way may be anti-conservative (e.g., p-values may appear smaller than they truly are, confidence intervals narrower). This issue is known as post-selection inference (PSI). Specialized methods have been developed to address it, for instance [@Lee2016], but they are not yet broadly applicable across the full range of model classes supported by `LazyModeler`. We have implemented PSI for (generalized) linear regression models based on the 'selcorr' R package [@Cattaneo2021], but users are free to use the retained model from `LazyModeler` for more sophisticated PSI analyses.
+The model selection procedures implemented in `LazyModeler` are provided for convenience and exploratory analysis, and reflect practices recommended in widely used applied statistics literature [@Crawley2007; @Crawley2015]. Users should be aware, however, that statistical inference reported from a model chosen in a data-driven way may be anti-conservative (e.g., p-values may appear smaller than they truly are, confidence intervals narrower). This issue is known as post-selection inference (PSI). Specialized methods have been developed to address it [e.g., @Lee2016], but they are not yet broadly applicable across the full range of model classes supported by `LazyModeler`. We have implemented PSI for (generalized) linear regression models based on the 'selcorr' R package [@Cattaneo2021], but users are free to use the retained model from `LazyModeler` for more sophisticated PSI analyses.
 
 # Code availability
 

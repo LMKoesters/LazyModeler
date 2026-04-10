@@ -11,8 +11,9 @@ remove_nas(df, term, model_type)
 
 \item{term}{The formula to be used with the model. Can be either quote() or formula()}
 
-\item{model_type}{The model to be used.
-Options: (g)lm, (g)lmer, nlmer, and gam.}
+\item{model_type}{Model type to be used.
+Options: "lm", "glm", "lmer", "glmer",
+"nlmer", and "gam".}
 }
 \value{
 List containing the final regression model,
