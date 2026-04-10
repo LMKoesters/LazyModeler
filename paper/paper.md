@@ -90,24 +90,24 @@ results_example <- optimize_model(
 	    "latitude_gps_n",
 	    "longitude_gps_e"
 	),
-    automatic_removal = TRUE, ### Alternative FALSE
+    automatic_removal = TRUE,
     autocorrelation_threshold = 0.8,
-    correlation_method = "spearman", ### Alternative 'pearson'
-    cor_use = "complete.obs", ### Alternative 'everything'
-    model_type = "glm", ### Alternatives 'lm', 'lmer', 'glmer', 'nlmer', or 'gam'
-    model_family = "quasibinomial", ### Alternatives 'gaussian', 'binomial', 'poisson', etc.
-    evaluation_methods = c("anova"), ### Alternatives 'aic', 'aicc', and 'bic'
-    simplification_direction = "backward", ### Alternative 'forward' or 'both'
-    backward_simplify_model = TRUE, ### Alternative FALSE
-    omit_na = "overall", ### Alternative 'stepwise'
-    scale_predictor = TRUE, ### Alternative FALSE
-    plot_quality_assessment = "performance", ### Alternative 'baseR'
+    correlation_method = "spearman",
+    cor_use = "complete.obs",
+    model_type = "glm",
+    model_family = "quasibinomial",
+    evaluation_methods = c("anova"),
+    simplification_direction = "backward",
+    backward_simplify_model = TRUE,
+    omit_na = "overall",
+    scale_predictor = TRUE,
+    plot_quality_assessment = "performance",
     round_p = 3,
-    plot_relationships = TRUE, ### Alternative FALSE
-    jitter_plots = TRUE, ### Alternative FALSE
-    plot_type = "violin", ### Alternative 'boxplot'
-    stat_test = "wilcox", ### Alternative 't.test'
-    trace = TRUE) ### Alternative FALSE
+    plot_relationships = TRUE,
+    jitter_plots = TRUE,
+    plot_type = "violin",
+    stat_test = "wilcox",
+    trace = TRUE)
 ```
 
 ![Navigating through the output. For example, (a) simply click on the data frame button highlighted with a red arrow to (b) illustrate the final model output.](assets/figure1.png)

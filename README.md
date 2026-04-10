@@ -51,7 +51,7 @@ A common usage requires an input data frame as well as a starting term for the m
 
 To calculate the model, the user can provide the type of linear model to calculate (default: "glm"), and the family (default: "gaussian"). The user can also decide on the simplification direction ("forward" for forward selection, "backward" for backward simplification, or "both"). If no simplification is desired, setting `simplification_direction = "backward"` plus `backward_simplify_model = FALSE` yields the original model without simplification.
 
-The following example generates and optimizes a generalized linear model using the provided plant dataset and a term that includes plant reproductive, geographic, ecological, and cytogenetic information. The aim of the model is to identify the cytogenetic (ploidy levels [2n, 4n, etc.]), environmental (altitude in meters above sea level, latitude, longitude, WorldClim solar radiation [kJ m⁻² day⁻¹], BioClim annual mean temperature [°C], and BioClim isothermality [ratio of mean diurnal range to temperature annual range * 100]) factors that determine the production of sexual seeds (ratio of sexually to asexually formed seeds [%]) in the facultatively asexual model plant group _Ranunculus auricomus_ (Ranunculaceae). Please see [@Karbstein2021] for more details. The pipeline checks for correlations between the values of the provided data frame columns and removes autocorrelated variables. The autocorrelation-cleaned term is then used for backward simplification of the model. Finally, the information on the coefficients of the simplified model is plotted. To access the final model, the user can navigate to `models_with_info` within the result, then either to `forward` or `backward` depending on the chosen selection/simplification procedure, and then to `final_model`. The plots are stored alongside the model within `plots` - these plots cover the result of `performance::check_model()`, as well as the regression, estimate, and effect size plots.
+The following example generates and optimizes a generalized linear model using the provided plant dataset and a term that includes plant reproductive, geographic, ecological, and cytogenetic information. The aim of the model is to identify the cytogenetic (ploidy levels [2n, 4n, etc.]), environmental (altitude in meters above sea level, latitude, longitude, WorldClim solar radiation [kJ m⁻² day⁻¹], BioClim annual mean temperature [°C], and BioClim isothermality [ratio of mean diurnal range to temperature annual range * 100]) factors that determine the production of sexual seeds (ratio of sexually to asexually formed seeds [%]) in the facultatively asexual model plant group _Ranunculus auricomus_ (Ranunculaceae). Please see Karbstein et al. 2021 for more details. The pipeline checks for correlations between the values of the provided data frame columns and removes autocorrelated variables. The autocorrelation-cleaned term is then used for backward simplification of the model. Finally, the information on the coefficients of the simplified model is plotted. To access the final model, the user can navigate to `models_with_info` within the result, then either to `forward` or `backward` depending on the chosen selection/simplification procedure, and then to `final_model`. The plots are stored alongside the model within `plots` - these plots cover the result of `performance::check_model()`, as well as the regression, estimate, and effect size plots.
 
 
 ``` r
@@ -82,24 +82,24 @@ results_example <- optimize_model(
 	    "latitude_gps_n",
 	    "longitude_gps_e"
 	),
-    automatic_removal = TRUE, ### Alternative FALSE
+    automatic_removal = TRUE,
     autocorrelation_threshold = 0.8,
-    correlation_method = "spearman", ### Alternative 'pearson'
-    cor_use = "complete.obs", ### Alternative 'everything'
-    model_type = "glm", ### Alternatives 'lm', 'lmer', 'glmer', 'nlmer', or 'gam'
-    model_family = "quasibinomial", ### Alternatives 'gaussian', 'binomial', 'poisson', etc.
-    evaluation_methods = c("anova"), ### Alternatives 'aic', 'aicc', and 'bic'
-    simplification_direction = "backward", ### Alternative 'forward' or 'both'
-    backward_simplify_model = TRUE, ### Alternative FALSE
-    omit_na = "overall", ### Alternative 'stepwise'
-    scale_predictor = TRUE, ### Alternative FALSE
-    plot_quality_assessment = "performance", ### Alternative 'baseR'
+    correlation_method = "spearman",
+    cor_use = "complete.obs",
+    model_type = "glm",
+    model_family = "quasibinomial",
+    evaluation_methods = c("anova"),
+    simplification_direction = "backward",
+    backward_simplify_model = TRUE,
+    omit_na = "overall",
+    scale_predictor = TRUE,
+    plot_quality_assessment = "performance",
     round_p = 3,
-    plot_relationships = TRUE, ### Alternative FALSE
-    jitter_plots = TRUE, ### Alternative FALSE
-    plot_type = "violin", ### Alternative 'boxplot'
-    stat_test = "wilcox", ### Alternative 't.test'
-    trace = TRUE) ### Alternative FALSE
+    plot_relationships = TRUE,
+    jitter_plots = TRUE,
+    plot_type = "violin",
+    stat_test = "wilcox",
+    trace = TRUE)
 ```
 
 ![Navigating through the output. For example, (a) simply click on the data frame button highlighted with a red arrow to (b) illustrate the final model output.](paper/assets/figure1.png)
