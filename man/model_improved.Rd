@@ -26,7 +26,7 @@ or 'backward' (i.e., backward simplification).}
 
 \item{model_type}{Model type to be used.
 Options: "lm", "glm", "lmer", "glmer",
-"nlmer", and "gam".}
+"nlme", and "gam".}
 }
 \value{
 Boolean; TRUE if model 1 better fits the data than model 2

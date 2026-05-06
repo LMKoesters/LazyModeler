@@ -11,7 +11,7 @@ generate_regression_model(df, model_type, term, model_family, ...)
 
 \item{model_type}{Model type to be used.
 Options: "lm", "glm", "lmer", "glmer",
-"nlmer", and "gam".}
+"nlme", and "gam".}
 
 \item{term}{The formula to be used with the model.
 Can be either quote() or formula()}

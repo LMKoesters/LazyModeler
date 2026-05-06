@@ -61,7 +61,7 @@ Default: "complete.obs".}
 
 \item{model_type}{Model type to be used.
 Options: "lm", "glm", "lmer", "glmer",
-"nlmer", and "gam". Default: "glm".}
+"nlme", and "gam". Default: "glm".}
 
 \item{model_family}{A character string describing the family used for model calculation.
 See \link[stats:family]{stats::family} for options. Default: "gaussian".}

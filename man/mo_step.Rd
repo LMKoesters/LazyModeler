@@ -36,7 +36,7 @@ Options: anova, aic, aicc, bic, default: anova.}
 
 \item{model_type}{Model type to be used.
 Options: "lm", "glm", "lmer", "glmer",
-"nlmer", and "gam".}
+"nlme", and "gam".}
 
 \item{blank_start}{Used for first run in forward model selection.
 Creates empty model.}

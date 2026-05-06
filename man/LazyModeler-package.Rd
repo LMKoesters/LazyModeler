@@ -20,6 +20,7 @@ Useful links:
 
 Authors:
 \itemize{
+  \item Lara Kösters \email{lkoesters@bgc-jena.mpg.de} (\href{https://orcid.org/0000-0002-7913-2377}{ORCID})
   \item Kevin Karbstein (\href{https://orcid.org/0000-0003-1424-6557}{ORCID})
 }
 

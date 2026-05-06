@@ -14,7 +14,6 @@ Authors@R:
              comment = c(ORCID = "0000-0003-1424-6557")))
 Maintainer: Lara Kösters <lkoesters@bgc-jena.mpg.de>
 Description: Pipeline for easy performance of regression modeling. It includes removal of autocorrelated variables, choice between several types of (non)linear regression models, standard stepwise model simplification, various model quality checks, plotting of coefficient estimates and relationships, and output generation.
-RoxygenNote: 7.3.3
 Encoding: UTF-8
 LazyData: true
 BugReports: https://github.com/LMKoesters/LazyModeler/issues
@@ -50,3 +49,4 @@ Config/testthat/edition: 3
 License: GPL (>= 3)
 Roxygen: list(markdown = TRUE)
 Config/rcmdcheck/ignore-inconsequential-notes: true
+Config/roxygen2/version: 8.0.0

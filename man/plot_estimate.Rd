@@ -13,7 +13,7 @@ plot_estimate(models_overview, regression_model, model_type)
 
 \item{model_type}{Model type to be used.
 Options: "lm", "glm", "lmer", "glmer",
-"nlmer", and "gam".}
+"nlme", and "gam".}
 }
 \value{
 A plot of the estimates listed within the model summary

@@ -45,7 +45,7 @@ See \link[stats:family]{stats::family} for options.}
 
 \item{model_type}{Model type to be used.
 Options: "lm", "glm", "lmer", "glmer",
-"nlmer", and "gam".}
+"nlme", and "gam".}
 }
 \value{
 Returns regression plots of variables listed within the model summary.

@@ -13,7 +13,7 @@ remove_nas(df, term, model_type)
 
 \item{model_type}{Model type to be used.
 Options: "lm", "glm", "lmer", "glmer",
-"nlmer", and "gam".}
+"nlme", and "gam".}
 }
 \value{
 List containing the final regression model,
