@@ -2973,33 +2973,6 @@ plot_regression_numeric <- function(
 
     x <- parse(text = x)[[1]]
 
-    # CHECK: should be obsolete
-    # compute square
-    # if (stringr::str_detect(deparse(x), stringr::regex("I\\(.+\\^2\\)"))) {
-    #   x_base <- stringr::str_extract(
-    #     deparse(x),
-    #     stringr::regex("(?<=I\\().+(?=\\^2\\))")
-    #   )
-    #   new_x <- sprintf(
-    #     "%s_squared_%s",
-    #     x_base,
-    #     format(Sys.time(), format = "%Y%m%d%H%M")
-    #   )
-    #   df <- df %>%
-    #     dplyr::rename(!!new_x := deparse(x))
-    #   x <- parse(text = new_x)[[1]]
-    #   df[[new_x]] <- as.numeric(df[[new_x]])
-    # } else if (stringr::str_detect(deparse(x), ":")) {
-    #   new_x <- gsub(":", "_", deparse(x))
-    #   df <- as.data.frame(stats::model.matrix(regression_model))
-    #   df <- df %>%
-    #     dplyr::rename(!!new_x := deparse(x))
-    #   df[[response_str]] <- as.data.frame(
-    #     stats::model.frame(regression_model)
-    #     )[,response_str]
-    #   x <- parse(text = new_x)[[1]]
-    # }
-
     p <- ggplot2::ggplot(data = df, ggplot2::aes(x = !!x, y = !!response_sym)) +
       ggplot2::geom_point(
         color = "white",
@@ -3175,7 +3148,7 @@ transform_variables <- function(
 
           df <- df %>%
             dplyr::rename(
-              !!new_col := pred_w_tr
+              !!new_col := tidyr::all_of(pred_w_tr)
             )
 
           preds_w_tr[[length(preds_w_tr) + 1]] <- new_col
