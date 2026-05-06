@@ -322,7 +322,7 @@ add_assessments <- function(
 #' @param model_type
 #'  Model type to be used.
 #'  Options: "lm", "glm", "lmer", "glmer",
-#'  "nlmer", and "gam".
+#'  "nlme", and "gam".
 #' @return
 #'  Boolean; TRUE if model 1 better fits the data than model 2
 model_improved <- function(
@@ -403,7 +403,7 @@ model_improved <- function(
 #' @param model_type
 #'  Model type to be used.
 #'  Options: "lm", "glm", "lmer", "glmer",
-#'  "nlmer", and "gam".
+#'  "nlme", and "gam".
 #' @param term
 #'  The formula to be used with the model.
 #'  Can be either quote() or formula()
@@ -504,7 +504,7 @@ generate_regression_model <- function(df, model_type, term, model_family, ...) {
 #' @param model_type
 #'  Model type to be used.
 #'  Options: "lm", "glm", "lmer", "glmer",
-#'  "nlmer", and "gam".
+#'  "nlme", and "gam".
 #' @param term
 #'  The formula to be used with the model.
 #'  Can be either quote() or formula().
@@ -713,7 +713,7 @@ forward_selection <- function(
 #' @param model_type
 #'  Model type to be used.
 #'  Options: "lm", "glm", "lmer", "glmer",
-#'  "nlmer", and "gam".
+#'  "nlme", and "gam".
 #' @param blank_start
 #'  Used for first run in forward model selection.
 #'  Creates empty model.
@@ -1042,7 +1042,7 @@ mo_step <- function(
 #' @param model_type
 #'  Model type to be used.
 #'  Options: "lm", "glm", "lmer", "glmer",
-#'  "nlmer", and "gam".
+#'  "nlme", and "gam".
 #' @param term
 #'  The formula to be used with the model.
 #'  Can be either quote() or formula()
@@ -1198,7 +1198,7 @@ simplify_model <- function(
 #' @param model_type
 #'  Model type to be used.
 #'  Options: "lm", "glm", "lmer", "glmer",
-#'  "nlmer", and "gam".
+#'  "nlme", and "gam".
 #' @return
 #'  List containing the final regression model,
 #'  the significant and marginally significant model variables
@@ -1226,7 +1226,7 @@ remove_nas <- function(df, term, model_type) {
 #' @param model_type
 #'  Model type to be used.
 #'  Options: "lm", "glm", "lmer", "glmer",
-#'  "nlmer", and "gam".
+#'  "nlme", and "gam".
 #' @param term
 #'  The formula to be used with the model.
 #'  Can be either quote() or formula()
@@ -1891,7 +1891,7 @@ expand_model_summary <- function(
 #' @param model_type
 #'  Model type to be used.
 #'  Options: "lm", "glm", "lmer", "glmer",
-#'  "nlmer", and "gam". Default: "glm".
+#'  "nlme", and "gam". Default: "glm".
 #' @param model_family
 #'  A character string describing the family used for model calculation.
 #'  See [stats::family] for options. Default: "gaussian".
@@ -2042,8 +2042,8 @@ optimize_model <- function(
     )
     if (!all(are_cols_numeric)) {
       warning(
-        "You asked us to check non-numeric columns for autocorrelations.
-          We're gonna skip them for you, but please don't do it again. ;)"
+        "Non-numeric columns were removed from the list of columns to
+        check for autocorrelations."
       )
       autocorrelation_cols <- autocorrelation_cols[are_cols_numeric]
     }
@@ -2066,30 +2066,28 @@ optimize_model <- function(
   if ((plot_perf) && (!rlang::is_installed("see"))) {
     warning(
       "Install 'see' for performance-based diagnostic plots.
-    Falling back to base R plots."
+      Falling back to base R plots."
     )
     plot_quality_assessment <- "baseR"
   }
-  if (model_type == "nlme") {
+  if (model_type == "nlmer") {
     warning(
-      "We're not using the lme4 package so we'd rather
-      refer to this model type as nlme. ;)"
+      "This package relies on nlme::nlme() rather than lme4::nlmer().
+      Changing model type to 'nlme'."
     )
     model_type <- "nlme"
   }
   if ((model_type %in% c("lm", "lmer")) && (model_family != "gaussian")) {
     warning(
-      "When opting for lm and lmer models,
-      you should always specify gaussian as the model family.
-      But don't ya worry, I'll change the family for you. ;)"
+      "When opting for lm and lmer models, model family should be set to
+      'gaussian'. Changing model family to 'gaussian'."
     )
     model_family <- "gaussian"
   }
   if (!("anova" %in% evaluation_methods) && (grepl("quasi", model_family))) {
     warning(
-      "Anova is the only method (that we support) that works with
-      quasibinomial distributions. Imma change it for ya real quick,
-      but please remember this for your future endeavors. ;)"
+      "Anova is the only method supported by this package that works with
+      quasibinomial distributions. Changing model family to 'quasibinomial'."
     )
     evaluation_methods <- c("anova")
   }
@@ -2126,8 +2124,7 @@ optimize_model <- function(
     warning(
       "Please remember to add all main effects as separate items
       in your formula when including interactions.
-      We've added all main effects for you this time.
-      Might not next time, though, so better include 'em yourself. ;)"
+      Changed formula to include main effects."
     )
   }
 
@@ -2482,7 +2479,7 @@ optimize_model <- function(
 #' @param model_type
 #'  Model type to be used.
 #'  Options: "lm", "glm", "lmer", "glmer",
-#'  "nlmer", and "gam".
+#'  "nlme", and "gam".
 #' @param model_family
 #'  A character string describing the family used for model calculation.
 #'  See [stats::family] for options.
@@ -2619,7 +2616,7 @@ plot_model_features <- function(
 #' @param model_type
 #'  Model type to be used.
 #'  Options: "lm", "glm", "lmer", "glmer",
-#'  "nlmer", and "gam".
+#'  "nlme", and "gam".
 #' @return
 #'  A plot of the estimates listed within the model summary
 plot_estimate <- function(models_overview, regression_model, model_type) {
@@ -2903,7 +2900,7 @@ plot_regression_categorical <- function(
 #' @param model_type
 #'  Model type to be used.
 #'  Options: "lm", "glm", "lmer", "glmer",
-#'  "nlmer", and "gam".
+#'  "nlme", and "gam".
 #' @return
 #'  Returns regression plots of variables listed within the model summary.
 plot_regression_numeric <- function(
@@ -3254,7 +3251,7 @@ transform_variables <- function(
 #' @param model_type
 #'  Model type to be used.
 #'  Options: "lm", "glm", "lmer", "glmer",
-#'  "nlmer", and "gam".
+#'  "nlme", and "gam".
 #' @param model_family
 #'  A character string describing the family used for model calculation.
 #'  See [stats::family] for options.
