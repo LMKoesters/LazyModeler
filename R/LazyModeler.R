@@ -3973,7 +3973,7 @@ plot_psi <- function(psi_df, p_threshold = 0.05, label_size = 2.5) {
     warning("Found NA p-values. Replacing with 1.")
   }
 
-  psi_df |>
+  psi_df <- psi_df |>
     dplyr::mutate(
       Raw_p = ifelse(
         .data$Raw_p == 0,
