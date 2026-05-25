@@ -2448,14 +2448,17 @@ optimize_model <- function(
         k = psi_k,
         round_p = round_p
       )
-      psi_plot <- plot_psi(
-        psi_result$result,
-        p_threshold = psi_p_threshold,
-        label_size = psi_label_size
-      )
-
-      psi_result$plot <- psi_plot
-      final_model <- psi_result$psi_model
+      
+      if ("psi_model" %in% names(psi_result)) {
+        psi_plot <- plot_psi(
+          psi_result$result,
+          p_threshold = psi_p_threshold,
+          label_size = psi_label_size
+        )
+        
+        psi_result$plot <- psi_plot
+        final_model <- psi_result$psi_model
+      }
     }
 
     if (scale_predictor) {
@@ -3761,7 +3764,7 @@ apply_psi <- function(
       Raw_sig = ifelse(p_raw <= 0.05, "Yes", "No"),
       Corr_sig = NA
     )
-    return(result)
+    return(list(result = result))
   }
 
   # Extract corrected p-values
