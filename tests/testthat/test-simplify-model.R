@@ -7,16 +7,18 @@ test_that("simplify_model fits a model and returns expected components", {
     term = y ~ x1 + x2 + x3 + f1 + x1:f1,
     evaluation_methods = c("aic", "aicc", "bic", "anova"),
     direction = "both",
-    categorical_vars=c('f1'),
+    categorical_vars = c("f1"),
     backward_simplify_model = TRUE,
     trace = TRUE,
     omit_na = "overall"
   )
 
   expect_equal(c("forward", "backward"), names(res))
-  expect_equal(c("final_model", "significant_variables", "marginally_significant_variables", "history"),
+  expect_equal(c("final_model", "significant_variables",
+                 "marginally_significant_variables", "history"),
                names(res$backward))
-  expect_equal(c("final_model", "significant_variables", "marginally_significant_variables", "history"),
+  expect_equal(c("final_model", "significant_variables",
+                 "marginally_significant_variables", "history"),
                names(res$forward))
 })
 
@@ -29,14 +31,15 @@ test_that("simplification removes non-informative terms", {
     term = y ~ x1 + x2 + x3 + f1,
     evaluation_methods = c("aic"),
     direction = "backward",
-    categorical_vars=c('f1'),
+    categorical_vars = c("f1"),
     backward_simplify_model = TRUE,
     trace = FALSE
   )$backward
 
   m <- res$final_model
   expect_s3_class(m, "lm")
-  expect_false(grepl("\\bx2\\b", paste(deparse(stats::formula(m)), collapse = " ")))
+  expect_false(grepl("\\bx2\\b", paste(deparse(stats::formula(m)),
+                                       collapse = " ")))
 })
 
 test_that("interaction terms keep main effects", {

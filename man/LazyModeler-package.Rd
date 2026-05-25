@@ -11,6 +11,7 @@ Pipeline for easy performance of regression modeling. It includes removal of aut
 \seealso{
 Useful links:
 \itemize{
+  \item \url{https://github.com/LMKoesters/LazyModeler}
   \item Report bugs at \url{https://github.com/LMKoesters/LazyModeler/issues}
 }
 

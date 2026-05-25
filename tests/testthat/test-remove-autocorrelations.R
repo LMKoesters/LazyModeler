@@ -37,31 +37,33 @@ test_that("no autocorrelations -> removed_predictors empty", {
   expect_true(length(res$removed_predictors) == 0)
 })
 
-test_that("automatic removal removes later variable according to priority order", {
-  d <- make_tiny_data()
+test_that("automatic removal removes later variable according
+          to priority order", {
+            d <- make_tiny_data()
 
-  res <- remove_autocorrelations(
-    df = d,
-    coefficients = c("x1", "x2", "x3"),
-    autocorrelation_threshold = 0.8,
-    automatic_removal = TRUE
-  )
+            res <- remove_autocorrelations(
+              df = d,
+              coefficients = c("x1", "x2", "x3"),
+              autocorrelation_threshold = 0.8,
+              automatic_removal = TRUE
+            )
 
-  # check priority: x1 before x2 means that x2 should be removed
-  expect_true("x2" %in% res$removed_predictors)
-  expect_false("x1" %in% res$removed_predictors)
-})
+            # check priority: x1 before x2 means that x2 should be removed
+            expect_true("x2" %in% res$removed_predictors)
+            expect_false("x1" %in% res$removed_predictors)
+          })
 
 test_that("invalid inputs throw informative errors", {
   d <- make_tiny_data()
 
   expect_error(
-    remove_autocorrelations(df=d, coefficients = c("does_not_exist")),
+    remove_autocorrelations(df = d, coefficients = c("does_not_exist")),
     regexp = "does_not_exist|not found|unknown|column"
   )
 
   expect_error(
-    remove_autocorrelations(df=d, coefficients = c("x1", "x2", "x3"), autocorrelation_threshold = 1.5),
+    remove_autocorrelations(df = d, coefficients = c("x1", "x2", "x3"),
+                            autocorrelation_threshold = 1.5),
     regexp = "threshold|between|0|1"
   )
 })

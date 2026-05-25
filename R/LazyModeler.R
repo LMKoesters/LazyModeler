@@ -56,16 +56,16 @@ remove_autocorrelations <- function(
     corrplot::cor.mtest(df[, coefficients])$p
   )
 
-  correlations_l <- correlations %>%
-    tibble::rownames_to_column(var = "coefficientA") %>%
+  correlations_l <- correlations |>
+    tibble::rownames_to_column(var = "coefficientA") |>
     tidyr::pivot_longer(
       !"coefficientA",
       names_to = "coefficientB",
       values_to = "correlation"
     )
 
-  correlations_p_values_l <- correlation_p_values %>%
-    tibble::rownames_to_column(var = "coefficientA") %>%
+  correlations_p_values_l <- correlation_p_values |>
+    tibble::rownames_to_column(var = "coefficientA") |>
     tidyr::pivot_longer(
       !"coefficientA",
       names_to = "coefficientB",
@@ -78,22 +78,22 @@ remove_autocorrelations <- function(
     by = c("coefficientA", "coefficientB")
   )
 
-  correlations_complete <- correlations_complete %>%
-    dplyr::filter(.data$coefficientA != .data$coefficientB) %>%
+  correlations_complete <- correlations_complete |>
+    dplyr::filter(.data$coefficientA != .data$coefficientB) |>
     dplyr::mutate(
       col1 = pmin(.data$coefficientA, .data$coefficientB),
       col2 = pmax(.data$coefficientA, .data$coefficientB),
       comparison = paste(.data$col1, .data$col2)
-    ) %>%
-    dplyr::distinct(.data$comparison, .keep_all = TRUE) %>%
+    ) |>
+    dplyr::distinct(.data$comparison, .keep_all = TRUE) |>
     dplyr::select(!tidyr::any_of(c("col1", "col2", "comparison")))
 
-  autocorrelations <- correlations_complete %>%
+  autocorrelations <- correlations_complete |>
     dplyr::filter(
       ((.data$correlation >= autocorrelation_threshold) |
-        (.data$correlation <= -autocorrelation_threshold)) &
+         (.data$correlation <= -autocorrelation_threshold)) &
         (.data$p_value < 0.05)
-    ) %>%
+    ) |>
     tibble::add_column(note = NA)
 
   if (nrow(autocorrelations) > 0) {
@@ -116,14 +116,14 @@ remove_autocorrelations <- function(
         by.y = "coefficient",
         suffixes = c("1", "2")
       )
-      autocorrelations <- autocorrelations %>%
-        dplyr::rowwise() %>%
+      autocorrelations <- autocorrelations |>
+        dplyr::rowwise() |>
         dplyr::mutate(
           idx_smaller = sort(c(.data$idx1, .data$idx2))[[1]],
           idx_bigger = sort(c(.data$idx1, .data$idx2))[[2]],
           comb = paste(.data$idx_smaller, .data$idx_bigger, sep = "|")
-        ) %>%
-        dplyr::ungroup() %>%
+        ) |>
+        dplyr::ungroup() |>
         dplyr::arrange(dplyr::desc(.data$idx_bigger))
 
       for (i in seq_len(nrow(autocorrelations))) {
@@ -761,12 +761,6 @@ mo_step <- function(
     # check for interactions when removing single vars and remove them as well
     var_m <- var
 
-    #########
-    # Current bug:
-    # Categorical vars will not be recognized within interactions
-    # i.e.: ploidytetraploid:solar_radiation SHOULD BE ploidy:solar_radiation
-    # FIX THIS
-
     if (direction == "backward" && !stringr::str_detect(var, ":")) {
       for (interaction in interactions) {
         if (
@@ -974,7 +968,7 @@ mo_step <- function(
 
     if (
       ((direction == "forward") &&
-        (model_summary[1, "smallest_p_value"] > 0.1)) ||
+         (model_summary[1, "smallest_p_value"] > 0.1)) ||
         (!blank_start && !model_has_improved)
     ) {
       reason <- "the p-value was not significant"
@@ -989,7 +983,7 @@ mo_step <- function(
       this_p_value <- model_summary[
         (model_summary$predictor == var) |
           ((model_summary$base_term1 == var) &
-            (is.na(model_summary$base_term2))),
+             (is.na(model_summary$base_term2))),
         "smallest_p_value"
       ]
       if (length(this_p_value) > 1) this_p_value <- this_p_value[[1]]
@@ -1436,7 +1430,7 @@ find_call <- function(term, pred_full = NA, return = "all", df_cols = NA) {
     response <- formula.tools::lhs(stats::as.formula(term))
     if (length(response) > 1) {
       response <- deparse(formula.tools::lhs(response))
-      random_idx <- sapply(vars, function(y) grepl(y, randoms, fixed = TRUE))
+      random_idx <- vars %in% randoms
       out <- vars[(vars != response) & !random_idx]
     } else {
       response <- deparse(response)
@@ -1520,6 +1514,44 @@ determine_model_family <- function(df, response_frm) {
   }
 
   model_family
+}
+
+#' Get minimum p-value
+#'
+#' Determine minum p-value of numeric/categorical coefficients
+#' @param coef
+#'  Name of coefficient
+#' @param coef_type
+#'  Type of coefficient. Can be either 'numeric' or 'categorical'
+#' @param expanded_model_summary
+#'  Expanded model summary as returned by [LazyModeler::expand_model_summary()]
+#' @return
+#'  Minimum p-value of provided coefficient
+get_min_p <- function(coef, coef_type, expanded_model_summary) {
+  if (coef_type == "numeric") {
+    min_p <- min(
+      expanded_model_summary[
+        (expanded_model_summary$predictor == coef) |
+          (((!is.na(expanded_model_summary$base_term1)) &
+              (expanded_model_summary$base_term1 == coef)) |
+             ((!is.na(expanded_model_summary$base_term2)) &
+                (expanded_model_summary$base_term2 == coef))),
+        "p_value"
+      ]
+    )
+  } else if (coef_type == "categorical") {
+    min_p <- min(
+      expanded_model_summary[
+        (expanded_model_summary$predictor == coef) |
+          (expanded_model_summary$base_term1 == coef),
+        "p_value"
+      ]
+    )
+  } else {
+    min_p <- 0.0
+  }
+
+  min_p
 }
 
 #' A minor version of expanded model summary
@@ -1652,33 +1684,6 @@ expand_model_summary <- function(
     }
   }
 
-  get_min_p <- function(coef, coef_type) {
-    if (coef_type == "numeric") {
-      min_p <- min(
-        expanded_model_summary[
-          (expanded_model_summary$predictor == coef) |
-            (((!is.na(expanded_model_summary$base_term1)) &
-              (expanded_model_summary$base_term1 == coef)) |
-              ((!is.na(expanded_model_summary$base_term2)) &
-                (expanded_model_summary$base_term2 == coef))),
-          "p_value"
-        ]
-      )
-    } else if (coef_type == "categorical") {
-      min_p <- min(
-        expanded_model_summary[
-          (expanded_model_summary$predictor == coef) |
-            (expanded_model_summary$base_term1 == coef),
-          "p_value"
-        ]
-      )
-    } else {
-      min_p <- 0.0
-    }
-
-    min_p
-  }
-
   elim_cat_trait <- function(predictor, base_term1, base_term2) {
     pred_wo_trait <- predictor
 
@@ -1723,14 +1728,14 @@ expand_model_summary <- function(
     }
   }
 
-  expanded_model_summary <- model_summary %>%
-    tibble::rownames_to_column(var = "predictor") %>%
-    dplyr::filter(.data$predictor != "(Intercept)") %>%
+  expanded_model_summary <- model_summary |>
+    tibble::rownames_to_column(var = "predictor") |>
+    dplyr::filter(.data$predictor != "(Intercept)") |>
     dplyr::mutate(
       response = paste(response_frm),
       .before = "predictor"
-    ) %>%
-    dplyr::rename(p_value = tidyr::all_of(p_col)) %>%
+    ) |>
+    dplyr::rename(p_value = tidyr::all_of(p_col)) |>
     dplyr::mutate(
       is_interaction = dplyr::case_when(
         stringr::str_detect(.data$predictor, ":") ~ TRUE,
@@ -1800,9 +1805,9 @@ expand_model_summary <- function(
         p_value < 0.05 ~ "*",
         TRUE ~ "ns"
       )
-    ) %>%
-    dplyr::mutate_if(is.numeric, round, digits = round_p) %>%
-    dplyr::rowwise() %>%
+    ) |>
+    dplyr::mutate_if(is.numeric, round, digits = round_p) |>
+    dplyr::rowwise() |>
     dplyr::mutate(
       predictor_term = {
         if (.data$pred_type == "numeric") {
@@ -1817,23 +1822,25 @@ expand_model_summary <- function(
           )
         }
       }
-    ) %>%
-    dplyr::ungroup() %>%
+    ) |>
+    dplyr::ungroup() |>
     as.data.frame()
 
-  expanded_model_summary <- expanded_model_summary %>%
+  expanded_model_summary <- expanded_model_summary |>
     dplyr::mutate(
       smallest_p_value = dplyr::case_when(
         .data$pred_type == "categorical" ~ purrr::map2_dbl(
           .data$base_term1,
           .data$pred_type,
-          get_min_p
+          get_min_p,
+          expanded_model_summary = expanded_model_summary
         ),
         .data$pred_type == "numeric" & .data$predictor == .data$base_term1 ~
           purrr::map2_dbl(
             .data$predictor,
             .data$pred_type,
-            get_min_p
+            get_min_p,
+            expanded_model_summary = expanded_model_summary
           ),
         TRUE ~ .data$p_value
       )
@@ -1841,22 +1848,285 @@ expand_model_summary <- function(
 
   non_sign_interactions <- expanded_model_summary[
     ((expanded_model_summary$p_value > 0.1) |
-      (is.na(expanded_model_summary$p_value))) &
+       (is.na(expanded_model_summary$p_value))) &
       (expanded_model_summary$is_interaction),
   ]
 
   if (nrow(non_sign_interactions) > 0) {
-    expanded_model_summary <- expanded_model_summary %>%
+    expanded_model_summary <- expanded_model_summary |>
       dplyr::arrange(
         dplyr::desc(.data$is_interaction),
         dplyr::desc(.data$smallest_p_value)
       )
   } else {
-    expanded_model_summary <- expanded_model_summary %>%
+    expanded_model_summary <- expanded_model_summary |>
       dplyr::arrange(dplyr::desc(.data$smallest_p_value))
   }
 
   expanded_model_summary
+}
+
+
+#' Check for presence of main effects in term
+#'
+#' Function that updates a given term to include all main effects
+#'  if interactions are present
+#' @param term
+#'  The formula to be used with the model.
+#'  Can be either quote() or formula().
+#' @return
+#'  Updated term with all main effects
+check_for_main_effects <- function(term) {
+  # check that interactions + main effects are in formula (i.e., x:y + x + y)
+  main_effects <- as.character(find_call(term, return = "main_effects"))
+  interactions <- find_call(term, return = "interactions")
+  need_to_add <- FALSE
+
+  extract_main_effects <- function(interaction) {
+    interaction_w_tr <- interaction[[1]] != ":"
+
+    if (!interaction_w_tr) {
+      stringr::str_split(deparse(interaction), ":")[[1]]
+    } else {
+      extract_main_effects(interaction[[2]])
+    }
+  }
+
+  term <- stats::as.formula(term)
+  for (interaction in interactions) {
+    effects <- extract_main_effects(interaction)
+
+    for (effect in effects) {
+      new_term <- paste("~ . +", effect)
+      if (!(effect %in% main_effects)) {
+        term <- stats::update(term, new_term)
+        need_to_add <- TRUE
+      }
+    }
+  }
+
+  if (need_to_add) {
+    warning(
+      "Please remember to add all main effects as separate items
+        in your formula when including interactions.
+        Changed formula to include main effects."
+    )
+  }
+
+  term
+}
+
+
+#' Check for plausibility of chosen model family
+#'
+#' Function that checks whether chosen model family matches response variable
+#' @param df
+#'  Dataframe with response and predictors as columns.
+#' @param response_frm
+#'  Response formula
+#' @param model_type
+#'  Model type to be used.
+#'  Options: "lm", "glm", "lmer", "glmer",
+#'  "nlme", and "gam". Default: "glm".
+#' @param model_family
+#'  A character string describing the family used for model calculation.
+#'  See [stats::family] for options. Default: "gaussian".
+#' @return
+#'  Updated model family
+check_model_family <- function(df, response_frm, model_type, model_family) {
+  if (model_type != "nlme") {
+    possible_model_family <- determine_model_family(df, response_frm)
+    if (model_family == "automatic") {
+      if (length(possible_model_family) > 1) {
+        message(
+          sprintf(
+            "Your response variable allows for %s distribution.
+            Which one would you prefer?",
+            paste(possible_model_family, collapse = " and ")
+          )
+        )
+        model_family <- readline()
+      } else if (length(possible_model_family) == 0) {
+        stop("No appropriate family found. Please check data types of columns.")
+      } else {
+        model_family <- possible_model_family[1]
+        message(stringr::str_interp(
+          "Continuing with ${model_family} distribution."
+        ))
+      }
+    } else if (!(model_family %in% possible_model_family)) {
+      warning(
+        sprintf(
+          "Chosen distribution '%s' does not match response values.
+          Would recommend %s. Please check.",
+          model_family,
+          paste(possible_model_family, collapse = ", or ")
+        )
+      )
+    }
+  }
+
+  model_family
+}
+
+#' Assess basic model quality
+#'
+#' Creates plots for model quality assessment either using
+#'  [performance::check_model()] or [graphics::plot()].
+#' @param final_model
+#'  Final, optimized model
+#' @param plot_quality_assessment
+#'  Module to use for plots for model quality assessment.
+#'  Options: "performance", "baseR". Default: "baseR".
+#' @param model_type
+#'  Model type to be used.
+#'  Options: "lm", "glm", "lmer", "glmer",
+#'  "nlme", and "gam". Default: "glm".
+#' @param model_family
+#'  A character string describing the family used for model calculation.
+#'  See [stats::family] for options. Default: "gaussian".
+#' @return
+#'  Plotted model
+assess_basic_model_quality <- function(
+  final_model,
+  plot_quality_assessment,
+  model_type,
+  model_family
+) {
+  if (plot_quality_assessment == "performance") {
+    if (model_type == "gam") {
+      checked_model <- withr::with_pdf(NULL, {
+        plot(performance::check_model(
+          final_model,
+          type = "normal"
+        ))
+      })
+    } else if (model_family == "binomial") {
+      withCallingHandlers(
+        checked_model <- withr::with_pdf(NULL, {
+          plot(performance::check_model(
+            final_model,
+            type = "discrete_both"
+          ))
+        }),
+        warning = function(w) {
+          if (grepl("stat_density", w$message)) {
+            warning(
+              sprintf(
+                "%s. Please choose another model family.",
+                w$message
+              )
+            )
+            tryInvokeRestart("muffleWarning")
+          } else {
+            warning(w$message)
+          }
+        }
+      )
+    } else {
+      withCallingHandlers(
+        checked_model <- withr::with_pdf(NULL, {
+          plot(performance::check_model(final_model))
+        }),
+        message = function(w) {
+          if (grepl("unknown labels", w$message)) {
+            tryInvokeRestart("muffleMessage")
+          }
+        }
+      )
+      checked_model[[3]] <- checked_model[[3]] +
+        ggplot2::theme(
+          axis.text.x = ggplot2::element_text(angle = 45, hjust = 1)
+        )
+    }
+  } else if (plot_quality_assessment == "baseR") {
+    checked_model <- withr::with_pdf(NULL, {
+      graphics::par(mfrow = c(2, 2), mar = rep(2, 4))
+      graphics::plot(final_model)
+      grDevices::recordPlot()
+    })
+  } else {
+    checked_model <- NA
+  }
+
+  checked_model
+}
+
+#' Updates term after check for autocorrelations
+#'
+#' Updates term to include all main effects, removes autocorrelations, and
+#'  determines categorical/numeric variables
+#' @param df
+#'  Dataframe with response and predictors as columns.
+#' @param term
+#'  The formula to be used with the model. Can be either quote() or formula().
+#' @param autocorrelation_cols
+#'  Sorted list of columns in dataframe to be considered when
+#'  removing autocorrelations. Should be sorted by priority.
+#'  Last element gets eliminated first.
+#' @param autocorrelations
+#'  A dataframe with information on autocorrelated variables.
+#' @param autocorrelations_and_preds
+#'  Named list with a) a vector containing all removed predictors
+#'  (empty if none were removed), and
+#'  b) a dataframe containing autocorrelations and
+#'  information on removed variables.
+#' @return
+#'  Names list with the updated term, a vector with categorical variables,
+#'    and a vector with numeric variables.
+update_term <- function(
+  df,
+  term,
+  autocorrelation_cols,
+  autocorrelations,
+  autocorrelations_and_preds
+) {
+  # check that interactions + main effects are in formula (i.e., x:y + x + y)
+  term <- check_for_main_effects(term)
+
+  predictor_frm <- term[[3]]
+
+  # remove autocorrelations from formula and gather categorical variables
+  split_frm <- find_call(term, return = "all")
+
+  categorical_vars <- vector()
+  numerical_vars <- vector()
+  remaining_pred_call <- vector()
+  for (frm_part in split_frm) {
+    frm_str <- deparse(frm_part)
+
+    if ((frm_str %in% colnames(df)) && (is.factor(df[, frm_str]))) {
+      categorical_vars <- append(categorical_vars, frm_str)
+    } else if ((frm_str %in% colnames(df)) && (is.numeric(df[, frm_str]))) {
+      numerical_vars <- append(numerical_vars, frm_str)
+    }
+
+    if (!all(is.na(autocorrelation_cols)) && (nrow(autocorrelations) > 0)) {
+      ptrn <- sprintf(
+        "(%s)(?![a-z0-9_\\-#])",
+        paste(autocorrelations_and_preds$removed_predictors, collapse = "|")
+      )
+      if (
+        !stringr::str_detect(
+          frm_str,
+          stringr::regex(ptrn, ignore_case = TRUE)
+        )
+      ) {
+        remaining_pred_call <- append(remaining_pred_call, frm_part)
+      }
+    }
+  }
+
+  if (!all(is.na(autocorrelation_cols)) && (nrow(autocorrelations) > 0)) {
+    predictor_frm <- remaining_pred_call[[1]]
+    for (i in 2:length(remaining_pred_call)) {
+      predictor_frm <- call("+", predictor_frm, remaining_pred_call[[i]])
+    }
+  }
+
+  list(term = term,
+       categorical_vars = categorical_vars,
+       numerical_vars = numerical_vars)
 }
 
 
@@ -2092,82 +2362,17 @@ optimize_model <- function(
     evaluation_methods <- c("anova")
   }
 
-  # check that interactions + main effects are in formula (i.e., x:y + x + y)
-  main_effects <- as.character(find_call(term, return = "main_effects"))
-  interactions <- find_call(term, return = "interactions")
-  need_to_add <- FALSE
-
-  extract_main_effects <- function(interaction) {
-    interaction_w_tr <- interaction[[1]] != ":"
-
-    if (!interaction_w_tr) {
-      stringr::str_split(deparse(interaction), ":")[[1]]
-    } else {
-      extract_main_effects(interaction[[2]])
-    }
-  }
-
-  term <- stats::as.formula(term)
-  for (interaction in interactions) {
-    effects <- extract_main_effects(interaction)
-
-    for (effect in effects) {
-      new_term <- paste("~ . +", effect)
-      if (!(effect %in% main_effects)) {
-        term <- stats::update(term, new_term)
-        need_to_add <- TRUE
-      }
-    }
-  }
-
-  if (need_to_add) {
-    warning(
-      "Please remember to add all main effects as separate items
-      in your formula when including interactions.
-      Changed formula to include main effects."
-    )
-  }
+  term_with_extras <- update_term(df,
+                                  term,
+                                  autocorrelation_cols,
+                                  autocorrelations,
+                                  autocorrelations_and_preds)
+  term <- term_with_extras$term
+  categorical_vars <- term_with_extras$categorical_vars
+  numerical_vars <- term_with_extras$numerical_vars
 
   response_frm <- term[[2]]
   predictor_frm <- term[[3]]
-
-  # remove autocorrelations from formula and gather categorical variables
-  split_frm <- find_call(term, return = "all")
-
-  categorical_vars <- vector()
-  numerical_vars <- vector()
-  remaining_pred_call <- vector()
-  for (frm_part in split_frm) {
-    frm_str <- deparse(frm_part)
-
-    if ((frm_str %in% colnames(df)) && (is.factor(df[, frm_str]))) {
-      categorical_vars <- append(categorical_vars, frm_str)
-    } else if ((frm_str %in% colnames(df)) && (is.numeric(df[, frm_str]))) {
-      numerical_vars <- append(numerical_vars, frm_str)
-    }
-
-    if (!all(is.na(autocorrelation_cols)) && (nrow(autocorrelations) > 0)) {
-      ptrn <- sprintf(
-        "(%s)(?![a-z0-9_\\-#])",
-        paste(autocorrelations_and_preds$removed_predictors, collapse = "|")
-      )
-      if (
-        !stringr::str_detect(
-          frm_str,
-          stringr::regex(ptrn, ignore_case = TRUE)
-        )
-      ) {
-        remaining_pred_call <- append(remaining_pred_call, frm_part)
-      }
-    }
-  }
-
-  if (!all(is.na(autocorrelation_cols)) && (nrow(autocorrelations) > 0)) {
-    predictor_frm <- remaining_pred_call[[1]]
-    for (i in 2:length(remaining_pred_call)) {
-      predictor_frm <- call("+", predictor_frm, remaining_pred_call[[i]])
-    }
-  }
 
   if (scale_predictor) {
     for (numerical_var in numerical_vars) {
@@ -2198,37 +2403,7 @@ optimize_model <- function(
     list(response = response_frm, predictor = predictor_frm)
   )
 
-  if (model_type != "nlme") {
-    possible_model_family <- determine_model_family(df, response_frm)
-    if (model_family == "automatic") {
-      if (length(possible_model_family) > 1) {
-        message(
-          sprintf(
-            "Your response variable allows for %s distribution.
-            Which one would you prefer?",
-            paste(possible_model_family, collapse = " and ")
-          )
-        )
-        model_family <- readline()
-      } else if (length(possible_model_family) == 0) {
-        stop("No appropriate family found. Please check data types of columns.")
-      } else {
-        model_family <- possible_model_family[1]
-        message(stringr::str_interp(
-          "Continuing with ${model_family} distribution."
-        ))
-      }
-    } else if (!(model_family %in% possible_model_family)) {
-      warning(
-        sprintf(
-          "Chosen distribution '%s' does not match response values.
-          Would recommend %s. Please check.",
-          model_family,
-          paste(possible_model_family, collapse = ", or ")
-        )
-      )
-    }
-  }
+  model_family <- check_model_family(df, response_frm, model_type, model_family)
 
   simplified_models <- simplify_model(
     df,
@@ -2289,7 +2464,7 @@ optimize_model <- function(
         df[numerical_var] <- df[,
           stringr::str_interp("${numerical_var}_aB3cD5eF6G")
         ]
-        df <- df %>%
+        df <- df |>
           dplyr::select(!stringr::str_interp("${numerical_var}_aB3cD5eF6G"))
       }
     }
@@ -2308,60 +2483,12 @@ optimize_model <- function(
     if (length(all_sign_vars) != 0) {
       # CHECK MODEL
       model_plots <- list()
-      if (plot_quality_assessment == "performance") {
-        if (model_type == "gam") {
-          checked_model <- withr::with_pdf(NULL, {
-            plot(performance::check_model(
-              final_model,
-              type = "normal"
-            ))
-          })
-        } else if (model_family == "binomial") {
-          withCallingHandlers(
-            checked_model <- withr::with_pdf(NULL, {
-              plot(performance::check_model(
-                final_model,
-                type = "discrete_both"
-              ))
-            }),
-            warning = function(w) {
-              if (grepl("stat_density", w$message)) {
-                warning(
-                  sprintf(
-                    "%s. Please choose another model family.",
-                    w$message
-                  )
-                )
-                tryInvokeRestart("muffleWarning")
-              } else {
-                warning(w$message)
-              }
-            }
-          )
-        } else {
-          withCallingHandlers(
-            checked_model <- withr::with_pdf(NULL, {
-              plot(performance::check_model(final_model))
-            }),
-            message = function(w) {
-              if (grepl("unknown labels", w$message)) {
-                tryInvokeRestart("muffleMessage")
-              }
-            }
-          )
-          checked_model[[3]] <- checked_model[[3]] +
-            ggplot2::theme(
-              axis.text.x = ggplot2::element_text(angle = 45, hjust = 1)
-            )
-        }
-      } else if (plot_quality_assessment == "baseR") {
-        checked_model <- withr::with_pdf(NULL, {
-          graphics::par(mfrow = c(2, 2), mar = rep(2, 4))
-        })
-      } else {
-        checked_model <- NA
-      }
-      model_plots$model_check <- checked_model
+      model_plots$model_check <- assess_basic_model_quality(
+        final_model,
+        plot_quality_assessment,
+        model_type,
+        model_family
+      )
 
       if (model_type == "gam") {
         models_overview <- summary(final_model)$p.table
@@ -2384,7 +2511,7 @@ optimize_model <- function(
         df,
         round_p
       )
-      models_overview <- models_overview %>%
+      models_overview <- models_overview |>
         dplyr::mutate(
           effect_direction = dplyr::case_when(
             .data$Estimate < 0 ~ "negative",
@@ -2425,14 +2552,14 @@ optimize_model <- function(
       next
     }
 
-    models_overview <- models_overview %>%
+    models_overview <- models_overview |>
       dplyr::rename(
         Response = "response",
         Predictor = "predictor",
         `Variable Type` = "pred_type",
         Significance = "significance",
         `Effect Direction` = "effect_direction"
-      ) %>%
+      ) |>
       dplyr::select(
         -c(
           "base_term1",
@@ -2541,7 +2668,7 @@ optimize_model <- function(
 #'   plants,
 #'   3
 #' )
-#' models_overview <- models_overview %>%
+#' models_overview <- models_overview |>
 #'   mutate(effect_direction = case_when(
 #'     Estimate < 0 ~ "negative",
 #'     TRUE ~ "positive"
@@ -2648,11 +2775,11 @@ plot_estimate <- function(models_overview, regression_model, model_type) {
     }
   )
   models_overview <- dplyr::bind_rows(models_overview, do.call(rbind, new_rows))
-  models_overview <- models_overview %>%
+  models_overview <- models_overview |>
     dplyr::arrange(
       dplyr::desc(.data$base_term1),
       dplyr::desc(.data$predictor)
-    ) %>%
+    ) |>
     dplyr::mutate(
       formatted_predictor = dplyr::case_when(
         (.data$significance != "ref") & (.data$pred_type == "categorical") ~
@@ -2665,9 +2792,9 @@ plot_estimate <- function(models_overview, regression_model, model_type) {
       )
     )
 
-  formatted_labels <- sapply(models_overview$formatted_predictor, function(x) {
+  formatted_labels <- lapply(models_overview$formatted_predictor, function(x) {
     if (grepl("^italic", x)) {
-      parse(text = as.character(x))
+      parse(text = as.character(x))[[1]]
     } else {
       as.character(x)
     }
@@ -2736,8 +2863,8 @@ plot_regression_categorical <- function(
   regression_plots,
   stat_results
 ) {
-  models_overview_group <- models_overview %>%
-    dplyr::filter(.data$base_term1 == cat_var) %>%
+  models_overview_group <- models_overview |>
+    dplyr::filter(.data$base_term1 == cat_var) |>
     dplyr::mutate(
       factor_group = stringr::str_remove(
         .data$predictor,
@@ -2791,7 +2918,7 @@ plot_regression_categorical <- function(
     df <- stat_out$df
     stat_results[[cat_var]] <- stat_out$stat_results
 
-    df <- df %>%
+    df <- df |>
       dplyr::mutate(
         significance = ifelse(
           is.na(.data$significance),
@@ -2994,7 +3121,8 @@ plot_regression_numeric <- function(
     }
   } else if (predictor_data_type == "mixed") {
     # >1 variable with one continuous
-    x <- sapply(preds_w_tr, function(pr) is.numeric(df[, pr]))
+    x <- vapply(preds_w_tr, function(pr) is.numeric(df[, pr]),
+                logical(1))
     sign_vars_sorted <- c(preds_w_tr[x], preds_w_tr[!x])
 
     x <- parse(text = sign_vars_sorted[1])[[1]]
@@ -3040,7 +3168,8 @@ plot_regression_numeric <- function(
     p <- p +
       ggplot2::labs(
         title = stringr::str_interp(
-          "Regression of coefficient: ${sign_vars_sorted[1]}:${sign_vars_sorted[2]}"
+          "Regression of coefficient:
+          ${sign_vars_sorted[1]}:${sign_vars_sorted[2]}"
         )
       )
   }
@@ -3146,7 +3275,7 @@ transform_variables <- function(
         if (stringr::str_detect(pred_w_tr, "\\^|\\(|\\)")) {
           new_col <- gsub("\\^|\\(|\\)", ".", pred_w_tr, perl = TRUE)
 
-          df <- df %>%
+          df <- df |>
             dplyr::rename(
               !!new_col := tidyr::all_of(pred_w_tr)
             )
@@ -3302,7 +3431,7 @@ plot_regression <- function(
   # for continuous or mixed variables
   relevant_predictors <- models_overview[
     models_overview$pred_type %in% c("numeric", "mixed"),
-  ] %>%
+  ] |>
     dplyr::filter(
       (.data$pred_type != "mixed") |
         (!duplicated(.data$base_term1, .data$base_term2))
@@ -3335,7 +3464,7 @@ plot_regression <- function(
 #' @return
 #'  A plot of the effect sizes of the variables listed within the model summary.
 plot_effect_size <- function(models_overview) {
-  models_overview <- models_overview %>%
+  models_overview <- models_overview |>
     dplyr::mutate(
       Estimate_abs = abs(.data$Estimate),
       Est_sum = sum(.data$Estimate_abs),
@@ -3343,7 +3472,7 @@ plot_effect_size <- function(models_overview) {
         .data$Estimate > 0 ~ (.data$Estimate_abs / .data$Est_sum) * 100,
         .data$Estimate < 0 ~ (.data$Estimate_abs / .data$Est_sum) * -100
       )
-    ) %>%
+    ) |>
     dplyr::arrange(dplyr::desc(.data$`Effect size`))
 
   p <- ggplot2::ggplot(
@@ -3381,12 +3510,12 @@ plot_effect_size <- function(models_overview) {
 #'  indicating significant differences between traits of a categorical variable
 run_stats <- function(df, response, predictor, test = "wilcox") {
   add_letters <- function(df, stat_results, test) {
-    df_sorted <- df %>%
-      dplyr::group_by(!!predictor) %>%
-      dplyr::mutate(resp_mean = mean(!!response)) %>%
-      dplyr::ungroup() %>%
-      dplyr::distinct(!!predictor, .keep_all = TRUE) %>%
-      dplyr::arrange(dplyr::desc(!!response)) %>%
+    df_sorted <- df |>
+      dplyr::group_by(!!predictor) |>
+      dplyr::mutate(resp_mean = mean(!!response)) |>
+      dplyr::ungroup() |>
+      dplyr::distinct(!!predictor, .keep_all = TRUE) |>
+      dplyr::arrange(dplyr::desc(!!response)) |>
       dplyr::mutate(idx = dplyr::row_number())
     if (any(stat_results$p_value < 0.05)) {
       stat_results <- merge(
@@ -3403,14 +3532,14 @@ run_stats <- function(df, response, predictor, test = "wilcox") {
         suffixes = c("1", "2")
       )
       # for accessibility
-      stat_results <- stat_results %>%
-        dplyr::rowwise() %>%
+      stat_results <- stat_results |>
+        dplyr::rowwise() |>
         dplyr::mutate(
           comb = paste(
             sort(c(.data$idx1, .data$idx2)),
             collapse = "|"
           )
-        ) %>%
+        ) |>
         dplyr::ungroup()
 
       letter <- "A"
@@ -3505,13 +3634,13 @@ run_stats <- function(df, response, predictor, test = "wilcox") {
         }
       }
     )
-    stat_results <- stat_result %>%
-      tibble::rownames_to_column(var = "var1") %>%
+    stat_results <- stat_result |>
+      tibble::rownames_to_column(var = "var1") |>
       tidyr::pivot_longer(
         cols = -c("var1"),
         names_to = "var2",
         values_to = "p_value"
-      ) %>%
+      ) |>
       dplyr::filter((.data$var1 != .data$var2) & (!is.na(.data$p_value)))
   } else if (test == "t.test") {
     stat_results <- as.data.frame(
@@ -3519,13 +3648,13 @@ run_stats <- function(df, response, predictor, test = "wilcox") {
         df[[response]],
         df[[predictor]]
       )$p.value
-    ) %>%
-      tibble::rownames_to_column(var = "var1") %>%
+    ) |>
+      tibble::rownames_to_column(var = "var1") |>
       tidyr::pivot_longer(
         cols = -c("var1"),
         names_to = "var2",
         values_to = "p_value"
-      ) %>%
+      ) |>
       dplyr::filter((.data$var1 != .data$var2) & (!is.na(.data$p_value)))
   } else {
     warning("We only allow wilcox and t.test for statistical testing.")
@@ -3653,7 +3782,7 @@ apply_psi <- function(
   rownames(result) <- result$Coefficient
 
   # Summarize
-  result <- result %>%
+  result <- result |>
     dplyr::mutate(
       Difference = ifelse(
         !is.na(.data$Raw_p) & !is.na(.data$Corrected_p),
@@ -3680,16 +3809,16 @@ apply_psi <- function(
           TRUE ~ "no change"
         )
       )
-    ) %>%
+    ) |>
     dplyr::filter(.data$Coefficient != "(Intercept)")
 
   # map original term to coefficient in results df
-  models_overview_psi <- models_overview %>%
-    dplyr::rowwise() %>%
+  models_overview_psi <- models_overview |>
+    dplyr::rowwise() |>
     dplyr::mutate(
       selcorr_coeff = gsub("\\^|\\(|\\)|\\:", ".", .data$predictor, perl = TRUE)
-    ) %>%
-    dplyr::ungroup() %>%
+    ) |>
+    dplyr::ungroup() |>
     as.data.frame()
   result <- merge(
     result,
@@ -3705,7 +3834,7 @@ apply_psi <- function(
   # and interactions retain main effects
   interactions_to_keep <- result[
     ((is.na(result$Corrected_p)) |
-      (result$Corrected_p <= 0.05)) &
+       (result$Corrected_p <= 0.05)) &
       (result$is_interaction),
   ]
   main_effects_to_keep <- unique(c(
@@ -3713,14 +3842,14 @@ apply_psi <- function(
     interactions_to_keep$base_term2
   ))
 
-  result <- result %>%
+  result <- result |>
     dplyr::mutate(
       to_remove = dplyr::case_when(
         .data$pred_type == "categorical" ~ ifelse(
           ((is.na(.data$Corrected_p)) |
-            (.data$Corrected_p > 0.05)) &
+             (.data$Corrected_p > 0.05)) &
             ((is.na(.data$smallest_p_value)) |
-              (.data$smallest_p_value > 0.05)),
+               (.data$smallest_p_value > 0.05)),
           TRUE,
           FALSE
         ),
@@ -3736,7 +3865,7 @@ apply_psi <- function(
     )
 
   # remove non-significant coefficients from term
-  to_remove_rows <- result[result$to_remove, ] %>%
+  to_remove_rows <- result[result$to_remove, ] |>
     dplyr::filter(
       (.data$pred_type != "mixed") |
         (!duplicated(.data$base_term1, .data$base_term2))
@@ -3811,7 +3940,7 @@ apply_psi <- function(
     final_model <- do.call(stats::lm, model_args)
   }
 
-  result <- result %>%
+  result <- result |>
     dplyr::select(
       tidyr::all_of(
         c("Coefficient", "Raw_p", "Corrected_p", "Difference", "Changed_sig")
@@ -3844,7 +3973,7 @@ plot_psi <- function(psi_df, p_threshold = 0.05, label_size = 2.5) {
     warning("Found NA p-values. Replacing with 1.")
   }
 
-  psi_df %>%
+  psi_df |>
     dplyr::mutate(
       Raw_p = ifelse(
         .data$Raw_p == 0,

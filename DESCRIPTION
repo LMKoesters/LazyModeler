@@ -16,6 +16,7 @@ Maintainer: Lara Kösters <lkoesters@bgc-jena.mpg.de>
 Description: Pipeline for easy performance of regression modeling. It includes removal of autocorrelated variables, choice between several types of (non)linear regression models, standard stepwise model simplification, various model quality checks, plotting of coefficient estimates and relationships, and output generation.
 Encoding: UTF-8
 LazyData: true
+URL: https://github.com/LMKoesters/LazyModeler
 BugReports: https://github.com/LMKoesters/LazyModeler/issues
 Depends: R (>= 4.1.0)
 Imports: 

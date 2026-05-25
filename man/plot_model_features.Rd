@@ -90,7 +90,7 @@ models_overview <- LazyModeler::expand_model_summary(
   plants,
   3
 )
-models_overview <- models_overview \%>\%
+models_overview <- models_overview |>
   mutate(effect_direction = case_when(
     Estimate < 0 ~ "negative",
     TRUE ~ "positive"
