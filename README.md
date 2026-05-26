@@ -26,10 +26,24 @@ The first major function `remove_autocorrelations` checks for any autocorrelatio
 
 The main function provides the model formula to the second major function `simplify_model`. If autocorrelations were detected, the formula is updated accordingly. The regression model is then calculated. Options for the models are: `lm`, `glm`, `lmer`, `glmer`, `gam`, or `nlmer`, with all possible distributions of the response variable being allowed. Stepwise backward simplification or forward model selection takes place using an iterative process where each time the metric(s) specified by the user are applied on the model to check whether further simplification/selection is needed. Main variables are kept when they are involved in interactions. Options for the metrics are: `aov`, `aic`, `aicc`, or `bic`. The final model is returned to the main function alongside its metadata as well as simplification history if requested by the user.
 
-Using the third major function `fancy_plotting`, the final model then undergoes multiple visualization steps. Plots to assess model quality are created using the standard plot function available through base R, or model check included in the `performance` R package (Lüdecke et al. 2021). Furthermore, the script produces regression, box, or violin plots for each numerical or categorical coefficient as well as plots depicting effects sizes and estimates. All generated plots are returned to the user within a named list. The main function additionally returns the output of both the model simplification/selection and autocorrelation functions as well as the summary of the final model.
+Using the third major function `plot_model_features()`, the final model then undergoes multiple visualization steps. Plots to assess model quality are created using the standard plot function available through base R, or model check included in the `performance` R package (Lüdecke et al. 2021). Furthermore, the script produces regression, box, or violin plots for each numerical or categorical coefficient as well as plots depicting effects sizes and estimates. All generated plots are returned to the user within a named list. The main function additionally returns the output of both the model simplification/selection and autocorrelation functions as well as the summary of the final model.
 
-`LazyModeler` makes use of the R package `corrplot` (Wei and Simko 2021) to calculate correlations between variables, `lme4` (Bates et al. 2024) and `lmerTest` (Kuznetsova, Brockhoff, and Christensen 2017) for regression modeling, `tidyverse` (Wickham
-et al. 2019) for data handling, and `MuMIn` (Bartoń 2024) for calculation of AICc scores. For generation of plots visualizing regression, effect size, and estimates, the script further leverages `tidyverse` and color palettes included in the `colorspace` (Zeileis et al. 2020) and `viridis` (Garnier et al. 2024) R packages.
+`LazyModeler` makes use of the R package `corrplot` (Wei and Simko 2021) to calculate correlations between variables, `lme4` (Bates et al. 2024), `lmerTest` (Kuznetsova, Brockhoff, and Christensen 2017), `mgcv` (Wood 2011), and `nlme` (Pinheiro et al. 2025) for regression modeling, `tidyr` and `dplyr` within `tidyverse` (Wickham
+et al. 2019) for data handling, and `MuMIn` (Bartoń 2024) for calculation of AICc scores. For generation of plots visualizing regression, effect size, and estimates, the script further leverages `ggplot2` within `tidyverse` and color palettes included in the `colorspace` (Zeileis et al. 2020) and `viridis` (Garnier et al. 2024) R packages.
+
+In addition, `LazyModeler` relies on the following R packages:
+- [`formula.tools`](https://cran.r-project.org/web/packages/formula.tools/index.html)
+- [`ggrepel`](https://ggrepel.slowkow.com/)
+- [`graphics`](https://www.rdocumentation.org/packages/graphics/versions/3.6.2)
+- [`purrr`](https://purrr.tidyverse.org/)
+- [`reformulas`](https://cran.r-project.org/web/packages/reformulas/index.html)
+- [`rlang`](https://cran.r-project.org/web/packages/rlang/index.html)
+- [`selcorr`](https://cran.r-project.org/web/packages/selcorr/index.html)
+- [`stats`](https://cran.r-project.org/doc/manuals/r-patched/packages/stats/refman/stats.html)
+- [`stringr`](https://stringr.tidyverse.org/)
+- [`tibble`](https://tibble.tidyverse.org/)
+- [`utils`](https://cran.r-project.org/web/packages/R.utils/index.html)
+- [`withr`](https://withr.r-lib.org/)
 
 # How to install
 
@@ -40,7 +54,7 @@ remotes::install_github("LMKoesters/LazyModeler")
 
 Alternatively, you need to download the tarball from GitHub and then install using `install.packages`.
 ``` r
-install.packages("PATH_TO_TARBALL/LazyModeler-v.0.2.0.tar.gz", repos = NULL, type="source")
+install.packages("PATH_TO_TARBALL/LazyModeler-v.1.0.0.tar.gz", repos = NULL, type="source")
 ```
 
 # Example
@@ -122,7 +136,7 @@ Please note that the LazyModeler project is released with a [`CODE_OF_CONDUCT.md
 
 # Important note
 
-The model selection procedures implemented in LazyModeler are provided for convenience and exploratory analysis, and reflect practices recommended in widely used applied statistics literature [Crawley 2007;  Crawley 2015]. Users should be aware, however, that statistical inference reported from a model chosen in a data-driven way may be anticonservative (e.g., p-values may appear smaller than they truly are, confidence intervals narrower). This issue is known as post-selection inference (PSI). Specialized methods have been developed to address it, for instance [Lee et al. 2016], but they are not yet broadly applicable across the full range of model classes supported by LazyModeler. We have implemented PSI for (generalized) linear regression models based on the 'selcorr' R package [Cattaneo 2021], but users are free to use the retained model from LazyModeler for more sophisticated PSI analyses.
+The model selection procedures implemented in LazyModeler are provided for convenience and exploratory analysis, and reflect practices recommended in widely used applied statistics literature [Crawley 2007;  Crawley 2015]. Users should be aware, however, that statistical inference reported from a model chosen in a data-driven way may be anticonservative (e.g., p-values may appear smaller than they truly are, confidence intervals narrower). This issue is known as post-selection inference (PSI). Specialized methods have been developed to address it, for instance [Lee et al. 2016], but they are not yet broadly applicable across the full range of model classes supported by LazyModeler. We have implemented PSI for (generalized) linear regression models based on the 'selcorr' R package (Cattaneo 2021), but users are free to use the retained model from LazyModeler for more sophisticated PSI analyses.
 
 # References
 
@@ -188,6 +202,9 @@ Assessment, Comparison and Testing of Statistical Models.” *Journal of
 Open Source Software* 6 (60): 3139.
 <https://doi.org/10.21105/joss.03139>.
 
+Pinheiro, J., Bates, D., & R Core Team. (2025). Nlme: Linear and nonlinear mixed effects
+models. <https://doi.org/10.32614/CRAN.package.nlme>.
+
 R Core Team. (2024). R: a language and environment for statistical computing. 
 R Foundation for Statistical Computing. <https://www.r-project.org/>
 
@@ -216,6 +233,10 @@ Wickham, Hadley, Mara Averick, Jennifer Bryan, Winston Chang, Lucy
 D’Agostino McGowan, Romain François, Garrett Grolemund, et al. 2019.
 “Welcome to the <span class="nocase">tidyverse</span>.” *Journal of Open
 Source Software* 4 (43): 1686. <https://doi.org/10.21105/joss.01686>.
+
+Wood, S. N. (2011). Fast stable restricted maximum likelihood and marginal likelihood
+estimation of semiparametric generalized linear models. Journal of the Royal Statistical
+Society (B), 73(1), 3–36. <https://doi.org/10.1111/j.1467-9868.2010.00749.x>.
 
 Zeileis, A., Fisher, J. C., Hornik, K., Ihaka,R.,
 McWhite, C. D., Murrell, P., Stauffer, R., & Wilke, C. O. 2020.
