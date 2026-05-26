@@ -114,6 +114,12 @@ We welcome contributions, feedback, and suggestions to improve this project.
 - Encountered a bug or unexpected behavior? Open an issue on GitHub. Just make sure that your issue hasn't been reported yet by checking existing issues before opening a new one.
 - Contributions (e.g., code improvements, new features, documentation) are welcome via pull requests. When contributing, describe your changes clearly and provide sufficient context to help us understand your work.
 
+More detailed information can be found in our [`CONTRIBUTING.md`](.github/CONTRIBUTING.md).
+
+## Code of Conduct
+
+Please note that the LazyModeler project is released with a [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md). By contributing to this project, you agree to abide by its terms.
+
 # Important note
 
 The model selection procedures implemented in LazyModeler are provided for convenience and exploratory analysis, and reflect practices recommended in widely used applied statistics literature [Crawley 2007;  Crawley 2015]. Users should be aware, however, that statistical inference reported from a model chosen in a data-driven way may be anticonservative (e.g., p-values may appear smaller than they truly are, confidence intervals narrower). This issue is known as post-selection inference (PSI). Specialized methods have been developed to address it, for instance [Lee et al. 2016], but they are not yet broadly applicable across the full range of model classes supported by LazyModeler. We have implemented PSI for (generalized) linear regression models based on the 'selcorr' R package [Cattaneo 2021], but users are free to use the retained model from LazyModeler for more sophisticated PSI analyses.

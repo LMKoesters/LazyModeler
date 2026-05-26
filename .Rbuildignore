@@ -6,3 +6,5 @@
 ^paper
 ^notebook
 logo_lazymodeler.png
+^\.github$
+^CODE_OF_CONDUCT\.md$
