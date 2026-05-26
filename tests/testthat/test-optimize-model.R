@@ -68,7 +68,7 @@ test_that("optimize_model fails loudly on invalid model_type", {
 
 test_that("optimize_model stops on automatic distribution", {
   d <- make_tiny_proportions_data()
-  
+
   expect_error(
     optimize_model(
       df = d,

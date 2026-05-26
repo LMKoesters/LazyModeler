@@ -144,22 +144,12 @@ data("plants")
 # Apply backward simplification to the model and plot the final model.
 optimized_model_result <- optimize_model(
   plants,
-  quote(sexual_seed_prop ~ altitude +
-    latitude_gps_n +
-    longitude_gps_e +
-    (solar_radiation +
-      annual_mean_temperature +
-      isothermality)^2 +
+  quote(sexual_seed_prop ~ latitude_gps_n +
     I(isothermality^2) +
-    habitat +
-    ploidy),
+    habitat),
   autocorrelation_cols = c(
-    "solar_radiation",
-    "annual_mean_temperature",
     "isothermality",
-    "altitude",
-    "latitude_gps_n",
-    "longitude_gps_e"
+    "latitude_gps_n"
   ),
   automatic_removal = TRUE,
   autocorrelation_threshold = 0.8,
@@ -171,13 +161,13 @@ optimized_model_result <- optimize_model(
   backward_simplify_model = TRUE,
   omit_na = "overall",
   scale_predictor = TRUE,
-  plot_quality_assessment = "performance",
+  plot_quality_assessment = "baseR",
   round_p = 3,
   cor_use = "complete.obs",
   plot_relationships = TRUE,
   jitter_plots = TRUE,
   plot_type = "boxplot",
   stat_test = "wilcox",
-  trace = TRUE
+  trace = FALSE
 )
 }

@@ -53,7 +53,6 @@ Plot estimate, regression and effect size
 }
 \examples{
 # setup
-library(dplyr)
 data("plants")
 model_type <- "glm"
 model_family <- "quasibinomial"
@@ -91,7 +90,7 @@ models_overview <- LazyModeler::expand_model_summary(
   3
 )
 models_overview <- models_overview |>
-  mutate(effect_direction = case_when(
+  dplyr::mutate(effect_direction = dplyr::case_when(
     Estimate < 0 ~ "negative",
     TRUE ~ "positive"
   ))

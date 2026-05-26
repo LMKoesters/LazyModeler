@@ -73,8 +73,7 @@ data("plants")
 # by applying backward simplification
 simplified_model_info <- simplify_model(plants,
   "glm",
-  quote(sexual_seed_prop ~ altitude +
-    solar_radiation +
+  quote(sexual_seed_prop ~ solar_radiation +
     annual_mean_temperature +
     isothermality +
     I(isothermality^2) +

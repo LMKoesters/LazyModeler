@@ -1081,8 +1081,7 @@ mo_step <- function(
 #' # by applying backward simplification
 #' simplified_model_info <- simplify_model(plants,
 #'   "glm",
-#'   quote(sexual_seed_prop ~ altitude +
-#'     solar_radiation +
+#'   quote(sexual_seed_prop ~ solar_radiation +
 #'     annual_mean_temperature +
 #'     isothermality +
 #'     I(isothermality^2) +
@@ -1377,7 +1376,7 @@ backward_simplification <- function(
         sprintf(
           paste("We initialised the model successfully,",
                 "but weren't able to simplify it, because %s.",
-                "Please check overfitting and multicollinearity among", 
+                "Please check overfitting and multicollinearity among",
                 "predictors to exclude potential modeling issues.",
                 collapse = " "),
           res$reason
@@ -1522,9 +1521,10 @@ determine_model_family <- function(df, response_frm) {
   } else {
     possible_families <- c("gaussian")
     family_notice <- paste("Gaussian is suggested for continuous outcomes.",
-      "Consider transformations or other families if residual diagnostics",
-      "indicate non-normality, heteroscedasticity, or bounded support.",
-      collapse = " ")
+                           "Consider transformations or other families if",
+                           "residual diagnostics indicate non-normality,",
+                           "heteroscedasticity, or bounded support.",
+                           collapse = " ")
   }
 
   list(possible_families = possible_families,
@@ -1966,12 +1966,12 @@ check_model_family <- function(df, response_frm, model_type, model_family) {
         )
       } else {
         model_family <- possible_model_families[1]
-        
+
         message(sprintf(
           paste("%s Continuing with %s distribution. If you want to use",
-          "a different distribution, make sure your data is formatted",
-          "correctly, then rerun optimize_model() with your",
-          "preferred distribution.", collapse = " "),
+                "a different distribution, make sure your data is formatted",
+                "correctly, then rerun optimize_model() with your",
+                "preferred distribution.", collapse = " "),
           determined_model_families$family_notice,
           model_family
         ))
@@ -2261,22 +2261,12 @@ update_term <- function(
 #' # Apply backward simplification to the model and plot the final model.
 #' optimized_model_result <- optimize_model(
 #'   plants,
-#'   quote(sexual_seed_prop ~ altitude +
-#'     latitude_gps_n +
-#'     longitude_gps_e +
-#'     (solar_radiation +
-#'       annual_mean_temperature +
-#'       isothermality)^2 +
+#'   quote(sexual_seed_prop ~ latitude_gps_n +
 #'     I(isothermality^2) +
-#'     habitat +
-#'     ploidy),
+#'     habitat),
 #'   autocorrelation_cols = c(
-#'     "solar_radiation",
-#'     "annual_mean_temperature",
 #'     "isothermality",
-#'     "altitude",
-#'     "latitude_gps_n",
-#'     "longitude_gps_e"
+#'     "latitude_gps_n"
 #'   ),
 #'   automatic_removal = TRUE,
 #'   autocorrelation_threshold = 0.8,
@@ -2288,14 +2278,14 @@ update_term <- function(
 #'   backward_simplify_model = TRUE,
 #'   omit_na = "overall",
 #'   scale_predictor = TRUE,
-#'   plot_quality_assessment = "performance",
+#'   plot_quality_assessment = "baseR",
 #'   round_p = 3,
 #'   cor_use = "complete.obs",
 #'   plot_relationships = TRUE,
 #'   jitter_plots = TRUE,
 #'   plot_type = "boxplot",
 #'   stat_test = "wilcox",
-#'   trace = TRUE
+#'   trace = FALSE
 #' )
 #' @export
 optimize_model <- function(
@@ -2657,7 +2647,6 @@ optimize_model <- function(
 #'  and statistics for categorical variables.
 #' @examples
 #' # setup
-#' library(dplyr)
 #' data("plants")
 #' model_type <- "glm"
 #' model_family <- "quasibinomial"
@@ -2695,7 +2684,7 @@ optimize_model <- function(
 #'   3
 #' )
 #' models_overview <- models_overview |>
-#'   mutate(effect_direction = case_when(
+#'   dplyr::mutate(effect_direction = dplyr::case_when(
 #'     Estimate < 0 ~ "negative",
 #'     TRUE ~ "positive"
 #'   ))
