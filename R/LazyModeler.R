@@ -1375,10 +1375,11 @@ backward_simplification <- function(
     if ((var_cnt > 2) && (stats::formula(regression_model) == term)) {
       warning(
         sprintf(
-          "We initialised the model successfully,
-          but weren't able to simplify it, because %s.
-          Please check overfitting and multicollinearity among
-          predictors to exclude potential modeling issues.",
+          paste("We initialised the model successfully,",
+                "but weren't able to simplify it, because %s.",
+                "Please check overfitting and multicollinearity among", 
+                "predictors to exclude potential modeling issues.",
+                collapse = " "),
           res$reason
         )
       )
@@ -1487,7 +1488,8 @@ find_call <- function(term, pred_full = NA, return = "all", df_cols = NA) {
 #' @param response_frm
 #'  Response formula
 #' @return
-#'  Model family to be used with regression model
+#'  A list with a vector with possible model families to be used
+#'    based on response variable, and a notice on the chosen family/families
 determine_model_family <- function(df, response_frm) {
   response_col <- paste(response_frm)
   df[response_col] <- with(df, eval(parse(text = response_frm)))
@@ -1495,25 +1497,38 @@ determine_model_family <- function(df, response_frm) {
   response <- df[!is.na(df[[response_col]]), ][[response_col]]
   is_num <- is.numeric(response)
   is_int <- is.integer(response)
-  gaus_or_pois <- is_num && ((min(response) < 0) || (max(response) > 1))
 
-  if (is_int || is_num) {
-    if ((min(response) < 0) || (max(response) > 100)) {
-      model_family <- c("gaussian")
-    } else if (is_int || (gaus_or_pois)) {
-      model_family <- c("gaussian", "poisson")
-    } else if (is_num && (min(response) >= 0) && (max(response) <= 1)) {
-      model_family <- c("gaussian", "poisson", "quasibinomial")
-    } else {
-      model_family <- c()
-    }
-  } else if (is.logical(response)) {
-    model_family <- c("binomial")
+  if (is.logical(response)) {
+    possible_families <- c("binomial")
+    family_notice <- paste("If observations represent grouped binomial",
+                           "outcomes, provide trials/weights or use",
+                           "cbind(successes, failures).", collape = " ")
+  } else if (is_num && (min(response) >= 0 && max(response) <= 1)) {
+    possible_families <- c("gaussian", "quasibinomial")
+    family_notice <- paste("Your values appear to be proportions.",
+                           "quasibinomial may be appropriate",
+                           "if values represent proportions from",
+                           "binomial trials and trial sizes are supplied as",
+                           "weights. Otherwise gaussian may be more",
+                           "appropriate.", collapse = " ")
+  } else if (is_int && min(response) >= 0 && all(response %% 1 == 0)) {
+    possible_families <- c("poisson")
+    family_notice <- paste("Poisson assumes non-negative count data",
+                           "and mean-variance equality. Check for",
+                           "overdispersion; if present, quasipoisson or",
+                           "negative binomial may be more appropriate.",
+                           "Note, however, that we currently only",
+                           "cover poisson distributions.", collapse = " ")
   } else {
-    model_family <- c()
+    possible_families <- c("gaussian")
+    family_notice <- paste("Gaussian is suggested for continuous outcomes.",
+      "Consider transformations or other families if residual diagnostics",
+      "indicate non-normality, heteroscedasticity, or bounded support.",
+      collapse = " ")
   }
 
-  model_family
+  list(possible_families = possible_families,
+       family_notice = family_notice)
 }
 
 #' Get minimum p-value
@@ -1935,32 +1950,40 @@ check_for_main_effects <- function(term) {
 #'  Updated model family
 check_model_family <- function(df, response_frm, model_type, model_family) {
   if (model_type != "nlme") {
-    possible_model_family <- determine_model_family(df, response_frm)
+    determined_model_families <- determine_model_family(df, response_frm)
+    possible_model_families <- determined_model_families$possible_families
     if (model_family == "automatic") {
-      if (length(possible_model_family) > 1) {
-        message(
+      if (length(possible_model_families) > 1) {
+        stop(
           sprintf(
-            "Your response variable allows for %s distribution.
-            Which one would you prefer?",
-            paste(possible_model_family, collapse = " and ")
+            paste("Your response variable allows for the following",
+                  "distributions: %s. %s Carefully consider all options, then",
+                  "rerun optimize_model() with your preferred distribution.",
+                  collapse = " "),
+            paste(possible_model_families, collapse = " and "),
+            determined_model_families$family_notice
           )
         )
-        model_family <- readline()
-      } else if (length(possible_model_family) == 0) {
-        stop("No appropriate family found. Please check data types of columns.")
       } else {
-        model_family <- possible_model_family[1]
-        message(stringr::str_interp(
-          "Continuing with ${model_family} distribution."
+        model_family <- possible_model_families[1]
+        
+        message(sprintf(
+          paste("%s Continuing with %s distribution. If you want to use",
+          "a different distribution, make sure your data is formatted",
+          "correctly, then rerun optimize_model() with your",
+          "preferred distribution.", collapse = " "),
+          determined_model_families$family_notice,
+          model_family
         ))
       }
-    } else if (!(model_family %in% possible_model_family)) {
+    } else if (!(model_family %in% possible_model_families)) {
       warning(
         sprintf(
-          "Chosen distribution '%s' does not match response values.
-          Would recommend %s. Please check.",
+          paste("Chosen distribution '%s' does not match response values.",
+                "Would recommend %s. %s Please check.", collapse = " "),
           model_family,
-          paste(possible_model_family, collapse = ", or ")
+          paste(possible_model_families, collapse = ", or "),
+          determined_model_families$family_notice
         )
       )
     }
@@ -2448,14 +2471,14 @@ optimize_model <- function(
         k = psi_k,
         round_p = round_p
       )
-      
+
       if ("psi_model" %in% names(psi_result)) {
         psi_plot <- plot_psi(
           psi_result$result,
           p_threshold = psi_p_threshold,
           label_size = psi_label_size
         )
-        
+
         psi_result$plot <- psi_plot
         final_model <- psi_result$psi_model
       }
@@ -3840,10 +3863,6 @@ apply_psi <- function(
        (result$Corrected_p <= 0.05)) &
       (result$is_interaction),
   ]
-  main_effects_to_keep <- unique(c(
-    interactions_to_keep$base_term1,
-    interactions_to_keep$base_term2
-  ))
 
   result <- result |>
     dplyr::mutate(
@@ -3857,7 +3876,10 @@ apply_psi <- function(
           FALSE
         ),
         !.data$is_interaction ~ ifelse(
-          !(.data$base_term1 %in% main_effects_to_keep) &
+          !(.data$base_term1 %in% unique(c(
+            interactions_to_keep$base_term1,
+            interactions_to_keep$base_term2
+          ))) &
             ((is.na(.data$Corrected_p)) | (.data$Corrected_p > 0.05)),
           TRUE,
           FALSE

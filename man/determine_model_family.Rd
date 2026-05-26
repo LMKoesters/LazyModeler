@@ -12,7 +12,8 @@ determine_model_family(df, response_frm)
 \item{response_frm}{Response formula}
 }
 \value{
-Model family to be used with regression model
+A list with a vector with possible model families to be used
+based on response variable, and a notice on the chosen family/families
 }
 \description{
 Determine model family automatically based on response column in dataframe

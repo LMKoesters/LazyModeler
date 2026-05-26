@@ -65,3 +65,21 @@ test_that("optimize_model fails loudly on invalid model_type", {
     regexp = "Unknown model type"
   )
 })
+
+test_that("optimize_model stops on automatic distribution", {
+  d <- make_tiny_proportions_data()
+  
+  expect_error(
+    optimize_model(
+      df = d,
+      term = quote(y ~ x1 + x2 + x3 + f1 + I(x1^2)),
+      autocorrelation_cols = c("x1", "x2", "x3"),
+      automatic_removal = TRUE,
+      autocorrelation_threshold = 0.8,
+      correlation_method = "spearman",
+      model_type = "glm",
+      model_family = "automatic"
+    ),
+    regexp = "rerun optimize_model\\(\\) with your preferred distribution"
+  )
+})

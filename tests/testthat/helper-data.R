@@ -12,6 +12,21 @@ make_tiny_data <- function(n = 60, seed = 42) {
   data.frame(y = y, x1 = x1, x2 = x2, x3 = x3, f1 = f1)
 }
 
+make_tiny_proportions_data <- function(n = 60, seed = 42) {
+  set.seed(seed)
+  
+  x1 <- rnorm(n)
+  x2 <- x1 * 0.95 + rnorm(n, sd = 0.05)  # correlated to x1
+  x3 <- rnorm(n)
+  f1 <- factor(sample(c("A", "B", "C"), n, replace = TRUE))
+  
+  # linear relation
+  y <- 1 + 2 * x1 - 1.5 * x3 + ifelse(f1 == "B", 0.5, 0) + rnorm(n, sd = 0.2)
+  y <- (y - min(y)) / (max(y) - min(y))
+  
+  data.frame(y = y, x1 = x1, x2 = x2, x3 = x3, f1 = f1)
+}
+
 make_tiny_categorical_data <- function(n = 60, seed = 42) {
   set.seed(seed)
 
