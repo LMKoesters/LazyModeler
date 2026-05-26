@@ -54,7 +54,11 @@ remotes::install_github("LMKoesters/LazyModeler")
 
 Alternatively, you need to download the tarball from GitHub and then install using `install.packages`.
 ``` r
-install.packages("PATH_TO_TARBALL/LazyModeler-v.1.0.0.tar.gz", repos = NULL, type="source")
+install.packages(
+	"https://github.com/LMKoesters/LazyModeler/releases/download/v1.0.0/LazyModeler_1.0.0.tar.gz",
+	repos = NULL,
+	type="source"
+)
 ```
 
 # Example
