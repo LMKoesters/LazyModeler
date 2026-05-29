@@ -1,10 +1,10 @@
 create_model <- function(formula,
-                         family,
                          data,
                          model_type,
-                         model_args,
-                         logger) {
-  model_fun %<-% switch(
+                         family = gaussian,
+                         model_args = list(),
+                         logger = NULL) {
+  model_fun <- switch(
     as.character(model_type),
     "glm" = {
       model_args <- c(model_args, list("formula" = formula,
@@ -18,7 +18,6 @@ create_model <- function(formula,
       stats::lm
       },
     "glmer" = {
-      # TODO glmer -> c("formula", "family", "data")
       model_args <- c(model_args, list("formula" = formula,
                                        "family" = family,
                                        "data" = data))
@@ -30,18 +29,20 @@ create_model <- function(formula,
       lmerTest::lmer
     },
     "gam" = {
-      # TODO gam -> c("formula", "family", "data")
       model_args <- c(model_args, list("formula" = formula,
                                        "family" = family,
                                        "data" = data))
       mgcv::gam
     },
     "nlme" = {
-      # TODO nlme -> c("model", "data")
-      # also important to keep in mind: fixed, random
+      model_args <- c(model_args, list("model" = formula,
+                                       "data" = data))
+      nlme::nlme
     },
     "nls" = {
-      # TODO nls -> c("formula", "data")
+      model_args <- c(model_args, list("formula" = formula,
+                                       "data" = data))
+      stats::nls
     }
   )
   

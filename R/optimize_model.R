@@ -36,9 +36,9 @@ optimize_model <- function(
   
   # TODO MODEL SIMPLIFICATION
   simplify_model(formula,
-                 family,
                  data,
                  model_type,
+                 family,
                  model_args,
                  direction)
   

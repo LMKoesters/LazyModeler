@@ -32,15 +32,15 @@ simplify_forward <- function() {
 
 simplify_backward <- function(
     formula,
-    family,
     data,
     model_type,
+    family,
     model_args) {
   
   # CREATE MODEL
   regression_model <- create_model(formula,
-                                   family,
                                    data,
                                    model_type,
+                                   family,
                                    model_args)
 }

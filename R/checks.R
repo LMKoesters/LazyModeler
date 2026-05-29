@@ -1,7 +1,4 @@
 check_model_type <- function(model_type) {
-  # TODO this won't work if model_type is something like gaussian()
-  # Need to convert to string
-  
   if (!model_type %in% c("lm", "glm", "lmer", "glmer", "gam", "nlme", "nls")) {
     stop(
       sprintf(
@@ -18,4 +15,5 @@ check_model_type <- function(model_type) {
 check_model_family <- function(family) {
   # TODO
   # determine family etc
+  # keep in mind that family can be string or function
 }
