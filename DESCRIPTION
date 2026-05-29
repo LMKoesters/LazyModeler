@@ -18,7 +18,7 @@ Encoding: UTF-8
 LazyData: true
 URL: https://github.com/LMKoesters/LazyModeler
 BugReports: https://github.com/LMKoesters/LazyModeler/issues
-Depends: R (>= 4.1.0)
+Depends: R (>= 4.4.0)
 Imports: 
     colorspace,
     corrplot,
@@ -42,7 +42,8 @@ Imports:
     tibble,
     tidyr,
     utils,
-    withr
+    withr,
+    zeallot
 Suggests: 
     see,
     testthat (>= 3.0.0)
@@ -51,3 +52,4 @@ License: GPL (>= 3)
 Roxygen: list(markdown = TRUE)
 Config/rcmdcheck/ignore-inconsequential-notes: true
 Config/roxygen2/version: 8.0.0
+RoxygenNote: 8.0.0
