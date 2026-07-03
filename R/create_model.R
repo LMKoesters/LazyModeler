@@ -11,12 +11,12 @@ create_model <- function(formula,
                                        "family" = family,
                                        "data" = data))
       stats::glm
-      },
+    },
     "lm" = {
       model_args <- c(model_args, list("formula" = formula,
                                        "data" = data))
       stats::lm
-      },
+    },
     "glmer" = {
       model_args <- c(model_args, list("formula" = formula,
                                        "family" = family,
@@ -45,7 +45,7 @@ create_model <- function(formula,
       stats::nls
     }
   )
-  
+
   regression_model <- withCallingHandlers(
     do.call(model_fun, model_args),
     warning = function(w) {
@@ -57,6 +57,6 @@ create_model <- function(formula,
       }
     }
   )
-  
+
   regression_model
 }
