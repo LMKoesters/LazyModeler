@@ -24,7 +24,7 @@ Our R package `LazyModeler` enables users to automatically remove autocorrelated
 
 The first major function `handle_autocorrelations` checks for any autocorrelations (\|r\| \> 0.7) (Dormann et al. 2013) given a list of variables sorted by relevance. Automatic removal of these autocorrelations is possible through the use of a function parameter. Removal will follow the order of the list of variables, ensuring that the user's expertise on the importance of features is respected. A named list is returned with a) a vector containing all removed predictors, and b) a data frame listing autocorrelations and information on deleted variables.
 
-The main function provides the model formula to the second major function `simplify_model`. If autocorrelations were detected, the formula is updated accordingly. The regression model is then calculated. Options for the models are: `lm`, `glm`, `lmer`, `glmer`, `gam`, `nls`, or `nlmer`, with all possible distributions of the response variable being allowed. Stepwise backward simplification or forward model selection takes place using an iterative process where each time the metric(s) specified by the user are applied on the model to check whether further simplification/selection is needed. Main variables are kept when they are involved in interactions. Options for the metrics are: `aov`, `aic`, `aicc`, or `bic`. The final model is returned to the main function alongside its metadata as well as simplification history if requested by the user.
+The main function provides the model formula to the second major function `simplify_model`. If autocorrelations were detected, the formula is updated accordingly. The regression model is then calculated. Options for the models are: `lm`, `glm`, `lmer`, `glmer`, `gam`, `nls`, or `nlmer`, with all possible distributions of the response variable being allowed. Stepwise backward simplification or forward model selection takes place using an iterative process where each time the metric(s) specified by the user are applied on the model to check whether further simplification/selection is needed. Main variables are kept when they are involved in interactions. Options for the metrics are: `anova`, `aic`, `aicc`, or `bic`. The final model is returned to the main function alongside its metadata as well as simplification history if requested by the user.
 
 Using the third major function `plot_model()`, the final model then undergoes multiple visualization steps. Plots to assess model quality are created using the standard plot function available through base R, or model check included in the `performance` R package (Lüdecke et al. 2021). Furthermore, the script produces regression, box, or violin plots for each numerical or categorical coefficient as well as plots depicting effects sizes and estimates. All generated plots are returned to the user within a named list. The main function additionally returns the output of both the model simplification/selection and autocorrelation functions as well as the summary of the final model.
 
@@ -55,7 +55,7 @@ remotes::install_github("LMKoesters/LazyModeler")
 Alternatively, you need to download the tarball from GitHub and then install using `install.packages`.
 ``` r
 install.packages(
-	"https://github.com/LMKoesters/LazyModeler/releases/download/v1.0.0/LazyModeler_1.0.0.tar.gz",
+	"https://github.com/LMKoesters/LazyModeler/releases/download/v2.0.0/LazyModeler_2.0.0.tar.gz",
 	repos = NULL,
 	type="source"
 )
