@@ -80,14 +80,12 @@ create_model <- function(formula,
     "nlme" = {
       model_args <- c(model_args, list("model" = formula,
                                        "data" = data))
-      print(model_args)
       nlme::nlme
     },
     "nls" = {
       model_args <- c(model_args, list("formula" = formula,
                                        "data" = data))
       model_args$model <- TRUE
-      print(model_args)
       stats::nls
     }
   )
