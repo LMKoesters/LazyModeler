@@ -8,9 +8,31 @@ optimize_model(
   formula,
   data,
   model_type,
-  family = gaussian,
+  family = stats::gaussian,
   model_args = list(),
-  direction = "backward"
+  evaluation_methods = c("anova"),
+  directions = c("backward"),
+  simplify_model = TRUE,
+  scale_predictors = TRUE,
+  remove_autocors = TRUE,
+  trace = TRUE,
+  base_formula = NA,
+  use_psi = FALSE,
+  quality_assessment = "baseR",
+  ac_threshold = 0.7,
+  ac_columns = c(),
+  cor_args = list(method = c("pearson"), use = "complete.obs"),
+  p_threshold = 0.05,
+  psi_boot_repl = 100,
+  psi_k = 2,
+  round_p = 5,
+  stat_type = 2,
+  psi_label_size = 2.5,
+  plot_point_position = "jitter",
+  plot_relationships = TRUE,
+  categorical_stat_test = "wilcox",
+  plot_type = "boxplot",
+  plot_curve = TRUE
 )
 }
 \arguments{
@@ -18,21 +40,124 @@ optimize_model(
 
 \item{data}{Dataframe with response and predictors as columns.}
 
-\item{model_type}{Model type to be used.
+\item{model_type}{Model type to be used as character string.
 Options: "lm", "glm", "lmer", "glmer",
-"nlme", and "gam". Default: "glm".}
+"nlme", "gam", and "nls"}
 
-\item{family}{A character string describing the family used for model calculation.
-See \link[stats:family]{stats::family} for options. Default: "gaussian".}
+\item{family}{A character string or call describing the family used for model calculation.
+See \link[stats:family]{stats::family} for options. Default: gaussian.}
 
 \item{model_args}{A named list of additional arguments given directly to model call}
+
+\item{evaluation_methods}{Character vector with methods to use for model evaluation.
+Allowed evaluation methods: "aic", "aicc", "bic", or "anova".
+Default: c("anova")}
+
+\item{directions}{Vector of directions of model selection. Default: c("backward")}
+
+\item{simplify_model}{Whether or not to simplify the full model. Default: TRUE}
+
+\item{scale_predictors}{Whether to apply scaling to predictor variables. Default: FALSE}
+
+\item{remove_autocors}{Whether to remove autocorrelated dataframe variables from formula.
+Default: TRUE}
+
+\item{trace}{Whether to return the full model selection history. Default: TRUE}
+
+\item{base_formula}{Lower formula used for forward model selection. Only required if forward
+selection is chosen, otherwise NA}
+
+\item{use_psi}{Whether to apply post model selection inference to correct p-values.
+Default: FALSE}
+
+\item{quality_assessment}{The mode of model quality assessment. Either "baseR" or "performance".
+Default: "baseR"}
+
+\item{ac_threshold}{Threshold at which two variables are to be considered autocorrelated.
+Default: 0.7}
+
+\item{ac_columns}{Columns to check for autocorrelations. The order of columns dictates
+priority basis for removal of predictors. Columns further down the list
+are removed first. If empty, columns are determined based on the given
+dataframe}
+
+\item{cor_args}{Further arguments for \code{\link[stats:cor]{stats::cor()}}.
+Default: method = "pearson" and use = "complete.obs"}
+
+\item{p_threshold}{P-value threshold for significance evaluation}
+
+\item{psi_boot_repl}{A number or list of psi bootstrap replicates.
+Default: 100}
+
+\item{psi_k}{The multiple of the number of degrees of freedom used as
+penalty in the model selection. The default k = 2 corresponds to the AIC.}
+
+\item{round_p}{Convenience parameter for automatic rounding of p-values. Default: 5}
+
+\item{stat_type}{Type of Anova test}
+
+\item{psi_label_size}{Size of labels within post-selection inference plot.
+Default: 2.5}
+
+\item{plot_point_position}{Position adjustment for model feature plots. See the position paramter of
+\code{\link[ggplot2:geom_point]{ggplot2::geom_point()}} for more information. Default: "jitter"}
+
+\item{plot_relationships}{Whether to plot regression, effect size, and estimates.
+Default: TRUE}
+
+\item{categorical_stat_test}{Either "t.test" or "wilcox".
+Used to calculate statistics for regression plots of categorical variables.
+Default: "wilcox"}
+
+\item{plot_type}{Either "boxplot" or "violin".
+Used to plot regression plots for categorical variables.
+Default: "boxplot"}
+
+\item{plot_curve}{Whether to plot \code{\link[ggplot2:geom_smooth]{ggplot2::geom_smooth()}} in regression plots. Default: TRUE}
 }
 \value{
 List with a) information on autocorrelated variables and b)
-final simplified/expanded models with further information
-(see function \code{\link[=simplify_model]{simplify_model()}} for further details)
+final simplified/expanded models with further information and plots
 }
 \description{
 Optimize model by removing autocorrelations and variables
 that do not significantly predict response variable.
+}
+\examples{
+# setup
+data("plants")
+
+# generate a glm model with the provided term and simplify it
+# by applying backward simplification
+simplified_model_info <- optimize_model(
+  sexual_seed_prop ~ solar_radiation +
+    annual_mean_temperature +
+    isothermality +
+    I(isothermality^2) +
+    habitat +
+    ploidy +
+    solar_radiation:annual_mean_temperature +
+    solar_radiation:isothermality +
+    annual_mean_temperature:isothermality,
+  data = plants,
+  model_type = "glm",
+  ac_threshold = 0.8,
+  ac_columns = c("solar_radiation",
+                 "annual_mean_temperature",
+                 "isothermality",
+                 "altitude",
+                 "latitude_gps_n",
+                 "longitude_gps_e"),
+  cor_args = list(method = c("spearman"),
+                  use = "complete.obs"),
+  family = "quasibinomial",
+  directions = c("backward"),
+  scale_predictors = TRUE,
+  evaluation_methods = c("anova"),
+  quality_assessment = "performance",
+  categorical_stat_test = "wilcox",
+  plot_type = "violin",
+  round_p = 3,
+  trace = TRUE
+)
 }

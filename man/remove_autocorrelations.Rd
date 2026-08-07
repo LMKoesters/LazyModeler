@@ -19,5 +19,5 @@ a) a vector with removed predictors (NULL if none were removed), and
 b) a dataframe with comprehensive information on autocorrelations
 }
 \description{
-Function to remove autocorrelations between columns in input dataframe
+Removes autocorrelations between columns of an input dataframe.
 }

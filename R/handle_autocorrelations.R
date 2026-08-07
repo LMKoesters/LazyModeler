@@ -1,31 +1,40 @@
 #' Handle autocorrelations
 #'
-#' Function to process autocorrelations between columns in input dataframe
+#' Processes autocorrelations between columns in input dataframe by calculating
+#'  correlation scores, determining which column best to remove if
+#'  more than two columns are autocorrelated, and removing related terms from
+#'  a given formula.
+#' @param formula
+#'  A formula used for downstream model creation and simplification
 #' @param data
-#'  Dataframe with response and predictors as columns.
+#'  Underlying data for autocorrelation detection and downstream
+#'    model creation
 #' @param cols
 #'  Columns to check for autocorrelations. The order of columns dictates
 #'  priority basis for removal of predictors. Columns further down the list
-#'  are removed first.
+#'  are removed first
 #' @param remove
 #'  Boolean switch for automatic removal of autocorrelated variables.
+#'    Default: TRUE
 #' @param threshold
-#'  The threshold at which two variables are to be considered as autocorrelated.
+#'  The threshold at which two variables are to be considered autocorrelated
 #' @param cor_args
 #'  Further arguments for [stats::cor()].
+#'    Default: method = "pearson" and use = "complete.obs"
 #' @return
 #'  Named list with
-#'  a) a vector with removed predictors (NULL if none were removed), and
-#'  b) a dataframe with comprehensive information on autocorrelations
+#'  a) a vector with removed predictors, and
+#'  b) a dataframe with comprehensive information on autocorrelations;
+#'    NULL if no autocorrelations were detected
+#'  c) an updated formula without autocorrelated variables
 handle_autocorrelations <- function(
-  data,
-  cols,
-  remove = TRUE,
-  threshold = 0.7,
-  cor_args = list(method = c("pearson"),
-    use = "complete.obs"
-  )
-) {
+    formula,
+    data,
+    cols,
+    remove = TRUE,
+    threshold = 0.7,
+    cor_args = list(method = c("pearson"),
+                    use = "complete.obs")) {
   # SETUP
   check_correlation_threshold(threshold)
 
@@ -49,8 +58,8 @@ handle_autocorrelations <- function(
 
   correlations_w_p <- cor_sort_and_filter(correlations_w_p, threshold)
   if (nrow(correlations_w_p) == 0) {
-    list("autocorrelations_info" = NULL,
-         "removed_predictors" = NULL)
+    out <- list("autocorrelations_info" = NULL,
+                "removed_predictors" = c())
   } else if (remove) {
     c(autocorrelations,
       removed_predictors) %<-% remove_autocorrelations(correlations_w_p, cols)
@@ -59,22 +68,32 @@ handle_autocorrelations <- function(
                                              "correlation",
                                              "p_value",
                                              "note")]
-    list("autocorrelations_info" = autocorrelations,
-         "removed_predictors" = removed_predictors)
+    out <- list("autocorrelations_info" = autocorrelations,
+                "removed_predictors" = removed_predictors)
   } else {
     warning(
       paste("Some of your variables are autocorrelated.",
             "Check $autocorrelations for more info.",
             collapse = " ")
     )
-    list("autocorrelations_info" = correlations_w_p,
-         "removed_predictors" = NULL)
+    out <- list("autocorrelations_info" = correlations_w_p,
+                "removed_predictors" = c())
   }
+
+  # UPDATE FORMULA
+  if (remove) {
+    out$formula <- remove_autocor_predictors(formula,
+                                             unique(out$removed_predictors))
+  } else {
+    out$formula <- formula
+  }
+
+  out
 }
 
 #' Handle autocorrelations
 #'
-#' Function to remove autocorrelations between columns in input dataframe
+#' Removes autocorrelations between columns of an input dataframe.
 #' @param correlations_w_p
 #'  Dataframe of sorted and indexed autocorrelated variables with p-values.
 #' @param cols

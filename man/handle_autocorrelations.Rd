@@ -5,6 +5,7 @@
 \title{Handle autocorrelations}
 \usage{
 handle_autocorrelations(
+  formula,
   data,
   cols,
   remove = TRUE,
@@ -13,23 +14,33 @@ handle_autocorrelations(
 )
 }
 \arguments{
-\item{data}{Dataframe with response and predictors as columns.}
+\item{formula}{A formula used for downstream model creation and simplification}
+
+\item{data}{Underlying data for autocorrelation detection and downstream
+model creation}
 
 \item{cols}{Columns to check for autocorrelations. The order of columns dictates
 priority basis for removal of predictors. Columns further down the list
-are removed first.}
+are removed first}
 
-\item{remove}{Boolean switch for automatic removal of autocorrelated variables.}
+\item{remove}{Boolean switch for automatic removal of autocorrelated variables.
+Default: TRUE}
 
-\item{threshold}{The threshold at which two variables are to be considered as autocorrelated.}
+\item{threshold}{The threshold at which two variables are to be considered autocorrelated}
 
-\item{cor_args}{Further arguments for \code{\link[stats:cor]{stats::cor()}}.}
+\item{cor_args}{Further arguments for \code{\link[stats:cor]{stats::cor()}}.
+Default: method = "pearson" and use = "complete.obs"}
 }
 \value{
 Named list with
-a) a vector with removed predictors (NULL if none were removed), and
-b) a dataframe with comprehensive information on autocorrelations
+a) a vector with removed predictors, and
+b) a dataframe with comprehensive information on autocorrelations;
+NULL if no autocorrelations were detected
+c) an updated formula without autocorrelated variables
 }
 \description{
-Function to process autocorrelations between columns in input dataframe
+Processes autocorrelations between columns in input dataframe by calculating
+correlation scores, determining which column best to remove if
+more than two columns are autocorrelated, and removing related terms from
+a given formula.
 }
