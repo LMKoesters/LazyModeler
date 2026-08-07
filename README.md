@@ -54,7 +54,11 @@ remotes::install_github("LMKoesters/LazyModeler")
 
 Alternatively, you need to download the tarball from GitHub and then install using `install.packages`.
 ``` r
-install.packages("PATH_TO_TARBALL/LazyModeler-v.1.0.0.tar.gz", repos = NULL, type="source")
+install.packages(
+	"https://github.com/LMKoesters/LazyModeler/releases/download/v1.0.0/LazyModeler_1.0.0.tar.gz",
+	repos = NULL,
+	type="source"
+)
 ```
 
 # Example
@@ -77,17 +81,44 @@ str(plants)
 summary(plants)
 
 results_example <- optimize_model(
+
+# generate a glm model with the provided term and simplify it
+# by applying backward simplification
+results_example <- optimize_model(
+  sexual_seed_prop ~
+    altitude +
+    latitude_gps_n +
+    longitude_gps_e +
+    (solar_radiation +
+      annual_mean_temperature +
+      isothermality)^2 +
+    I(isothermality^2) +
+    habitat +
+    ploidy,
+  data = plants,
+  model_type = "glm",
+  ac_threshold = 0.8,
+  ac_columns = c("solar_radiation",
+                 "annual_mean_temperature",
+                 "isothermality",
+                 "altitude",
+                 "latitude_gps_n",
+                 "longitude_gps_e"),
+  cor_args = list(method = c("spearman"),
+                  use = "complete.obs"),
+  family = "quasibinomial",
+  directions = c("backward"),
+  scale_predictors = TRUE,
+  evaluation_methods = c("anova"),
+  quality_assessment = "performance",
+  categorical_stat_test = "wilcox",
+  plot_type = "violin",
+  round_p = 3,
+  trace = TRUE
+)
+
     df = plants,
-    term = quote(sexual_seed_prop ~
-			     altitude +
-			     latitude_gps_n +
-			     longitude_gps_e +
-			     (solar_radiation +
-				     annual_mean_temperature +
-				     isothermality)^2 +
-				 I(isothermality^2) +
-				 habitat +
-				 ploidy),
+    term = quote(),
     autocorrelation_cols = c(
 	    "solar_radiation",
 	    "annual_mean_temperature",
