@@ -45,7 +45,7 @@ Options: "lm", "glm", "lmer", "glmer",
 "nlme", "gam", and "nls"}
 
 \item{family}{A character string or call describing the family used for model calculation.
-See \link[stats:family]{stats::family} for options. Default: gaussian.}
+See \link[stats:family]{stats::family} for options. Can also be "automatic". Default: gaussian.}
 
 \item{model_args}{A named list of additional arguments given directly to model call}
 

@@ -71,7 +71,7 @@ check_model_family <- function(family = NULL,
       sprintf(
         paste("Chosen distribution '%s' does not match response values.",
               "Would recommend %s. %s Please check.", collapse = " "),
-        family,
+        get_family_character(family),
         paste(valid_families, collapse = ", or "),
         valid_families_info$notice
       )

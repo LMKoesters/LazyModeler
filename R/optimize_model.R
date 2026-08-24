@@ -12,7 +12,7 @@
 #'  "nlme", "gam", and "nls"
 #' @param family
 #'  A character string or call describing the family used for model calculation.
-#'  See [stats::family] for options. Default: gaussian.
+#'  See [stats::family] for options. Can also be "automatic". Default: gaussian.
 #' @param model_args
 #'  A named list of additional arguments given directly to model call
 #' @param evaluation_methods
@@ -154,11 +154,13 @@ optimize_model <- function(
     plot_curve = TRUE) {
 
   check_model_type(model_type)
-  if (!model_type %in% c("glm", "glmer", "gam")) {
-    family <- check_model_family(family)
-  }
   formula <- check_formula(formula, data)
-
+  if (model_type %in% c("glm", "glmer", "gam")) {
+    family <- check_model_family(family,
+                                 automatic = identical(family, "automatic"),
+                                 data = data,
+                                 lhs = formula.tools::lhs(formula))
+  }
   out <- list()
 
   # AUTOCORRELATIONS
