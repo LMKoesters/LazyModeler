@@ -12,7 +12,7 @@ get_addable_terms(formula, model, model_type)
 \item{model}{A model to determine removable terms for}
 
 \item{model_type}{The type of model to get removable terms for. Can be either "glm", "lm",
-"glmer", "lmer", "gam"}
+"glmer", "lmer", or "gam"}
 }
 \value{
 A dataframe with terms to add and the name of the p-value column

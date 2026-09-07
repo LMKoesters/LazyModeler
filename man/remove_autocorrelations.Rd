@@ -4,14 +4,16 @@
 \alias{remove_autocorrelations}
 \title{Handle autocorrelations}
 \usage{
-remove_autocorrelations(correlations_w_p, cols)
+remove_autocorrelations(correlations_w_p, term_map_all, term_map_cor)
 }
 \arguments{
 \item{correlations_w_p}{Dataframe of sorted and indexed autocorrelated variables with p-values.}
 
-\item{cols}{Columns to check for autocorrelations. The order of columns dictates
-priority basis for removal of predictors. Columns further down the list
-are removed first.}
+\item{term_map_all}{Terms with columns represented in the data.}
+
+\item{term_map_cor}{Terms with columns to check for autocorrelations. The order of columns
+dictates priority basis for removal of predictors. Columns further down
+the list are removed first.}
 }
 \value{
 A list with

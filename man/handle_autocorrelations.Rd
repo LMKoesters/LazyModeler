@@ -7,10 +7,13 @@
 handle_autocorrelations(
   formula,
   data,
-  cols,
+  model_type,
+  family = NA,
+  cols = c(),
   remove = TRUE,
   threshold = 0.7,
-  cor_args = list(method = c("pearson"), use = "complete.obs")
+  cor_args = list(method = c("pearson"), use = "complete.obs"),
+  model_args = list()
 )
 }
 \arguments{
@@ -18,6 +21,13 @@ handle_autocorrelations(
 
 \item{data}{Underlying data for autocorrelation detection and downstream
 model creation}
+
+\item{model_type}{Model type to be used as character string.
+Options: "lm", "glm", "lmer", "glmer",
+"nlme", "gam", and "nls"}
+
+\item{family}{A character string or call describing the family used for model calculation.
+See \link[stats:family]{stats::family} for options.}
 
 \item{cols}{Columns to check for autocorrelations. The order of columns dictates
 priority basis for removal of predictors. Columns further down the list
@@ -30,6 +40,8 @@ Default: TRUE}
 
 \item{cor_args}{Further arguments for \code{\link[stats:cor]{stats::cor()}}.
 Default: method = "pearson" and use = "complete.obs"}
+
+\item{model_args}{A named list of additional arguments given directly to model call}
 }
 \value{
 Named list with

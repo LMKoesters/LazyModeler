@@ -229,9 +229,9 @@ optimize_forward <- function(
 
     if (typeof(best_pred_info) != "list") {
       if (optimize == "revert") {
-        final_model = last_model_info$model
+        final_model <- last_model_info$model
       } else {
-        final_model = best_step_res$model
+        final_model <- best_step_res$model
       }
 
       p_values <- get_model_p_values(final_model,
@@ -425,9 +425,9 @@ optimize_backward <- function(
 
     if (typeof(best_pred_info) != "list") {
       if (optimize == "revert") {
-        final_model = last_model_info$model
+        final_model <- last_model_info$model
       } else {
-        final_model = best_step_res$model
+        final_model <- best_step_res$model
       }
 
       p_values <- get_model_p_values(final_model,

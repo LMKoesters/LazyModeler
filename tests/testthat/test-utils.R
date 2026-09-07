@@ -5,15 +5,6 @@ test_that("3-way interactions are extracted", {
   expect_true(length(unique(interactions$main_effect)) == 3)
 })
 
-test_that("All columns related to formula are extracted", {
-  d <- make_significant_factors_data()
-
-  cols <- formula_related_cols(y ~ x1 + I(x1^2) + f2 + x1:f2 + x1:x2:f2 + x1:x2,
-                               d)
-
-  expect_equal(cols, c("x1", "x2"))
-})
-
 test_that("3-way interactions are transformed into trait interactions", {
   d <- make_significant_factors_data()
 

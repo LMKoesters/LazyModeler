@@ -38,23 +38,23 @@ create_model <- function(formula,
                          family = stats::gaussian,
                          model_args = list(),
                          fit = TRUE) {
-  model_args$na.action <- stats::na.omit
+  if (!"na.action" %in% names(model_args)) {
+    model_args$na.action <- stats::na.omit
+  }
 
   model_fun <- switch(
     as.character(model_type),
     "glm" = {
-      glm_method <- if (fit) "glm.fit" else "model.frame"
+      if (!fit) model_args$method <- "model.frame"
       model_args <- c(model_args, list("formula" = formula,
                                        "family" = family,
-                                       "data" = data,
-                                       "method" = glm_method))
+                                       "data" = data))
       stats::glm
     },
     "lm" = {
-      lm_method <- if (fit) "qr" else "model.frame"
+      if (!fit) model_args$method <- "model.frame"
       model_args <- c(model_args, list("formula" = formula,
-                                       "data" = data,
-                                       "method" = lm_method))
+                                       "data" = data))
       stats::lm
     },
     "glmer" = {
@@ -70,10 +70,10 @@ create_model <- function(formula,
       lme4::lmer
     },
     "gam" = {
+      if (!fit) model_args$fit <- fit
       model_args <- c(model_args, list("formula" = formula,
                                        "family" = family,
-                                       "data" = data,
-                                       "fit" = fit))
+                                       "data" = data))
       model_args$method <- "REML"
       mgcv::gam
     },

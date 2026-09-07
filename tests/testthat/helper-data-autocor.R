@@ -1,12 +1,19 @@
 make_autocor_data <- function(n = 80, seed = 42) {
   set.seed(seed)
 
-  x1 <- rnorm(n)
+  x1 <- exp(rnorm(n, mean = 1, sd = 0.4))
   x2 <- x1 * 0.9 + rnorm(n) * .7  # correlated to x1
   x3 <- rnorm(n) * .7 + x2 # correlated to x2, but not to x1
   x4 <- rnorm(n) + x3
   x5 <- x4 * .5 + rnorm(n) * 0.1
   x6 <- rnorm(n)
+
+  # factor associated with x6
+  f1 <- cut(
+    x6 + rnorm(n, sd = 0.2),
+    breaks = c(-Inf, -0.5, 0.5, Inf),
+    labels = c("A", "B", "C")
+  )
 
   # linear relation
   y <- 1 + 2 * x1 - 1.5 * x3 + rnorm(n, sd = 0.2)
@@ -17,7 +24,8 @@ make_autocor_data <- function(n = 80, seed = 42) {
                   x3 = x3,
                   x4 = x4,
                   x5 = x5,
-                  x6 = x6)
+                  x6 = x6,
+                  f1 = f1)
 
   d
 }

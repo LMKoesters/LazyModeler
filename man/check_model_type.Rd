@@ -4,10 +4,12 @@
 \alias{check_model_type}
 \title{Check that model type is supported by package}
 \usage{
-check_model_type(type)
+check_model_type(model_type, model_args)
 }
 \arguments{
-\item{type}{The model type to be checked}
+\item{model_type}{The model type to be checked}
+
+\item{model_args}{A named list of additional arguments given directly to model call}
 }
 \description{
 Function to check whether model type is among supported model types.

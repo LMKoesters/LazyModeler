@@ -8,12 +8,14 @@ optimize_model(
   formula,
   data,
   model_type,
+  ...,
   family = stats::gaussian,
   model_args = list(),
   evaluation_methods = c("anova"),
   directions = c("backward"),
   simplify_model = TRUE,
   scale_predictors = TRUE,
+  detect_autocors = TRUE,
   remove_autocors = TRUE,
   trace = TRUE,
   base_formula = NA,
@@ -42,10 +44,11 @@ optimize_model(
 
 \item{model_type}{Model type to be used as character string.
 Options: "lm", "glm", "lmer", "glmer",
-"nlme", "gam", and "nls"}
+"nlme", "gam", and "nls".}
 
 \item{family}{A character string or call describing the family used for model calculation.
-See \link[stats:family]{stats::family} for options. Can also be "automatic". Default: gaussian.}
+See \link[stats:family]{stats::family} for options. Can also be "automatic".
+Default: gaussian}
 
 \item{model_args}{A named list of additional arguments given directly to model call}
 
@@ -59,18 +62,24 @@ Default: c("anova")}
 
 \item{scale_predictors}{Whether to apply scaling to predictor variables. Default: FALSE}
 
+\item{detect_autocors}{Whether to detect autocorrelated dataframe variables. Note that we
+support autocorrelation detection only for model types "lm", "glm",
+"lmer", "glmer", and "gam".
+Default: TRUE}
+
 \item{remove_autocors}{Whether to remove autocorrelated dataframe variables from formula.
 Default: TRUE}
 
 \item{trace}{Whether to return the full model selection history. Default: TRUE}
 
 \item{base_formula}{Lower formula used for forward model selection. Only required if forward
-selection is chosen, otherwise NA}
+selection is chosen, otherwise NA.}
 
 \item{use_psi}{Whether to apply post model selection inference to correct p-values.
 Default: FALSE}
 
 \item{quality_assessment}{The mode of model quality assessment. Either "baseR" or "performance".
+Other values do not produce quality assessment plots.
 Default: "baseR"}
 
 \item{ac_threshold}{Threshold at which two variables are to be considered autocorrelated.
@@ -79,7 +88,14 @@ Default: 0.7}
 \item{ac_columns}{Columns to check for autocorrelations. The order of columns dictates
 priority basis for removal of predictors. Columns further down the list
 are removed first. If empty, columns are determined based on the given
-dataframe}
+dataframe. Provided columns need to be part of the formula.
+For instance, when providing the formula y ~ x1 + x2 and ac_columns
+c("x1", "x2", "x3"), x3 will not be considered for autocorrelation
+testing.
+Note that LazyModeler still distinguishes between interactions
+and main effects. Removal of predictors will start with the evaluation of
+correlations between main effects and will remove blocking interactions
+when removing a main effect.}
 
 \item{cor_args}{Further arguments for \code{\link[stats:cor]{stats::cor()}}.
 Default: method = "pearson" and use = "complete.obs"}
@@ -105,8 +121,8 @@ Default: 2.5}
 \item{plot_relationships}{Whether to plot regression, effect size, and estimates.
 Default: TRUE}
 
-\item{categorical_stat_test}{Either "t.test" or "wilcox".
-Used to calculate statistics for regression plots of categorical variables.
+\item{categorical_stat_test}{Either "t.test" or "wilcox". Used to calculate statistics for regression
+plots of categorical variables.
 Default: "wilcox"}
 
 \item{plot_type}{Either "boxplot" or "violin".

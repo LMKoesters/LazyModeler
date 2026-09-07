@@ -80,21 +80,18 @@ data(plants)
 str(plants)
 summary(plants)
 
-results_example <- optimize_model(
-
 # generate a glm model with the provided term and simplify it
 # by applying backward simplification
 results_example <- optimize_model(
-  sexual_seed_prop ~
-    altitude +
-    latitude_gps_n +
-    longitude_gps_e +
-    (solar_radiation +
-      annual_mean_temperature +
-      isothermality)^2 +
+  sexual_seed_prop ~ solar_radiation +
+    annual_mean_temperature +
+    isothermality +
     I(isothermality^2) +
     habitat +
-    ploidy,
+    ploidy +
+    solar_radiation:annual_mean_temperature +
+    solar_radiation:isothermality +
+    annual_mean_temperature:isothermality,
   data = plants,
   model_type = "glm",
   ac_threshold = 0.8,
@@ -116,35 +113,6 @@ results_example <- optimize_model(
   round_p = 3,
   trace = TRUE
 )
-
-    df = plants,
-    term = quote(),
-    autocorrelation_cols = c(
-	    "solar_radiation",
-	    "annual_mean_temperature",
-	    "isothermality",
-	    "altitude",
-	    "latitude_gps_n",
-	    "longitude_gps_e"
-	),
-    automatic_removal = TRUE,
-    autocorrelation_threshold = 0.8,
-    correlation_method = "spearman",
-    cor_use = "complete.obs",
-    model_type = "glm",
-    model_family = "quasibinomial",
-    evaluation_methods = c("anova"),
-    simplification_direction = "backward",
-    backward_simplify_model = TRUE,
-    omit_na = "overall",
-    scale_predictor = TRUE,
-    plot_quality_assessment = "performance",
-    round_p = 3,
-    plot_relationships = TRUE,
-    jitter_plots = TRUE,
-    plot_type = "violin",
-    stat_test = "wilcox",
-    trace = TRUE)
 ```
 
 ![Navigating through the output. For example, (a) simply click on the data frame button highlighted with a red arrow to (b) illustrate the final model output.](paper/assets/figure1.png)

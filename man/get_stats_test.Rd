@@ -8,7 +8,7 @@ get_stats_test(model_type, family = stats::gaussian)
 }
 \arguments{
 \item{model_type}{The type of model to get removable terms for. Can be either "glm", "lm",
-"glmer", "lmer", "gam"}
+"glmer", "lmer", or "gam"}
 
 \item{family}{The model family. Default: gaussian}
 }

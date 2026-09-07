@@ -280,7 +280,7 @@ get_model_p_values <- function(model,
 #'  A model to determine removable terms for
 #' @param model_type
 #'  The type of model to get removable terms for. Can be either "glm", "lm",
-#'    "glmer", "lmer", "gam"
+#'    "glmer", "lmer", or "gam"
 #' @returns
 #'  A dataframe with removable terms and the name of the p-value column
 get_removable_terms <- function(model,
@@ -329,7 +329,7 @@ get_removable_terms <- function(model,
 #'  A model to determine removable terms for
 #' @param model_type
 #'  The type of model to get removable terms for. Can be either "glm", "lm",
-#'    "glmer", "lmer", "gam"
+#'    "glmer", "lmer", or "gam"
 #' @returns
 #'  A dataframe with terms to add and the name of the p-value column
 get_addable_terms <- function(formula,
@@ -379,7 +379,7 @@ get_addable_terms <- function(formula,
 #'
 #' @param model_type
 #'  The type of model to get removable terms for. Can be either "glm", "lm",
-#'    "glmer", "lmer", "gam"
+#'    "glmer", "lmer", or "gam"
 #' @param family
 #'  The model family. Default: gaussian
 #' @returns
@@ -388,11 +388,11 @@ get_stats_test <- function(model_type,
                            family = stats::gaussian) {
   if ((model_type == "glm") &&
         (family %in% c("binomial", "poisson"))) {
-    stats_test = "LRT"
+    stats_test <- "LRT"
   } else if (model_type %in% c("lmer", "glmer")) {
-    stats_test = "Chisq"
+    stats_test <- "Chisq"
   } else {
-    stats_test = "F"
+    stats_test <- "F"
   }
 
   stats_test
@@ -430,34 +430,23 @@ new_model_is_better <- function(assess1, assess2) {
 #'  Updated formula without autocorrelated predictors
 remove_autocor_predictors <- function(formula,
                                       predictors) {
-  terms <- attr(stats::terms.formula(formula), "term.labels")
-  interactions <- extract_interactions(terms)
-
   for (pred in predictors) {
     d <- paste(". ~ . -", pred)
     formula <- stats::update(formula, d)
-    terms <- attr(stats::terms.formula(formula), "term.labels")
-    interactions <- extract_interactions(terms)
-    interacts <- interactions$predictor[interactions$main_effect == pred] |>
-      unique()
-    for (interact in interacts) {
-      d <- paste(". ~ . -", interact)
-      formula <- stats::update(formula, d)
-    }
   }
 
   formula
 }
 
-#' Extract columns mentioned in formula
+#' Extract numeric columns mentioned in formula
 #'
 #' @param formula
 #'  A model formula
 #' @param data
 #'  Data with columns mentioned in formula
 #' @returns
-#'  Returns all data columns mentioned in formula
-formula_related_cols <- function(formula, data) {
+#'  Returns all numeric data columns mentioned in formula
+formula_numeric_cols <- function(formula, data) {
   terms <- attr(stats::terms.formula(formula), "term.labels")
   interactions <- extract_interactions(terms)
   main_effects <- interactions$main_effect
@@ -692,4 +681,139 @@ get_term_factors <- function(model,
                           interactions$term)
 
   list(categorical_vars, interactions, numeric_vars)
+}
+
+#' Maps model.matrix column names to terms
+#' @param m_matrix
+#'  A model.matrix result
+#' @param formula
+#'  A formula used for downstream model creation and simplification
+#' @returns
+#'  A dataframe with column names and corresponding formula terms
+map_col_to_term <- function(m_matrix, formula) {
+  assign <- attr(m_matrix, "assign")
+  term_labels <- attr(stats::terms(formula), "term.labels")
+  column_terms <- term_labels[assign]
+
+  data.frame(
+    column = colnames(m_matrix)[colnames(m_matrix) != "(Intercept)"],
+    term = column_terms
+  )
+}
+
+#' Adds interactions and sorts a term-to-column dataframe by
+#'  main effects/interactions
+#' @param m_matrix
+#'  A dataframe with column names and corresponding formula terms
+#' @param sort
+#'  Whether to sort the term map by interactions/main effects
+#' @returns
+#'  A (sorted) term map including information on interactions with
+#'    main effects listed first
+sort_term_map <- function(term_map, sort = TRUE) {
+  interactions <- extract_interactions(term_map$term)
+  term_map$i <- seq.int(nrow(term_map))
+
+  term_map <- term_map |>
+    dplyr::mutate(is_interaction = .data$term %in% interactions$predictor) |>
+    dplyr::left_join(
+      interactions,
+      by = c("term" = "predictor")
+    ) |>
+    dplyr::arrange(.data$is_interaction, .data$i)
+
+  term_map
+}
+
+#' Format data for detection of autocorrelations
+#'
+#' Format input data for detection of autocorrelations
+#'  by calculating the model matrix that allows autocorrelation testing
+#'  for interactions, transforms, and factor variables.
+#' @param formula
+#'  A formula used for downstream model creation and simplification
+#' @param data
+#'  Underlying data for autocorrelation detection and downstream
+#'    model creation
+#' @param model_type
+#'  Model type to be used as character string.
+#'  Options: "lm", "glm", "lmer", "glmer",
+#'  "nlme", "gam", and "nls"
+#' @param family
+#'  A character string or call describing the family used for model calculation.
+#'    See [stats::family] for options.
+#' @param model_args
+#'  A named list of additional arguments given directly to model call
+#' @return
+#'  Dataframe with interactions, transforms,
+#'    and factor variables as numeric columns
+format_cor_data <- function(
+    data,
+    formula,
+    model_type,
+    family,
+    model_args = list()) {
+  model_args$na.action <- stats::na.pass
+  if (model_type %in% c("lm", "glm")) {
+    model_frame <- create_model(
+      formula,
+      data,
+      model_type,
+      family,
+      model_args,
+      fit = FALSE
+    )
+
+    m_matrix <- stats::model.matrix(
+      formula,
+      model_frame,
+      contrasts.arg = model_args$contrasts
+    )
+  } else if (model_type %in% c("lmer", "glmer")) {
+    if (model_type == "lmer") {
+      func <- lme4::lFormula
+      params <- c(model_args, list(
+        formula = formula,
+        data = data
+      ))
+    } else {
+      func <- lme4::glFormula
+      params <- c(model_args, list(
+        formula = formula,
+        family = family,
+        data = data
+      ))
+    }
+
+    setup <- do.call(func, params)
+    m_matrix <- setup$X
+    formula <- lme4::nobars(formula)
+  } else if (model_type == "gam") {
+    # extract parametric formula for detection of autocorrelations
+    model_frame <- create_model(
+      formula,
+      data,
+      model_type,
+      family,
+      model_args,
+      fit = FALSE
+    )
+    formula <- stats::formula(model_frame$pterms)
+
+    model_frame <- create_model(
+      formula,
+      data,
+      model_type,
+      family,
+      model_args,
+      fit = FALSE
+    )
+    m_matrix <- model_frame$X
+  }
+
+  term_map <- map_col_to_term(m_matrix, formula)
+  m_matrix <- m_matrix |>
+    as.data.frame() |>
+    dplyr::select(-c("(Intercept)"))
+  list(m_matrix = m_matrix, term_map = term_map)
 }

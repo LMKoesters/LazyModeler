@@ -98,9 +98,6 @@ plot_psi <- function(psi_info,
 #' @param quality_assessment
 #'  The mode of model quality assessment. Either "baseR" or "performance".
 #'    Default: "baseR"
-#' @param plot_relationships
-#'  Whether to plot regression, effect size, and estimates.
-#'  Default: TRUE
 #' @param test
 #'  Either "t.test" or "wilcox".
 #'  Used to calculate statistics for regression plots of categorical variables.
@@ -149,7 +146,6 @@ plot_psi <- function(psi_info,
 plot_model <- function(model,
                        model_type,
                        quality_assessment = "baseR",
-                       plot_relationships = TRUE,
                        test = "wilcox",
                        plot_type = "boxplot",
                        plot_curve = TRUE,
@@ -181,7 +177,7 @@ plot_model <- function(model,
       stats::formula(model)
     )
   } else {
-    formula <- model$formula
+    formula <- stats::formula(model)
   }
   response_str <- deparse1(formula.tools::lhs(formula))
   c(categorical_vars,
@@ -200,42 +196,40 @@ plot_model <- function(model,
                                                  categorical_vars,
                                                  interactions)
 
-  if (plot_relationships) {
-    model_plots$estimates <- plot_estimates(model_overview,
-                                            formatted_labels)
-    model_plots$effect_sizes <- plot_effect_sizes(model_overview,
-                                                  formatted_labels)
-    categorical_plots <- plot_categorical_vars(categorical_vars,
-                                               response_str,
-                                               m_frame,
-                                               model_overview,
-                                               test,
-                                               plot_type)
-    family <- stats::family(model)$family
-    numeric_plots <- plot_numeric_vars(numeric_vars,
-                                       response_str,
-                                       m_frame,
-                                       m_matrix,
-                                       model_overview,
-                                       model_type,
-                                       family,
-                                       plot_curve,
-                                       round_p,
-                                       point_position)
-    interaction_plots <- plot_interactions(interactions,
-                                           response_str,
-                                           m_frame,
-                                           m_matrix,
-                                           model_overview,
-                                           model_type,
-                                           family,
-                                           plot_curve,
-                                           round_p,
-                                           point_position)
-    model_plots$categorical_variables <- categorical_plots
-    model_plots$relationships <- c(numeric_plots,
-                                   interaction_plots)
-  }
+  model_plots$estimates <- plot_estimates(model_overview,
+                                          formatted_labels)
+  model_plots$effect_sizes <- plot_effect_sizes(model_overview,
+                                                formatted_labels)
+  categorical_plots <- plot_categorical_vars(categorical_vars,
+                                             response_str,
+                                             m_frame,
+                                             model_overview,
+                                             test,
+                                             plot_type)
+  family <- stats::family(model)$family
+  numeric_plots <- plot_numeric_vars(numeric_vars,
+                                     response_str,
+                                     m_frame,
+                                     m_matrix,
+                                     model_overview,
+                                     model_type,
+                                     family,
+                                     plot_curve,
+                                     round_p,
+                                     point_position)
+  interaction_plots <- plot_interactions(interactions,
+                                         response_str,
+                                         m_frame,
+                                         m_matrix,
+                                         model_overview,
+                                         model_type,
+                                         family,
+                                         plot_curve,
+                                         round_p,
+                                         point_position)
+  model_plots$categorical_variables <- categorical_plots
+  model_plots$relationships <- c(numeric_plots,
+                                 interaction_plots)
 
   model_plots
 }
@@ -262,6 +256,7 @@ prepare_plot_data <- function(model,
       )
     )
 
+  # TODO may be problematic when contrasts is provided
   get_term_factors(model, model_type, model_overview)
 }
 
@@ -587,7 +582,7 @@ plot_numeric_vars <- function(numeric_vars,
         digits = round_p
       )
     } else {
-      estimate = "NA"
+      estimate <- "NA"
     }
     est_len <- length(as.character(estimate))
     x_max <- max(m_frame[[numeric_var]])
