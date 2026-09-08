@@ -238,3 +238,11 @@ test_that("p_threshold determines compare models (forward)", {
   )
   expect_true(assess2$has_improved)
 })
+
+test_that("base formula is correctly built when none is provided", {
+  (base_formula <- check_base_formula(NA, some_resp ~ x1 + x2)) |>
+    expect_warning(regexp = "not provide a base formula")
+  expect_equal(base_formula,
+               some_resp ~ 1,
+               ignore_attr = ".Environment")
+})

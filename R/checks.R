@@ -290,3 +290,34 @@ check_variance <- function(data_ext, term_map) {
     dplyr::filter(!.data$column %in% has_no_variance)
   list(term_map, has_no_variance)
 }
+
+#' Check base formula used for forward model selection
+#'
+#' Checks whether base formula was provided and creates one if
+#'  necessary.
+#' @param base_formula
+#'  The lower formula used for forward model selection. Only required if
+#'    direction = "forward", otherwise this is NA
+#' @param formula
+#'  Upper formula to be used for model creation/selection.
+#'    Used for extraction of response.
+#' @returns
+#'  A base formula to be used for forward model selection
+check_base_formula <- function(base_formula, formula) {
+  if (typeof(base_formula) != "language") {
+    lhs <- formula.tools::lhs(formula)
+    base_formula <- stats::reformulate(c("1"), response = lhs)
+    warning(
+      sprintf(
+        paste("You did not provide a base formula for forward model",
+              "selection. We are continuing with %s. If you wish",
+              "to use a different lower formula, please adjust your",
+              "method call.",
+              collapse = " "),
+        deparse1(base_formula)
+      )
+    )
+  }
+
+  base_formula
+}

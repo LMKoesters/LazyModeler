@@ -104,14 +104,7 @@ simplify_model <- function(
       trace
     )
   } else {
-    if (typeof(base_formula) != "language") {
-      warning(paste("You did not provide a base formula for forward model",
-                    "selection. We are continuing with y ~ 1. If you wish",
-                    "to use a different lower formula, please adjust your",
-                    "method call.",
-                    collapse = " "))
-      base_formula <- y ~ 1
-    }
+    base_formula <- check_base_formula(base_formula, formula)
 
     out <- optimize_forward(
       formula,
