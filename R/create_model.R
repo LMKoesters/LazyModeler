@@ -42,7 +42,7 @@ create_model <- function(formula,
     model_args$na.action <- stats::na.omit
   }
 
-  if (family %in% c("glm", "glmer", "gam")) {
+  if (model_type %in% c("glm", "glmer", "gam")) {
     model_args$formula <- formula
     model_args$family <- family
     model_args$data <- data

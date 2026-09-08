@@ -56,8 +56,7 @@ handle_autocorrelations <- function(
         "You have provided only a single column for autocorrelation",
         "testing. You need to specify at least two columns.",
         "Alternatively, you can let us determine relevant columns",
-        "based on the model formula.",
-        collapse = " "
+        "based on the model formula."
       )
     )
   }
@@ -89,7 +88,7 @@ handle_autocorrelations <- function(
     term_map_cor <- term_map_all
   }
 
-  if (nrow(term_map_cor) < 2) {
+  if (length(unique(term_map_cor$term)) < 2) {
     stop(
       sprintf(
         paste(
@@ -136,6 +135,7 @@ handle_autocorrelations <- function(
     threshold,
     p_threshold
   )
+
   if (nrow(correlations_w_p) == 0) {
     out <- list("autocorrelations_info" = NULL,
                 "removed_predictors" = c(has_no_variance))
@@ -201,6 +201,14 @@ remove_autocorrelations <- function(
     dplyr::left_join(term_map_all[, c("column", "term")],
                      by = c("main_effect" = "term"),
                      suffix = c("", "_main"))
+  autocorrelations <- autocorrelations |>
+    dplyr::left_join(term_map_cor[, c("column", "term")],
+                     by = c("coefficientA" = "column")) |>
+    dplyr::left_join(term_map_cor[, c("column", "term")],
+                     by = c("coefficientB" = "column"),
+                     suffix = c("A", "B")) |>
+    dplyr::filter(.data$termA != .data$termB)
+
   autocors_int <- autocorrelations[
     (autocorrelations$coefficientA %in% interactions$column) &
       (autocorrelations$coefficientB) %in% interactions$column,
