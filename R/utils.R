@@ -23,10 +23,12 @@ cor_pivot_longer <- function(correlations, values_to) {
 #'  Dataframe with information on correlations between variables with p-values
 #' @param threshold
 #'  The threshold at which to consider two variables autocorrelated
+#' @param p_threshold
+#'  p-value threshold for significance evaluation
 #' @returns
 #'  A sorted dataframe of autocorrelations with a correlation coefficient
 #'  equal to or larger than threshold
-cor_sort_and_filter <- function(correlations_w_p, threshold) {
+cor_sort_and_filter <- function(correlations_w_p, threshold, p_threshold) {
   correlations_w_p |>
     dplyr::mutate(
       sorted_coefA = pmin(.data$coefficientA, .data$coefficientB),
@@ -40,7 +42,7 @@ cor_sort_and_filter <- function(correlations_w_p, threshold) {
     dplyr::filter(
       ((.data$correlation >= threshold) |
          (.data$correlation <= -threshold)) &
-        (.data$p_value < 0.05)
+        (.data$p_value < p_threshold)
     ) |>
     tibble::add_column(note = NA)
 }
@@ -190,6 +192,8 @@ extract_interactions <- function(predictors) {
 #'  Direction of model selection used for anova interpretation
 #' @param old_model_assessments
 #'  The evaluation results of the previous model
+#' @param p_threshold
+#'  p-value threshold for significance evaluation. Default: 0.05
 #' @param delta
 #'  Minimal value by which the two models must differ for the newer model to
 #'    be rejected
@@ -200,6 +204,7 @@ compare_models <- function(evaluation_methods,
                            models,
                            direction,
                            old_model_assessments,
+                           p_threshold = 0.05,
                            delta = 2) {
   if (direction == "backward") models_idx <- list("small" = 1, "large" = 2)
   else models_idx <- list("small" = 2, "large" = 1)
@@ -215,24 +220,26 @@ compare_models <- function(evaluation_methods,
     res <- evaluators[[eval_m]](models[[1]])
     evaluation_results[eval_m] <- res
     diff <- res - old_model_assessments[[eval_m]]
-    if (diff > delta) return(
-      list("has_improved" = FALSE,
-           "assessments" = evaluation_results)
-    )
+    if (diff > delta) {
+      return(
+        list("has_improved" = FALSE,
+             "assessments" = evaluation_results)
+      )
+    }
   }
 
   if ("anova" %in% evaluation_methods) {
     anova_res <- stats::anova(models[[models_idx$small]],
                               models[[models_idx$large]])
     p_col <- colnames(anova_res)[[grep("Pr\\(", colnames(anova_res))]]
-    if ((direction == "backward") &&
-          (anova_res[2, p_col] < .05)) {
-      return(list("has_improved" = FALSE,
-                  "assessments" = evaluation_results))
-    } else if ((direction == "forward") &&
-                 (anova_res[2, p_col] >= .05)) {
-      return(list("has_improved" = FALSE,
-                  "assessments" = evaluation_results))
+    p_val <- anova_res[2, p_col]
+    larger_is_significantly_better <- p_val < p_threshold
+    if ((direction == "forward" && !larger_is_significantly_better) ||
+          (direction == "backward" && larger_is_significantly_better)) {
+      return(
+        list("has_improved" = FALSE,
+             "assessments" = evaluation_results)
+      )
     }
   }
 
@@ -281,10 +288,13 @@ get_model_p_values <- function(model,
 #' @param model_type
 #'  The type of model to get removable terms for. Can be either "glm", "lm",
 #'    "glmer", "lmer", or "gam"
+#' @param p_threshold
+#'  p-value threshold for significance evaluation. Default: 0.05
 #' @returns
 #'  A dataframe with removable terms and the name of the p-value column
 get_removable_terms <- function(model,
-                                model_type) {
+                                model_type,
+                                p_threshold = 0.05) {
   if (model_type == "gam") {
     pterms <- summary(model)$pTerms.table |>
       as.data.frame() |>
@@ -315,7 +325,7 @@ get_removable_terms <- function(model,
   }
   adjustable_terms <- adjustable_terms |>
     dplyr::filter((.data$predictor != "<none>") &
-                    (.data[[p_col]] >= 0.05)) |>
+                    (.data[[p_col]] >= p_threshold)) |>
     dplyr::arrange(dplyr::desc(.data[[p_col]]))
 
   list(adjustable_terms, p_col)

@@ -12,6 +12,7 @@ optimize_forward(
   family = stats::gaussian,
   model_args = list(),
   evaluation_methods = c("anova"),
+  p_threshold,
   trace = TRUE
 )
 }
@@ -32,6 +33,8 @@ optimize_forward(
 \item{evaluation_methods}{Character vector with methods to use for model evaluation.
 Allowed evaluation methods: "aic", "aicc", "bic", or "anova".
 Default: c("anova")}
+
+\item{p_threshold}{p-value threshold for significance evaluation. Default: 0.05}
 
 \item{trace}{Whether to return the selection history. Default. TRUE}
 }

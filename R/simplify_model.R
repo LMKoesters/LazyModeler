@@ -18,6 +18,8 @@
 #'  Direction of model selection. Default: "backward"
 #' @param family
 #'  The model family. Default: gaussian
+#' @param p_threshold
+#'  p-value threshold for significance evaluation. Default: 0.05
 #' @param trace
 #'  Whether to return the selection history. Default. TRUE
 #' @param base_formula
@@ -58,6 +60,7 @@ simplify_model <- function(
     evaluation_methods = c("anova"),
     direction = "backward",
     family = stats::gaussian,
+    p_threshold = 0.05,
     trace = TRUE,
     base_formula = NA) {
   evaluation_methods <- tolower(evaluation_methods)
@@ -69,7 +72,8 @@ simplify_model <- function(
                     data,
                     model_type,
                     model_args,
-                    evaluation_methods))
+                    evaluation_methods,
+                    p_threshold))
   }
 
   if (model_type == "gam") {
@@ -89,8 +93,16 @@ simplify_model <- function(
   }
 
   if (direction == "backward") {
-    out <- optimize_backward(formula, data, model_type, family, model_args,
-                             evaluation_methods, trace)
+    out <- optimize_backward(
+      formula,
+      data,
+      model_type,
+      family,
+      model_args,
+      evaluation_methods,
+      p_threshold,
+      trace
+    )
   } else {
     if (typeof(base_formula) != "language") {
       warning(paste("You did not provide a base formula for forward model",
@@ -101,8 +113,17 @@ simplify_model <- function(
       base_formula <- y ~ 1
     }
 
-    out <- optimize_forward(formula, base_formula, data, model_type, family,
-                            model_args, evaluation_methods, trace)
+    out <- optimize_forward(
+      formula,
+      base_formula,
+      data,
+      model_type,
+      family,
+      model_args,
+      evaluation_methods,
+      p_threshold,
+      trace
+    )
   }
   out
 }
@@ -123,12 +144,15 @@ simplify_model <- function(
 #'  Character vector with methods to use for model evaluation.
 #'  Allowed evaluation methods: "aic", "aicc", "bic", or "anova".
 #'  Default: c("anova")
+#' @param p_threshold
+#'  p-value threshold for significance evaluation. Default: 0.05
 #' @returns A model with evaluation metrics
 nls_nlme <- function(formula,
                      data,
                      model_type,
                      model_args = list(),
-                     evaluation_methods = c("anova")) {
+                     evaluation_methods = c("anova"),
+                     p_threshold = 0.05) {
 
   model <- create_model(formula,
                         data,
@@ -142,7 +166,8 @@ nls_nlme <- function(formula,
   assessed_models <- compare_models(evaluation_methods,
                                     list(model, model),
                                     "backward",
-                                    old_model_assessments)
+                                    old_model_assessments,
+                                    p_threshold)
   p_values <- get_model_p_values(model, model_type)
   out <- list(assessments = assessed_models$assessments,
               final_model = model,
@@ -170,6 +195,8 @@ nls_nlme <- function(formula,
 #'  Character vector with methods to use for model evaluation.
 #'  Allowed evaluation methods: "aic", "aicc", "bic", or "anova".
 #'  Default: c("anova")
+#' @param p_threshold
+#'  p-value threshold for significance evaluation. Default: 0.05
 #' @param trace
 #'  Whether to return the selection history. Default. TRUE
 #' @returns
@@ -183,6 +210,7 @@ optimize_forward <- function(
     family = stats::gaussian,
     model_args = list(),
     evaluation_methods = c("anova"),
+    p_threshold,
     trace = TRUE) {
   history <- list()
   current_formula <- base_formula
@@ -204,7 +232,8 @@ optimize_forward <- function(
   assessed_models <- compare_models(evaluation_wo_anova,
                                     list(model, model),
                                     "forward",
-                                    old_model_assessments)
+                                    old_model_assessments,
+                                    p_threshold)
 
   last_model_info <- list(
     model = model,
@@ -225,7 +254,8 @@ optimize_forward <- function(
                                          direction = "forward",
                                          family,
                                          model_args,
-                                         evaluation_methods)
+                                         evaluation_methods,
+                                         p_threshold)
 
     if (typeof(best_pred_info) != "list") {
       if (optimize == "revert") {
@@ -286,6 +316,8 @@ optimize_forward <- function(
 #'  Character vector with methods to use for model evaluation.
 #'  Allowed evaluation methods: "aic", "aicc", "bic", or "anova".
 #'  Default: c("anova")
+#' @param p_threshold
+#'  p-value threshold for significance evaluation. Default: 0.05
 #' @returns
 #'  The best predictor to add/remove, alongside the updated model and
 #'    information on whether to continue the selection process or revert to
@@ -299,7 +331,8 @@ determine_best_pred <- function(predictors_to_adjust,
                                 direction,
                                 family = stats::gaussian,
                                 model_args = list(),
-                                evaluation_methods = c("anova")) {
+                                evaluation_methods = c("anova"),
+                                p_threshold = 0.05) {
   best_pred_info <- NA
   best_pred <- NA
   best_step_res <- NA
@@ -317,6 +350,7 @@ determine_best_pred <- function(predictors_to_adjust,
                                family,
                                model_args,
                                evaluation_methods,
+                               p_threshold,
                                direction = direction,
                                full_formula = full_formula)
 
@@ -364,6 +398,8 @@ determine_best_pred <- function(predictors_to_adjust,
 #'  Character vector with methods to use for model evaluation.
 #'  Allowed evaluation methods: "aic", "aicc", "bic", or "anova".
 #'  Default: c("anova")
+#' @param p_threshold
+#'  p-value threshold for significance evaluation. Default: 0.05
 #' @param trace
 #'  Whether to return the selection history. Default. TRUE
 #' @returns
@@ -376,6 +412,7 @@ optimize_backward <- function(
     family = stats::gaussian,
     model_args = list(),
     evaluation_methods = c("anova"),
+    p_threshold = 0.05,
     trace = TRUE) {
   history <- list()
   last_model_info <- NA
@@ -389,7 +426,8 @@ optimize_backward <- function(
                         model_args)
 
   c(predictors_to_remove, p_col) %<-% get_removable_terms(model,
-                                                          model_type)
+                                                          model_type,
+                                                          p_threshold)
 
   evaluation_wo_anova <- evaluation_methods[evaluation_methods != "anova"]
   old_model_assessments <- as.list(rep(Inf, length(evaluation_methods)))
@@ -398,7 +436,8 @@ optimize_backward <- function(
   assessed_models <- compare_models(evaluation_wo_anova,
                                     list(model, model),
                                     "backward",
-                                    old_model_assessments)
+                                    old_model_assessments,
+                                    p_threshold)
 
   last_model_info <- list(
     model = model,
@@ -421,7 +460,8 @@ optimize_backward <- function(
                                          direction = "backward",
                                          family,
                                          model_args,
-                                         evaluation_methods)
+                                         evaluation_methods,
+                                         p_threshold)
 
     if (typeof(best_pred_info) != "list") {
       if (optimize == "revert") {
@@ -475,6 +515,8 @@ optimize_backward <- function(
 #'  Character vector with methods to use for model evaluation.
 #'  Allowed evaluation methods: "aic", "aicc", "bic", or "anova".
 #'  Default: c("anova")
+#' @param p_threshold
+#'  p-value threshold for significance evaluation. Default: 0.05
 #' @param direction
 #'  Direction of model selection. Default: "backward"
 #' @param full_formula
@@ -487,6 +529,7 @@ optimizer_step <- function(formula,
                            family = stats::gaussian,
                            model_args,
                            evaluation_methods,
+                           p_threshold = 0.05,
                            direction = "backward",
                            full_formula = NA) {
   has_last_model <- typeof(last_model_info) == "list"
@@ -504,7 +547,8 @@ optimizer_step <- function(formula,
 
   if (direction == "backward") {
     c(adjustable_terms, p_col) %<-% get_removable_terms(model,
-                                                        model_type)
+                                                        model_type,
+                                                        p_threshold)
   } else {
     c(adjustable_terms, p_col) %<-% get_addable_terms(full_formula,
                                                       model,
@@ -529,7 +573,8 @@ optimizer_step <- function(formula,
   assessed_models <- compare_models(evaluation_methods,
                                     list(model, last_model_info$model),
                                     direction,
-                                    last_model_info$assessments)
+                                    last_model_info$assessments,
+                                    p_threshold)
   out$assessments <- assessed_models$assessments
 
   if (has_last_model &&

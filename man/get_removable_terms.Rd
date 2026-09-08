@@ -4,13 +4,15 @@
 \alias{get_removable_terms}
 \title{Get removable terms}
 \usage{
-get_removable_terms(model, model_type)
+get_removable_terms(model, model_type, p_threshold = 0.05)
 }
 \arguments{
 \item{model}{A model to determine removable terms for}
 
 \item{model_type}{The type of model to get removable terms for. Can be either "glm", "lm",
 "glmer", "lmer", or "gam"}
+
+\item{p_threshold}{p-value threshold for significance evaluation. Default: 0.05}
 }
 \value{
 A dataframe with removable terms and the name of the p-value column

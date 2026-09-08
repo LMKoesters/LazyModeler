@@ -14,7 +14,8 @@ determine_best_pred(
   direction,
   family = stats::gaussian,
   model_args = list(),
-  evaluation_methods = c("anova")
+  evaluation_methods = c("anova"),
+  p_threshold = 0.05
 )
 }
 \arguments{
@@ -40,6 +41,8 @@ determine_best_pred(
 \item{evaluation_methods}{Character vector with methods to use for model evaluation.
 Allowed evaluation methods: "aic", "aicc", "bic", or "anova".
 Default: c("anova")}
+
+\item{p_threshold}{p-value threshold for significance evaluation. Default: 0.05}
 }
 \value{
 The best predictor to add/remove, alongside the updated model and

@@ -9,7 +9,8 @@ nls_nlme(
   data,
   model_type,
   model_args = list(),
-  evaluation_methods = c("anova")
+  evaluation_methods = c("anova"),
+  p_threshold = 0.05
 )
 }
 \arguments{
@@ -24,6 +25,8 @@ nls_nlme(
 \item{evaluation_methods}{Character vector with methods to use for model evaluation.
 Allowed evaluation methods: "aic", "aicc", "bic", or "anova".
 Default: c("anova")}
+
+\item{p_threshold}{p-value threshold for significance evaluation. Default: 0.05}
 }
 \value{
 A model with evaluation metrics

@@ -12,6 +12,7 @@ simplify_model(
   evaluation_methods = c("anova"),
   direction = "backward",
   family = stats::gaussian,
+  p_threshold = 0.05,
   trace = TRUE,
   base_formula = NA
 )
@@ -33,6 +34,8 @@ Default: c("anova")}
 \item{direction}{Direction of model selection. Default: "backward"}
 
 \item{family}{The model family. Default: gaussian}
+
+\item{p_threshold}{p-value threshold for significance evaluation. Default: 0.05}
 
 \item{trace}{Whether to return the selection history. Default. TRUE}
 

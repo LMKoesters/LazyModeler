@@ -65,7 +65,7 @@
 #'  Further arguments for [stats::cor()].
 #'    Default: method = "pearson" and use = "complete.obs"
 #' @param p_threshold
-#'  P-value threshold for significance evaluation
+#'  p-value threshold for significance evaluation. Default: 0.05
 #' @param psi_boot_repl
 #'  A number or list of psi bootstrap replicates.
 #'    Default: 100
@@ -232,6 +232,7 @@ optimize_model <- function(
                             evaluation_methods,
                             direction,
                             family,
+                            p_threshold,
                             trace,
                             base_formula)
       model_out[[direction]]$model_selection_result <- res

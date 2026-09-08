@@ -12,6 +12,7 @@ handle_autocorrelations(
   cols = c(),
   remove = TRUE,
   threshold = 0.7,
+  p_threshold = 0.05,
   cor_args = list(method = c("pearson"), use = "complete.obs"),
   model_args = list()
 )
@@ -37,6 +38,8 @@ are removed first}
 Default: TRUE}
 
 \item{threshold}{The threshold at which two variables are to be considered autocorrelated}
+
+\item{p_threshold}{p-value threshold for significance evaluation}
 
 \item{cor_args}{Further arguments for \code{\link[stats:cor]{stats::cor()}}.
 Default: method = "pearson" and use = "complete.obs"}

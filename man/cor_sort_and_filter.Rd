@@ -4,12 +4,14 @@
 \alias{cor_sort_and_filter}
 \title{Sort and filter correlations}
 \usage{
-cor_sort_and_filter(correlations_w_p, threshold)
+cor_sort_and_filter(correlations_w_p, threshold, p_threshold)
 }
 \arguments{
 \item{correlations_w_p}{Dataframe with information on correlations between variables with p-values}
 
 \item{threshold}{The threshold at which to consider two variables autocorrelated}
+
+\item{p_threshold}{p-value threshold for significance evaluation}
 }
 \value{
 A sorted dataframe of autocorrelations with a correlation coefficient

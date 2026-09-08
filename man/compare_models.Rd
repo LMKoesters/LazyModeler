@@ -9,6 +9,7 @@ compare_models(
   models,
   direction,
   old_model_assessments,
+  p_threshold = 0.05,
   delta = 2
 )
 }
@@ -22,6 +23,8 @@ Default: c("anova")}
 \item{direction}{Direction of model selection used for anova interpretation}
 
 \item{old_model_assessments}{The evaluation results of the previous model}
+
+\item{p_threshold}{p-value threshold for significance evaluation. Default: 0.05}
 
 \item{delta}{Minimal value by which the two models must differ for the newer model to
 be rejected}

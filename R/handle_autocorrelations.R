@@ -25,6 +25,8 @@
 #'    Default: TRUE
 #' @param threshold
 #'  The threshold at which two variables are to be considered autocorrelated
+#' @param p_threshold
+#'  p-value threshold for significance evaluation
 #' @param cor_args
 #'  Further arguments for [stats::cor()].
 #'    Default: method = "pearson" and use = "complete.obs"
@@ -44,6 +46,7 @@ handle_autocorrelations <- function(
     cols = c(),
     remove = TRUE,
     threshold = 0.7,
+    p_threshold = 0.05,
     cor_args = list(method = c("pearson"),
                     use = "complete.obs"),
     model_args = list()) {
@@ -93,7 +96,7 @@ handle_autocorrelations <- function(
           "We were unable to detect enough valid columns for testing against",
           "autocorrelations. Please check whether the columns included in your",
           "dataframe and formula match. Columns found were: %s"
-          ),
+        ),
         paste(term_map_cor$term, collapse = " ")
       )
     )
@@ -128,7 +131,11 @@ handle_autocorrelations <- function(
     by = c("coefficientA", "coefficientB")
   )
 
-  correlations_w_p <- cor_sort_and_filter(correlations_w_p, threshold)
+  correlations_w_p <- cor_sort_and_filter(
+    correlations_w_p,
+    threshold,
+    p_threshold
+  )
   if (nrow(correlations_w_p) == 0) {
     out <- list("autocorrelations_info" = NULL,
                 "removed_predictors" = c(has_no_variance))

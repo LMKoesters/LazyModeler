@@ -8,7 +8,6 @@ plot_model(
   model,
   model_type,
   quality_assessment = "baseR",
-  plot_relationships = TRUE,
   test = "wilcox",
   plot_type = "boxplot",
   plot_curve = TRUE,
@@ -24,9 +23,6 @@ Options: "lm", "glm", "gam"}
 
 \item{quality_assessment}{The mode of model quality assessment. Either "baseR" or "performance".
 Default: "baseR"}
-
-\item{plot_relationships}{Whether to plot regression, effect size, and estimates.
-Default: TRUE}
 
 \item{test}{Either "t.test" or "wilcox".
 Used to calculate statistics for regression plots of categorical variables.

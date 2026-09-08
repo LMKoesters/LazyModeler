@@ -12,6 +12,7 @@ optimizer_step(
   family = stats::gaussian,
   model_args,
   evaluation_methods,
+  p_threshold = 0.05,
   direction = "backward",
   full_formula = NA
 )
@@ -33,6 +34,8 @@ optimizer_step(
 \item{evaluation_methods}{Character vector with methods to use for model evaluation.
 Allowed evaluation methods: "aic", "aicc", "bic", or "anova".
 Default: c("anova")}
+
+\item{p_threshold}{p-value threshold for significance evaluation. Default: 0.05}
 
 \item{direction}{Direction of model selection. Default: "backward"}
 

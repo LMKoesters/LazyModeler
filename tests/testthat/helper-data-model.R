@@ -52,14 +52,24 @@ make_tiny_glm_data <- function(n = 300, seed = 42) {
   set.seed(seed)
   x1 <- rnorm(n)
   x2 <- rnorm(n)
+  x3 <- rnorm(n)
   f1 <- factor(sample(c("A", "B"), n, replace = TRUE))
 
   # signal through x1 + f1
-  eta <- -0.5 + 2.0 * x1 + ifelse(f1 == "B", 0.8, 0)
+  eta <- -0.5 +
+    2.0 * x1 +
+    0.23 * x3 +
+    ifelse(f1 == "B", 0.8, 0)
   p <- 1 / (1 + exp(-eta))
   y <- rbinom(n, size = 1, prob = p)
 
-  data.frame(y = y, x1 = x1, x2 = x2, f1 = f1)
+  data.frame(
+    y = y,
+    x1 = x1,
+    x2 = x2,
+    x3 = x3,
+    f1 = f1
+  )
 }
 
 make_grouped_data <- function(n = 80, seed = 42) {

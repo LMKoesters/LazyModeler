@@ -100,7 +100,7 @@ when removing a main effect.}
 \item{cor_args}{Further arguments for \code{\link[stats:cor]{stats::cor()}}.
 Default: method = "pearson" and use = "complete.obs"}
 
-\item{p_threshold}{P-value threshold for significance evaluation}
+\item{p_threshold}{p-value threshold for significance evaluation. Default: 0.05}
 
 \item{psi_boot_repl}{A number or list of psi bootstrap replicates.
 Default: 100}
