@@ -46,6 +46,9 @@ create_model <- function(formula,
     model_args$formula <- formula
     model_args$family <- family
     model_args$data <- data
+  } else if (model_type == "nlme") {
+    model_args$model <- formula
+    model_args$data <- data
   } else {
     model_args$formula <- formula
     model_args$data <- data

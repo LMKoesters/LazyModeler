@@ -14,11 +14,11 @@ test_that("remove_autocorrelations returns expected structure", {
   # check output type
   expect_type(res, "list")
   # check output structure
-  expect_true(all(c("removed_predictors",
+  expect_true(all(c("problematic_predictors",
                     "autocorrelations_info",
                     "formula") %in% names(res)))
   # check output type
-  expect_true(is.character(res$removed_predictors))
+  expect_true(is.character(res$problematic_predictors))
   # check output type
   expect_true(is.data.frame(res$autocorrelations_info))
   # check autocorrelations columns
@@ -29,7 +29,7 @@ test_that("remove_autocorrelations returns expected structure", {
                     "note") %in% names(res$autocorrelations_info)))
 })
 
-test_that("no autocorrelations -> removed_predictors is empty", {
+test_that("no autocorrelations -> problematic_predictors is empty", {
   d <- make_autocor_data()
 
   res <- handle_autocorrelations(
@@ -43,7 +43,7 @@ test_that("no autocorrelations -> removed_predictors is empty", {
   )
 
   expect_null(res$autocorrelations_info)
-  expect_length(res$removed_predictors, 0)
+  expect_length(res$problematic_predictors, 0)
 })
 
 test_that("handle_autocorrelations recognizes priority order of variables", {
@@ -60,8 +60,8 @@ test_that("handle_autocorrelations recognizes priority order of variables", {
   )
 
   # check priority: x2 before x1 means that x1 should be removed
-  expect_true("x1" %in% res$removed_predictors)
-  expect_false("x2" %in% res$removed_predictors)
+  expect_true("x1" %in% res$problematic_predictors)
+  expect_false("x2" %in% res$problematic_predictors)
 })
 
 test_that("handle_autocorrelations recognizes A-B-C constellation", {
@@ -78,7 +78,7 @@ test_that("handle_autocorrelations recognizes A-B-C constellation", {
   )
 
   # check that x2 was removed (a-b-c test)
-  expect_true("x2" %in% res$removed_predictors)
+  expect_true("x2" %in% res$problematic_predictors)
 })
 
 test_that("handle_autocorrelations respects main effects", {
@@ -96,8 +96,9 @@ test_that("handle_autocorrelations respects main effects", {
     threshold = 0.8
   )
 
-  expect_equal(res$removed_predictors,
-               c("log(x1)", "x2", "x1:x2", "x3", "x1:x3", "x5", "f1:log(x1)"))
+  expect_equal(res$problematic_predictors,
+               c("log(x1)", "f1B:log(x1)", "f1C:log(x1)", "x2", "x1:x2", "x3",
+                 "x1:x3", "x5"))
   expect_equal(res$formula,
                y ~ x1 + x4 + f1)
 })
@@ -331,7 +332,7 @@ test_that("0 variance is rejected from autocorrelation data", {
   )) |>
     expect_warning(regex = "no variance after NA omission")
 
-  expect_equal(res$removed_predictors,
+  expect_equal(res$problematic_predictors,
                c("x1", "I(x1^2)"))
 })
 
@@ -348,6 +349,6 @@ test_that("formula related columns are recognized from matrix", {
   )) |>
     expect_no_error()
 
-  expect_equal(res$removed_predictors,
+  expect_equal(res$problematic_predictors,
                c("x1:x2"))
 })

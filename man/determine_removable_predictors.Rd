@@ -9,7 +9,7 @@ determine_removable_predictors(
   coefficients,
   term_map,
   interactions,
-  removed_predictors = c()
+  problematic_predictors = c()
 )
 }
 \arguments{
@@ -24,7 +24,7 @@ are removed first.}
 
 \item{interactions}{Map of columns to terms with only interactions.}
 
-\item{removed_so_far}{A character vector with columns so far removed due to autocorrelations.}
+\item{problematic_predictors}{A character vector with columns so far removed due to autocorrelations.}
 }
 \value{
 A list with

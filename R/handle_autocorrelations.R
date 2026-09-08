@@ -111,7 +111,7 @@ handle_autocorrelations <- function(
   correlations <- as.data.frame(do.call(stats::cor, cor_args))
   if (nrow(correlations) == 0) {
     out <- list("autocorrelations_info" = NULL,
-                "removed_predictors" = c(),
+                "problematic_predictors" = c(),
                 "formula" = formula)
     return(out)
   }
@@ -138,20 +138,20 @@ handle_autocorrelations <- function(
 
   if (nrow(correlations_w_p) == 0) {
     out <- list("autocorrelations_info" = NULL,
-                "removed_predictors" = c(has_no_variance))
+                "problematic_predictors" = c(has_no_variance))
   } else if (remove) {
     c(autocorrelations,
-      removed_predictors) %<-% remove_autocorrelations(correlations_w_p,
+      problematic_predictors) %<-% remove_autocorrelations(correlations_w_p,
                                                        term_map_all,
                                                        term_map_cor)
-    removed_predictors <- c(removed_predictors, has_no_variance)
+    problematic_predictors <- c(problematic_predictors, has_no_variance)
     autocorrelations <- autocorrelations[, c("coefficientA",
                                              "coefficientB",
                                              "correlation",
                                              "p_value",
                                              "note")]
     out <- list("autocorrelations_info" = autocorrelations,
-                "removed_predictors" = removed_predictors)
+                "problematic_predictors" = problematic_predictors)
   } else {
     warning(
       paste("Some of your variables are autocorrelated.",
@@ -159,13 +159,15 @@ handle_autocorrelations <- function(
             collapse = " ")
     )
     out <- list("autocorrelations_info" = correlations_w_p,
-                "removed_predictors" = c(has_no_variance))
+                "problematic_predictors" = c(has_no_variance))
   }
 
   # UPDATE FORMULA
   if (remove) {
+    removable_terms <- removed_preds_to_terms(out$problematic_predictors,
+                                              term_map_cor)
     out$formula <- remove_autocor_predictors(formula,
-                                             unique(out$removed_predictors))
+                                             unique(removable_terms))
   } else {
     out$formula <- formula
   }
@@ -195,16 +197,13 @@ remove_autocorrelations <- function(
   cols <- unique(term_map_cor$column)
   c(coefficients, autocorrelations) %<-% cor_prep_autocor(correlations_w_p,
                                                           cols)
-  removed_predictors <- vector()
   interactions <- term_map_all[term_map_all$is_interaction, ]
-  interactions <- interactions |>
-    dplyr::left_join(term_map_all[, c("column", "term")],
-                     by = c("main_effect" = "term"),
-                     suffix = c("", "_main"))
+  term_map_distinct <- term_map_cor[, c("column", "term")] |>
+    dplyr::distinct(.keep_all = TRUE)
   autocorrelations <- autocorrelations |>
-    dplyr::left_join(term_map_cor[, c("column", "term")],
+    dplyr::left_join(term_map_distinct,
                      by = c("coefficientA" = "column")) |>
-    dplyr::left_join(term_map_cor[, c("column", "term")],
+    dplyr::left_join(term_map_distinct,
                      by = c("coefficientB" = "column"),
                      suffix = c("A", "B")) |>
     dplyr::filter(.data$termA != .data$termB)
@@ -223,38 +222,22 @@ remove_autocorrelations <- function(
       (!autocorrelations$coefficientB %in% interactions$column),
   ]
 
-  removed_predictors <- c()
+  problematic_predictors <- c()
   autocors_notes <- c()
   for (autocors in list(autocors_me, autocors_int_me, autocors_int)) {
     # first: remove main effects and blocking interactions in one step
-    c(autocors_notes_i, removed_predictors) %<-% determine_removable_predictors(
+    c(autocors_notes_i,
+      problematic_predictors) %<-% determine_removable_predictors(
       autocors,
       coefficients,
       term_map_all,
       interactions,
-      removed_predictors
+      problematic_predictors
     )
     autocors_notes <- rbind(autocors_notes, autocors_notes_i)
   }
 
-  for (term in term_map_cor$term) {
-    if (!term %in% removed_predictors) {
-      term_cols <- unique(
-        term_map_cor[term_map_cor$term == term, "column"]
-      )
-      if (all(term_cols %in% removed_predictors)) {
-        removed_predictors <- append(
-          removed_predictors,
-          term
-        )
-      }
-      removed_predictors <- removed_predictors[
-        !removed_predictors %in% term_cols
-      ]
-    }
-  }
-
-  list(autocors_notes, removed_predictors)
+  list(autocors_notes, problematic_predictors)
 }
 
 #' Determine predictors to remove
@@ -272,7 +255,7 @@ remove_autocorrelations <- function(
 #'    are removed first.
 #' @param interactions
 #'  Map of columns to terms with only interactions.
-#' @param removed_so_far
+#' @param problematic_predictors
 #'  A character vector with columns so far removed due to autocorrelations.
 #' @return
 #'  A list with
@@ -283,7 +266,7 @@ determine_removable_predictors <- function(
     coefficients,
     term_map,
     interactions,
-    removed_predictors = c()) {
+    problematic_predictors = c()) {
   # NOTE: the smaller the index, the more important the coefficient
   for (i in seq_len(nrow(autocorrelations))) {
     # C is the least important and part of comparison
@@ -308,13 +291,13 @@ determine_removable_predictors <- function(
         ]
         if (nrow(a_b_c) == 0) {
           # A!=C but A==B and B==C: remove B
-          if (coefficient_c %in% removed_predictors) {
+          if (coefficient_c %in% problematic_predictors) {
             coefficient_to_remove <- coefficient_b
             already_removed <- paste(coefficient_c, "was already removed")
-          } else if (coefficient_a %in% removed_predictors) {
+          } else if (coefficient_a %in% problematic_predictors) {
             coefficient_to_remove <- coefficient_c
             already_removed <- paste(coefficient_a, "was already removed")
-          } else if (!coefficient_b %in% removed_predictors) {
+          } else if (!coefficient_b %in% problematic_predictors) {
             coefficient_to_remove <- coefficient_b
             already_removed <- ""
           } else {
@@ -322,8 +305,8 @@ determine_removable_predictors <- function(
           }
 
           if (!is.na(coefficient_to_remove)) {
-            removed_predictors <- append(
-              removed_predictors,
+            problematic_predictors <- append(
+              problematic_predictors,
               coefficient_to_remove
             )
 
@@ -333,8 +316,8 @@ determine_removable_predictors <- function(
                            "column"]
             )
             if (length(blocking_interactions) > 0) {
-              removed_predictors <- append(
-                removed_predictors,
+              problematic_predictors <- append(
+                problematic_predictors,
                 blocking_interactions
               )
 
@@ -357,10 +340,10 @@ determine_removable_predictors <- function(
               )
             }
           }
-        } else if (!((coefficient_c %in% removed_predictors) ||
-                       (coefficient_b %in% removed_predictors))) {
-          removed_predictors <- append(
-            removed_predictors,
+        } else if (!((coefficient_c %in% problematic_predictors) ||
+                       (coefficient_b %in% problematic_predictors))) {
+          problematic_predictors <- append(
+            problematic_predictors,
             coefficient_c
           )
 
@@ -369,8 +352,8 @@ determine_removable_predictors <- function(
             interactions[interactions$column_main == coefficient_c, "column"]
           )
           if (length(blocking_interactions) > 0) {
-            removed_predictors <- append(
-              removed_predictors,
+            problematic_predictors <- append(
+              problematic_predictors,
               blocking_interactions
             )
 
@@ -382,10 +365,10 @@ determine_removable_predictors <- function(
             autocorrelations[i, "note"] <- sprintf("removed %s", coefficient_c)
           }
         } else {
-          if (coefficient_c %in% removed_predictors &&
-                coefficient_b %in% removed_predictors) {
+          if (coefficient_c %in% problematic_predictors &&
+                coefficient_b %in% problematic_predictors) {
             already_removed <- paste(coefficient_b, coefficient_c, sep = " & ")
-          } else if (coefficient_b %in% removed_predictors) {
+          } else if (coefficient_b %in% problematic_predictors) {
             already_removed <- coefficient_b
           } else {
             already_removed <- coefficient_c
@@ -394,9 +377,9 @@ determine_removable_predictors <- function(
                                                  already_removed)
         }
       }
-    } else if (!((coefficient_c %in% removed_predictors) ||
-                   (coefficient_b %in% removed_predictors))) {
-      removed_predictors <- append(removed_predictors,
+    } else if (!((coefficient_c %in% problematic_predictors) ||
+                   (coefficient_b %in% problematic_predictors))) {
+      problematic_predictors <- append(problematic_predictors,
                                    coefficient_c)
 
       # check whether there's interaction with coefficient_c as main effect
@@ -404,8 +387,8 @@ determine_removable_predictors <- function(
         interactions[interactions$column_main == coefficient_c, "column"]
       )
       if (length(blocking_interactions) > 0) {
-        removed_predictors <- append(
-          removed_predictors,
+        problematic_predictors <- append(
+          problematic_predictors,
           blocking_interactions
         )
 
@@ -417,10 +400,10 @@ determine_removable_predictors <- function(
         autocorrelations[i, "note"] <- sprintf("removed %s", coefficient_c)
       }
     } else {
-      if (coefficient_c %in% removed_predictors &&
-            coefficient_b %in% removed_predictors) {
+      if (coefficient_c %in% problematic_predictors &&
+            coefficient_b %in% problematic_predictors) {
         already_removed <- paste(coefficient_b, coefficient_c, sep = " & ")
-      } else if (coefficient_b %in% removed_predictors) {
+      } else if (coefficient_b %in% problematic_predictors) {
         already_removed <- coefficient_b
       } else {
         already_removed <- coefficient_c
@@ -430,5 +413,5 @@ determine_removable_predictors <- function(
     }
   }
 
-  list(autocorrelations, removed_predictors)
+  list(autocorrelations, problematic_predictors)
 }

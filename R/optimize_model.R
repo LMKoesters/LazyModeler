@@ -190,15 +190,18 @@ optimize_model <- function(
   # AUTOCORRELATIONS
   autocor_supported <- model_type %in% c("lm", "glm", "lmer", "glmer", "gam")
   if (detect_autocors && autocor_supported) {
-    autocorrelations_result <- handle_autocorrelations(formula,
-                                                       data,
-                                                       model_type,
-                                                       family,
-                                                       ac_columns,
-                                                       remove = remove_autocors,
-                                                       threshold = ac_threshold,
-                                                       cor_args = cor_args,
-                                                       model_args = model_args)
+    autocorrelations_result <- handle_autocorrelations(
+      formula,
+      data,
+      model_type,
+      family,
+      ac_columns,
+      remove = remove_autocors,
+      threshold = ac_threshold,
+      p_threshold = p_threshold,
+      cor_args = cor_args,
+      model_args = model_args
+    )
     out$autocorrelation_result <- autocorrelations_result
     formula <- autocorrelations_result$formula
   } else if (detect_autocors && !autocor_supported) {

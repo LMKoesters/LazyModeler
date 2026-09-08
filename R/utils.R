@@ -717,14 +717,20 @@ map_col_to_term <- function(m_matrix, formula) {
 #'  A (sorted) term map including information on interactions with
 #'    main effects listed first
 sort_term_map <- function(term_map, sort = TRUE) {
-  interactions <- extract_interactions(term_map$term)
+  interactions <- extract_interactions(term_map$column)
   term_map$i <- seq.int(nrow(term_map))
+  interactions <- interactions |>
+    dplyr::rename(column = "main_effect") |>
+    dplyr::left_join(term_map[, c("column", "term")],
+                     by = "column") |>
+    dplyr::rename(main_effect = "term")
 
   term_map <- term_map |>
-    dplyr::mutate(is_interaction = .data$term %in% interactions$predictor) |>
+    dplyr::mutate(is_interaction = .data$column %in% interactions$predictor) |>
     dplyr::left_join(
       interactions,
-      by = c("term" = "predictor")
+      by = c("column" = "predictor"),
+      suffix = c("", "_main")
     ) |>
     dplyr::arrange(.data$is_interaction, .data$i)
 
@@ -822,4 +828,33 @@ format_cor_data <- function(
     as.data.frame() |>
     dplyr::select(-c("(Intercept)"))
   list(m_matrix = m_matrix, term_map = term_map)
+}
+
+#' Translate autocorrelated or zero variance data columns to formula terms
+#' @param problematic_predictors
+#'  A vector with data columns to be removed from formula
+#' @param term_map_cor
+#'  Terms with columns to check for autocorrelations. The order of columns
+#'  dictates priority basis for removal of predictors. Columns further down
+#'  the list are removed first.
+#' @return
+#'  A character vector of removable formula predictors
+removed_preds_to_terms <- function(problematic_predictors, term_map_cor) {
+  for (term in term_map_cor$term) {
+    if (!term %in% problematic_predictors) {
+      term_cols <- unique(
+        term_map_cor[term_map_cor$term == term, "column"]
+      )
+      if (all(term_cols %in% problematic_predictors)) {
+        problematic_predictors <- append(
+          problematic_predictors,
+          term
+        )
+      }
+      problematic_predictors <- problematic_predictors[
+        !problematic_predictors %in% term_cols
+      ]
+    }
+  }
+  problematic_predictors
 }
