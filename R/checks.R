@@ -91,14 +91,14 @@ check_model_family <- function(family = NULL,
 
 #' Check that threshold is between 0-1
 #'
-#' Function to check whether threshold is within appropriate range of (0,1)
+#' Function to check whether threshold is within appropriate range of >0,<=1
 #' @param threshold
 #'  Threshold value to check
 check_correlation_threshold <- function(threshold) {
-  if (threshold < 0 || threshold > 1) {
+  if (threshold <= 0 || threshold > 1) {
     stop(
       sprintf(
-        paste("Your threshold %f is outside of range (0,1).",
+        paste("Your threshold %f is outside of range >0,<=1.",
           "Please choose an appropriate threshold and run again."
         ),
         threshold

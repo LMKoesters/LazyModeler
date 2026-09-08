@@ -10,5 +10,5 @@ check_correlation_threshold(threshold)
 \item{threshold}{Threshold value to check}
 }
 \description{
-Function to check whether threshold is within appropriate range of (0,1)
+Function to check whether threshold is within appropriate range of >0,<=1
 }
