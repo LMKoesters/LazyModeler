@@ -42,49 +42,41 @@ create_model <- function(formula,
     model_args$na.action <- stats::na.omit
   }
 
+  if (family %in% c("glm", "glmer", "gam")) {
+    model_args$formula <- formula
+    model_args$family <- family
+    model_args$data <- data
+  } else {
+    model_args$formula <- formula
+    model_args$data <- data
+  }
+
   model_fun <- switch(
     as.character(model_type),
     "glm" = {
       if (!fit) model_args$method <- "model.frame"
-      model_args <- c(model_args, list("formula" = formula,
-                                       "family" = family,
-                                       "data" = data))
       stats::glm
     },
     "lm" = {
       if (!fit) model_args$method <- "model.frame"
-      model_args <- c(model_args, list("formula" = formula,
-                                       "data" = data))
       stats::lm
     },
     "glmer" = {
-      model_args <- c(model_args, list("formula" = formula,
-                                       "family" = family,
-                                       "data" = data))
       lme4::glmer
     },
     "lmer" = {
-      model_args <- c(model_args, list("formula" = formula,
-                                       "data" = data))
       model_args$REML <- FALSE
       lme4::lmer
     },
     "gam" = {
       if (!fit) model_args$fit <- fit
-      model_args <- c(model_args, list("formula" = formula,
-                                       "family" = family,
-                                       "data" = data))
       model_args$method <- "REML"
       mgcv::gam
     },
     "nlme" = {
-      model_args <- c(model_args, list("model" = formula,
-                                       "data" = data))
       nlme::nlme
     },
     "nls" = {
-      model_args <- c(model_args, list("formula" = formula,
-                                       "data" = data))
       model_args$model <- TRUE
       stats::nls
     }
