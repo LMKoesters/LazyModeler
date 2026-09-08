@@ -163,7 +163,7 @@ test_that("invalid input of threshold > 1 throws informative error", {
   expect_error(
     handle_autocorrelations(formula = y ~ x1 + x2 + x3, data = d,
                             cols = c("x1", "x2", "x3"), threshold = 1.5),
-    regexp = "outside of range \\(0,1\\)"
+    regexp = "outside of range >0,<=1"
   )
 })
 
