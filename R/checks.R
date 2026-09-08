@@ -153,10 +153,11 @@ check_cbind_model_family <- function(data, pasted_response) {
   col1 <- pasted_response[[2]]
   col2 <- pasted_response[[3]]
 
-  family1 <- determine_model_family(data, str2lang(col1))$family
-  family2 <- determine_model_family(data, str2lang(col2))$family
+  valid_families1 <- determine_model_family(data, str2lang(col1))$valid_families
+  valid_families2 <- determine_model_family(data, str2lang(col2))$valid_families
 
-  if ("quasibinomial" %in% family1 || "quasibinomial" %in% family2) {
+  if ("quasibinomial" %in% valid_families1 ||
+        "quasibinomial" %in% valid_families2) {
     valid_families <- c("quasibinomial")
     notice <- paste("Your left-hand-side appears to be a grouped binomial",
                     "outcome and your columns fit a quasibinomial model",

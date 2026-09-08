@@ -98,9 +98,7 @@ determine_model_family <- function(data, lhs) {
   }
 
   response_data <- data[!is.na(data[[response_col]]), response_col]
-
   check_response_data_format(response_col, response_data)
-
   is_num <- is.numeric(response_data)
 
   if (is.logical(response_data) ||
@@ -111,8 +109,7 @@ determine_model_family <- function(data, lhs) {
                     "outcomes, provide trials/weights or use",
                     "cbind(successes, failures). Please also check for",
                     "overdispersion; if present, quasibinomial may be more",
-                    "appropriate",
-                    collape = " ")
+                    "appropriate")
   } else if (is_num && (min(response_data) >= 0 &&
                           max(response_data) <= 1)) {
     valid_families <- c("gaussian", "quasibinomial")
@@ -121,7 +118,7 @@ determine_model_family <- function(data, lhs) {
                     "if values represent proportions from",
                     "binomial trials and trial sizes are supplied as",
                     "weights. Otherwise gaussian may be more",
-                    "appropriate.", collapse = " ")
+                    "appropriate.")
   } else if (min(response_data) >= 0 && all(response_data %% 1 == 0)) {
     valid_families <- c("poisson")
     notice <- paste("Poisson assumes non-negative count data",
@@ -129,14 +126,13 @@ determine_model_family <- function(data, lhs) {
                     "overdispersion; if present, quasipoisson or",
                     "negative binomial may be more appropriate.",
                     "Note, however, that we currently only",
-                    "cover poisson distributions.", collapse = " ")
+                    "cover poisson distributions.")
   } else {
     valid_families <- c("gaussian")
     notice <- paste("Gaussian is suggested for continuous outcomes.",
                     "Consider transformations or other families if",
                     "residual diagnostics indicate non-normality,",
-                    "heteroscedasticity, or bounded support.",
-                    collapse = " ")
+                    "heteroscedasticity, or bounded support.")
   }
 
   list(valid_families = valid_families,
