@@ -230,3 +230,16 @@ make_tiny_proportions_data <- function(n = 60, seed = 42) {
 
   data.frame(y = y, x1 = x1, x2 = x2, x3 = x3, f1 = f1)
 }
+
+make_tiny_anova_data <- function(n = 40, seed = 1) {
+  set.seed(seed)
+
+  x1 <- rnorm(n)
+  x2 <- x1 + rnorm(n, sd = .7)
+  x3 <- rnorm(n)
+  x4 <- x3 + rnorm(n, sd = .7)
+
+  y <- -.5 * x1 + .35 * x3 + rnorm(n)
+
+  data.frame(y, x1, x2, x3, x4)
+}

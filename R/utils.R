@@ -188,11 +188,11 @@ extract_interactions <- function(predictors) {
 #'  Direction of model selection used for anova interpretation
 #' @param old_model_assessments
 #'  The evaluation results of the previous model
-#' @param p_threshold
-#'  p-value threshold for significance evaluation. Default: 0.05
+#' @param anv_p_value
+#'  (Optional) The p-value calculated by an ANOVA test
 #' @param delta
 #'  Minimal value by which the two models must differ for the newer model to
-#'    be rejected
+#'    be rejected. Default: 2
 #' @returns
 #'  Information on whether or not the model has improved and the results
 #'    of the model's evaluation
@@ -200,11 +200,8 @@ compare_models <- function(evaluation_methods,
                            models,
                            direction,
                            old_model_assessments,
-                           p_threshold = 0.05,
+                           anv_p_value = NULL,
                            delta = 2) {
-  if (direction == "backward") models_idx <- list("small" = 1, "large" = 2)
-  else models_idx <- list("small" = 2, "large" = 1)
-
   evaluators <- list(
     "aic" = stats::AIC,
     "aicc" = MuMIn::AICc,
@@ -225,18 +222,7 @@ compare_models <- function(evaluation_methods,
   }
 
   if ("anova" %in% evaluation_methods) {
-    anova_res <- stats::anova(models[[models_idx$small]],
-                              models[[models_idx$large]])
-    p_col <- colnames(anova_res)[[grep("Pr\\(", colnames(anova_res))]]
-    p_val <- anova_res[2, p_col]
-    larger_is_significantly_better <- p_val < p_threshold
-    if ((direction == "forward" && !larger_is_significantly_better) ||
-          (direction == "backward" && larger_is_significantly_better)) {
-      return(
-        list("has_improved" = FALSE,
-             "assessments" = evaluation_results)
-      )
-    }
+    evaluation_results$anova <- anv_p_value
   }
 
   list("has_improved" = TRUE,
@@ -336,11 +322,14 @@ get_removable_terms <- function(model,
 #' @param model_type
 #'  The type of model to get removable terms for. Can be either "glm", "lm",
 #'    "glmer", "lmer", or "gam"
+#' @param p_threshold
+#'  p-value threshold for significance evaluation. Default: 0.05
 #' @returns
 #'  A dataframe with terms to add and the name of the p-value column
 get_addable_terms <- function(formula,
                               model,
-                              model_type) {
+                              model_type,
+                              p_threshold = 0.05) {
   if (model_type == "gam") {
     current_terms <- stats::terms(stats::formula(model),
                                   specials = c("s", "te", "ti", "t2"))
@@ -375,7 +364,8 @@ get_addable_terms <- function(formula,
   }
 
   adjustable_terms <- adjustable_terms |>
-    dplyr::filter(.data$predictor != "<none>") |>
+    dplyr::filter((.data$predictor != "<none>") &
+                    (.data[[p_col]] < p_threshold)) |>
     dplyr::arrange(.data[[p_col]])
 
   list(adjustable_terms, p_col)
@@ -410,15 +400,32 @@ get_stats_test <- function(model_type,
 #'  The evaluation results of model 1
 #' @param assess2
 #'  The evaluation results of model 2
+#' @param direction
+#'  Direction of model selection
 #' @returns
 #'  Boolean that describes whether model 1 is better than model 2
-new_model_is_better <- function(assess1, assess2) {
+new_model_is_better <- function(assess1, assess2, direction) {
   evaluation_results <- c()
-  for (eval_m in names(assess1)) {
+  for (eval_m in names(assess1)[names(assess1) != "anova"]) {
     stat1 <- assess1[[eval_m]]
     stat2 <- assess2[[eval_m]]
     diff <- stat1 - stat2
     evaluation_results <- append(evaluation_results, diff < 0)
+  }
+
+  if ("anova" %in% names(assess1)) {
+    stat1 <- assess1$anova
+    stat2 <- assess2$anova
+
+    if (direction == "backward") {
+      # remove predictor with biggest p_val
+      new_model_higher_p_val <- stat1 > stat2
+      evaluation_results <- append(evaluation_results, new_model_higher_p_val)
+    } else {
+      # add predictor with lowest p_val
+      new_model_lower_p_val <- stat1 < stat2
+      evaluation_results <- append(evaluation_results, new_model_lower_p_val)
+    }
   }
 
   new_is_better <- length(evaluation_results[evaluation_results])

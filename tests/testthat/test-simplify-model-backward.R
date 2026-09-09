@@ -275,51 +275,17 @@ test_that("p_threshold determines removable terms", {
                y ~ x1 + x3)
 })
 
-test_that("p_threshold determines compare models (backward)", {
-  d <- make_tiny_glm_data()
+test_that("ANOVA-only works (backward)", {
+  d <- make_tiny_anova_data()
 
-  m1 <- create_model(
-    formula = y ~ x1 + x3,
-    data = d,
-    model_type = "glm",
-    family = gaussian
+  res <- simplify_model(
+    y ~ x1 + x2 + x3 + x4,
+    d,
+    model_type = "lm",
+    evaluation_methods = c("anova"),
+    direction = "backward"
   )
 
-  m2 <- create_model(
-    formula = y ~ x1 + x3 + x2,
-    data = d,
-    model_type = "glm",
-    family = gaussian
-  )
-
-  # m1 assessments
-  evaluation_methods <- c("aic", "aicc", "bic")
-  old_model_assessments <- as.list(rep(Inf, length(evaluation_methods)))
-  old_model_assessments <- stats::setNames(old_model_assessments,
-                                           evaluation_methods)
-  assessed_models <- compare_models(evaluation_methods,
-                                    list(m2, m2),
-                                    "backward",
-                                    old_model_assessments,
-                                    p_threshold = 0.05)
-
-  # compare with p=0.05
-  assess1 <- compare_models(
-    c("aic", "aicc", "bic", "anova"),
-    list(m1, m2),
-    direction = "backward",
-    old_model_assessments = assessed_models$assessments,
-    p_threshold = 0.05
-  )
-  expect_true(assess1$has_improved)
-
-  # compare with p=0.1
-  assess2 <- compare_models(
-    c("aic", "aicc", "bic", "anova"),
-    list(m1, m2),
-    direction = "backward",
-    old_model_assessments = assessed_models$assessments,
-    p_threshold = 0.4
-  )
-  expect_false(assess2$has_improved)
+  expect_equal(formula(res$final_model),
+               y ~ x2)
 })

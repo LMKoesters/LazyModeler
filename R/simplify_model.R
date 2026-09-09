@@ -159,8 +159,7 @@ nls_nlme <- function(formula,
   assessed_models <- compare_models(evaluation_methods,
                                     list(model, model),
                                     "backward",
-                                    old_model_assessments,
-                                    p_threshold)
+                                    old_model_assessments)
   p_values <- get_model_p_values(model, model_type)
   out <- list(assessments = assessed_models$assessments,
               final_model = model,
@@ -203,7 +202,7 @@ optimize_forward <- function(
     family = stats::gaussian,
     model_args = list(),
     evaluation_methods = c("anova"),
-    p_threshold,
+    p_threshold = 0.05,
     trace = TRUE) {
   history <- list()
   current_formula <- base_formula
@@ -216,17 +215,20 @@ optimize_forward <- function(
                         family,
                         model_args)
 
-  c(predictors_to_add, p_col) %<-% get_addable_terms(formula, model, model_type)
+  c(predictors_to_add, p_col) %<-% get_addable_terms(
+    formula,
+    model,
+    model_type,
+    p_threshold
+  )
 
-  evaluation_wo_anova <- evaluation_methods[evaluation_methods != "anova"]
   old_model_assessments <- as.list(rep(Inf, length(evaluation_methods)))
   old_model_assessments <- stats::setNames(old_model_assessments,
                                            evaluation_methods)
-  assessed_models <- compare_models(evaluation_wo_anova,
+  assessed_models <- compare_models(evaluation_methods,
                                     list(model, model),
                                     "forward",
-                                    old_model_assessments,
-                                    p_threshold)
+                                    old_model_assessments)
 
   last_model_info <- list(
     model = model,
@@ -331,10 +333,21 @@ determine_best_pred <- function(predictors_to_adjust,
   best_step_res <- NA
   simplify_info <- c()
   adjuster <- if (direction == "forward") "+" else "-"
+  if (model_type == "gam") {
+    p_col <- "p-value"
+  } else {
+    p_col <- colnames(predictors_to_adjust)[[
+      grep("Pr\\(", colnames(predictors_to_adjust))
+    ]]
+  }
 
   for (predictor in predictors_to_adjust$predictor) {
     d <- paste(". ~ .", adjuster, predictor)
     formula_to_test <- stats::update(stats::as.formula(current_formula), d)
+    anv_p_value <- predictors_to_adjust[
+      predictors_to_adjust$predictor == predictor,
+      p_col
+    ][[1]]
 
     step_res <- optimizer_step(formula_to_test,
                                data,
@@ -344,13 +357,15 @@ determine_best_pred <- function(predictors_to_adjust,
                                model_args,
                                evaluation_methods,
                                p_threshold,
+                               anv_p_value,
                                direction = direction,
                                full_formula = full_formula)
 
     if (step_res$optimize == "proceed") {
       if (typeof(best_pred_info) == "list") {
         new_is_better <- new_model_is_better(step_res$assessments,
-                                             best_pred_info$assessments)
+                                             best_pred_info$assessments,
+                                             direction)
         if (new_is_better) {
           best_pred_info <- list(assessments = step_res$assessments)
           best_pred <- predictor
@@ -422,23 +437,19 @@ optimize_backward <- function(
                                                           model_type,
                                                           p_threshold)
 
-  evaluation_wo_anova <- evaluation_methods[evaluation_methods != "anova"]
   old_model_assessments <- as.list(rep(Inf, length(evaluation_methods)))
   old_model_assessments <- stats::setNames(old_model_assessments,
                                            evaluation_methods)
-  assessed_models <- compare_models(evaluation_wo_anova,
+  assessed_models <- compare_models(evaluation_methods,
                                     list(model, model),
                                     "backward",
-                                    old_model_assessments,
-                                    p_threshold)
+                                    old_model_assessments)
 
   last_model_info <- list(
     model = model,
     assessments = assessed_models$assessments
   )
-  if (trace) {
-    history[[deparse1(current_formula)]] <- last_model_info
-  }
+  if (trace) history[[deparse1(current_formula)]] <- last_model_info
 
   while (optimize == "proceed") {
     c(best_pred_info,
@@ -510,6 +521,8 @@ optimize_backward <- function(
 #'  Default: c("anova")
 #' @param p_threshold
 #'  p-value threshold for significance evaluation. Default: 0.05
+#' @param anv_p_value
+#'  (Optional) The p-value calculated by an ANOVA test
 #' @param direction
 #'  Direction of model selection. Default: "backward"
 #' @param full_formula
@@ -523,6 +536,7 @@ optimizer_step <- function(formula,
                            model_args,
                            evaluation_methods,
                            p_threshold = 0.05,
+                           anv_p_value = NULL,
                            direction = "backward",
                            full_formula = NA) {
   has_last_model <- typeof(last_model_info) == "list"
@@ -545,7 +559,8 @@ optimizer_step <- function(formula,
   } else {
     c(adjustable_terms, p_col) %<-% get_addable_terms(full_formula,
                                                       model,
-                                                      model_type)
+                                                      model_type,
+                                                      p_threshold)
   }
 
   out <- list(
@@ -567,7 +582,7 @@ optimizer_step <- function(formula,
                                     list(model, last_model_info$model),
                                     direction,
                                     last_model_info$assessments,
-                                    p_threshold)
+                                    anv_p_value)
   out$assessments <- assessed_models$assessments
 
   if (has_last_model &&

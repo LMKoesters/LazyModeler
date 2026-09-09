@@ -141,9 +141,11 @@ handle_autocorrelations <- function(
                 "problematic_predictors" = c(has_no_variance))
   } else if (remove) {
     c(autocorrelations,
-      problematic_predictors) %<-% remove_autocorrelations(correlations_w_p,
-                                                       term_map_all,
-                                                       term_map_cor)
+      problematic_predictors) %<-% remove_autocorrelations(
+      correlations_w_p,
+      term_map_all,
+      term_map_cor
+    )
     problematic_predictors <- c(problematic_predictors, has_no_variance)
     autocorrelations <- autocorrelations[, c("coefficientA",
                                              "coefficientB",
@@ -379,8 +381,10 @@ determine_removable_predictors <- function(
       }
     } else if (!((coefficient_c %in% problematic_predictors) ||
                    (coefficient_b %in% problematic_predictors))) {
-      problematic_predictors <- append(problematic_predictors,
-                                   coefficient_c)
+      problematic_predictors <- append(
+        problematic_predictors,
+        coefficient_c
+      )
 
       # check whether there's interaction with coefficient_c as main effect
       blocking_interactions <- unique(
