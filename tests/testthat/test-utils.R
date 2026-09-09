@@ -59,3 +59,36 @@ test_that("factor-factor interactions transformed into trait interactions", {
     nrow(interactions[!interactions$interaction %in% all_combis, ]) == 0
   )
 })
+
+test_that("NAs are omitted from data", {
+  d <- make_tiny_data_with_na()
+
+  res <- omit_na_from_model_data(
+    formula = prop ~ x1 + x2 + x3,
+    data = d,
+    model_type = "glm",
+    family = quasibinomial,
+    model_args = list(weights = quote(trials))
+  )
+
+  expect_shape(res, nrow = 55)
+  expect_equal(colnames(res),
+               colnames(d))
+})
+
+test_that("NAs are omitted from data when subset is used", {
+  d <- make_tiny_data_with_na()
+
+  res <- omit_na_from_model_data(
+    formula = prop ~ x1 + x2 + x3,
+    data = d,
+    model_type = "glm",
+    family = quasibinomial,
+    model_args = list(weights = quote(trials),
+                      subset = quote(x3 <= 0.))
+  )
+
+  expect_shape(res, nrow = 35)
+  expect_equal(colnames(res),
+               colnames(d))
+})

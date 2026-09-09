@@ -337,7 +337,6 @@ get_addable_terms <- function(formula,
                                 specials = c("s", "te", "ti", "t2"))
     adjustable_terms <- stats::add.scope(current_terms, upper_terms)
     adjustable_terms <- data.frame(list(predictor = adjustable_terms))
-
     p_col <- "predictor"
   } else {
     family <- stats::family(model)$family
@@ -367,7 +366,6 @@ get_addable_terms <- function(formula,
     dplyr::filter((.data$predictor != "<none>") &
                     (.data[[p_col]] < p_threshold)) |>
     dplyr::arrange(.data[[p_col]])
-
   list(adjustable_terms, p_col)
 }
 
@@ -864,4 +862,64 @@ removed_preds_to_terms <- function(problematic_predictors, term_map_cor) {
     }
   }
   problematic_predictors
+}
+
+#' Omit NAs from model data
+#' @param formula
+#'  Upper formula to be used for model creation/selection
+#' @param data
+#'  Underlying model data
+#' @param model_type
+#'  The type of model to be created. Can be either "glm", "lm", "glmer", "lmer",
+#'    "gam", "nlme", or "nls"
+#' @param model_args
+#'  Optional additional arguments to be given directly to the model call
+#' @param family
+#'  The model family. Default: gaussian
+#' @return
+#'  Model data without NAs
+omit_na_from_model_data <- function(formula,
+                                    data,
+                                    model_type,
+                                    family,
+                                    model_args = c()) {
+  model_args_cp <- model_args
+  model_args_cp$na.action <- stats::na.pass
+  data$temporary_na_action_id <- seq_len(nrow(data))
+  temporary_formula <- stats::update(
+    stats::as.formula(formula),
+    paste(". ~ . +", "temporary_na_action_id")
+  )
+  if (model_type %in% c("glm", "lm")) {
+    mf <- create_model(
+      temporary_formula,
+      data,
+      model_type,
+      family,
+      model_args_cp,
+      fit = FALSE)
+  } else if (model_type == "gam") {
+    model <- create_model(
+      temporary_formula,
+      data,
+      model_type,
+      family,
+      model_args_cp,
+      fit = FALSE)
+    mf <- model$mf
+  } else {
+    mf <- stats::model.frame(
+      formula = reformulas::subbars(stats::as.formula(temporary_formula)),
+      data = data,
+      na.action = stats::na.pass
+    )
+  }
+  keep_ids <- mf[
+    stats::complete.cases(mf),
+    "temporary_na_action_id",
+    drop = TRUE
+  ]
+  data <- data[data$temporary_na_action_id %in% keep_ids, , drop = FALSE] |>
+    dplyr::select(-"temporary_na_action_id")
+  data
 }

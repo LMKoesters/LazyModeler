@@ -19,7 +19,11 @@ make_tiny_data <- function(n = 80, seed = 42) {
 
   d$rate <- exp(0.2 + 0.5 * d$x1) * d$exposure
   d$count <- rpois(n, d$rate)
-  d$prop <- rbinom(n, d$trials, plogis(-0.2 + 0.5 * d$x1)) / d$trials
+  d$prop <- rbinom(
+    n,
+    d$trials,
+    plogis(-0.2 + 0.2 * d$x1 + 0.2 * d$x2)
+  ) / d$trials
 
   d
 }

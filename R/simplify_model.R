@@ -76,22 +76,15 @@ simplify_model <- function(
                     p_threshold))
   }
 
-  if (model_type == "gam") {
-    model <- create_model(formula, data, model_type, family, model_args,
-                          fit = FALSE)
-
-    data <- model$mf
-  } else if (model_type %in% c("glm", "lm")) {
-    data <- create_model(formula, data, model_type, family, model_args,
-                         fit = FALSE)
-  } else {
-    data <- stats::model.frame(
-      formula = reformulas::subbars(stats::as.formula(formula)),
-      data = data,
-      na.action = stats::na.omit
-    )
-  }
-
+  # OMIT NA
+  data <- omit_na_from_model_data(
+    formula,
+    data,
+    model_type,
+    family,
+    model_args
+  )
+  
   if (direction == "backward") {
     out <- optimize_backward(
       formula,

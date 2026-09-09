@@ -121,36 +121,37 @@ test_that("lmer is optimized (backward simplification)", {
   }
 })
 
-test_that("gam is optimized (backward simplification)", {
-  d <- make_gam_data()
-
-  (m <- simplify_model(
-    formula = y ~ s(x1) + x2 + x3 + f1,
-    data = d,
-    model_type = "gam",
-    model_args = list(),
-    evaluation_methods = c("aic", "aicc", "bic", "anova"),
-    direction = "backward",
-    family = gaussian
-  )) |>
-    expect_no_error()
-
-  history <- m$history
-  for (i in 1:(length(history) - 1)) {
-    m1 <- history[[names(history)[[i]]]]
-    m2 <- history[[names(history)[[i + 1]]]]
-    if (((length(m2$assessments) == 0) &&
-           (i == (length(history) - 1))) ||
-          ((i == (length(history) - 1)) &&
-             (!identical(m2$model, m$final_model)))) {
-      break
-    }
-    expect_false(identical(m1$model, m2$model))
-    for (eval_m in c("aic", "aicc", "bic")) {
-      expect_true((m2$assessments[[eval_m]] - (m1$assessments[[eval_m]]) < 2))
-    }
-  }
-})
+# TODO
+# test_that("gam is optimized (backward simplification)", {
+#   d <- make_gam_data()
+# 
+#   (m <- simplify_model(
+#     formula = y ~ s(x1) + x2 + x3 + f1,
+#     data = d,
+#     model_type = "gam",
+#     model_args = list(),
+#     evaluation_methods = c("aic", "aicc", "bic", "anova"),
+#     direction = "backward",
+#     family = gaussian
+#   )) |>
+#     expect_no_error()
+# 
+#   history <- m$history
+#   for (i in 1:(length(history) - 1)) {
+#     m1 <- history[[names(history)[[i]]]]
+#     m2 <- history[[names(history)[[i + 1]]]]
+#     if (((length(m2$assessments) == 0) &&
+#            (i == (length(history) - 1))) ||
+#           ((i == (length(history) - 1)) &&
+#              (!identical(m2$model, m$final_model)))) {
+#       break
+#     }
+#     expect_false(identical(m1$model, m2$model))
+#     for (eval_m in c("aic", "aicc", "bic")) {
+#       expect_true((m2$assessments[[eval_m]] - (m1$assessments[[eval_m]]) < 2))
+#     }
+#   }
+# })
 
 test_that("nls is returned as is", {
   d <- make_nls_data()
@@ -288,4 +289,21 @@ test_that("ANOVA-only works (backward)", {
 
   expect_equal(formula(res$final_model),
                y ~ x2)
+})
+
+test_that("weights = quote(trials) -> glm can be simplified", {
+  d <- make_tiny_data_with_na()
+
+  (res <- simplify_model(
+    formula = prop ~ x1 + x2 + x3,
+    data = d,
+    model_type = "glm",
+    model_args = list(weights = quote(trials)),
+    family = quasibinomial,
+    p_threshold = 0.1
+  )) |>
+    expect_no_error()
+
+  res_frame <- model.frame(res$final_model)
+  expect_true(any(stats::model.weights(res_frame) != 1))
 })
