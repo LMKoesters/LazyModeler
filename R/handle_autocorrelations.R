@@ -28,7 +28,7 @@
 #' @param p_threshold
 #'  p-value threshold for significance evaluation
 #' @param cor_args
-#'  Further arguments for [stats::cor()].
+#'  Further arguments for [stats::cor()] and [stats::cor.test()].
 #'    Default: method = "pearson" and use = "complete.obs"
 #' @param model_args
 #'  A named list of additional arguments given directly to model call
@@ -63,6 +63,7 @@ handle_autocorrelations <- function(
 
   # SETUP
   check_correlation_threshold(threshold)
+  cor_args <- check_cor_args(cor_args)
 
   if (length(cols) > 0) {
     terms <- attr(stats::terms.formula(formula), "term.labels")
@@ -108,28 +109,57 @@ handle_autocorrelations <- function(
 
   # COMPUTE CORRELATIONS
   cor_args <- c(cor_args, list(x = data_ext[, cols]))
-  correlations <- as.data.frame(do.call(stats::cor, cor_args))
-  if (nrow(correlations) == 0) {
+  if (cor_args$use == "all.obs" && anyNA.data.frame(cor_args$x)) {
+    stop(
+      paste(
+        "You specified use=all.obs for autocorrelation detection",
+        "but your data contains NAs. Please check and run again."
+      )
+    )
+  } else if (cor_args$use == "complete.obs") {
+    complete <- stats::complete.cases(cor_args$x)
+    if (!any(complete)) {
+      stop(
+        paste(
+          "You have specified use=complete.cases, but your data does not",
+          "contain complete cases. Please check and run again."
+        )
+      )
+    }
+  }
+  correlations <- as.data.frame(
+    do.call(stats::cor, cor_args[names(cor_args) %in% c("x", "use", "method")])
+  )
+  correlations_l <- cor_pivot_longer(correlations, "correlation") |>
+    dplyr::filter(.data$correlation >= threshold |
+                    .data$correlation <= -threshold)
+  if (nrow(correlations_l) == 0) {
     out <- list("autocorrelations_info" = NULL,
-                "problematic_predictors" = c(),
+                "problematic_predictors" = c(has_no_variance),
                 "formula" = formula)
+    if (remove) {
+      removable_terms <- removed_preds_to_terms(out$problematic_predictors,
+                                                term_map_cor)
+      out$formula <- remove_autocor_predictors(formula,
+                                               unique(removable_terms))
+    } else {
+      out$formula <- formula
+    }
     return(out)
   }
 
   # COMPUTE P-VALUES
-  correlations_p_val <- as.data.frame(
-    corrplot::cor.mtest(data_ext[, cols])$p
-  )
-
-  # PIVOT LONGER & MERGE
-  correlations_l <- cor_pivot_longer(correlations, "correlation")
-  correlations_p_val_l <- cor_pivot_longer(correlations_p_val, "p_value")
-  correlations_w_p <- merge(
+  ## remove NAs
+  if (cor_args$use == "complete.cases" || cor_args$use == "na.or.complete") {
+    complete <- stats::complete.cases(cor_args$x)
+    cor_args$x <- cor_args$x[complete, ]
+  }
+  correlations_w_p <- extract_cor_p_values(
     correlations_l,
-    correlations_p_val_l,
-    by = c("coefficientA", "coefficientB")
+    cor_args
   )
 
+  # SORT & FILTER BY P-THRESHOLD
   correlations_w_p <- cor_sort_and_filter(
     correlations_w_p,
     threshold,
@@ -293,17 +323,20 @@ determine_removable_predictors <- function(
         ]
         if (nrow(a_b_c) == 0) {
           # A!=C but A==B and B==C: remove B
-          if (coefficient_c %in% problematic_predictors) {
-            coefficient_to_remove <- coefficient_b
-            already_removed <- paste(coefficient_c, "was already removed")
+          if (coefficient_b %in% problematic_predictors ||
+                (coefficient_a %in% problematic_predictors &&
+                   coefficient_c %in% problematic_predictors)) {
+            coefficient_to_remove <- NA
+            already_removed <- paste(coefficient_b, "was already removed")
           } else if (coefficient_a %in% problematic_predictors) {
             coefficient_to_remove <- coefficient_c
             already_removed <- paste(coefficient_a, "was already removed")
-          } else if (!coefficient_b %in% problematic_predictors) {
+          } else if (coefficient_c %in% problematic_predictors) {
+            coefficient_to_remove <- coefficient_b
+            already_removed <- paste(coefficient_c, "was already removed")
+          } else {
             coefficient_to_remove <- coefficient_b
             already_removed <- ""
-          } else {
-            coefficient_to_remove <- NA
           }
 
           if (!is.na(coefficient_to_remove)) {
@@ -418,4 +451,40 @@ determine_removable_predictors <- function(
   }
 
   list(autocorrelations, problematic_predictors)
+}
+
+#' Computes p-values for correlations
+#'
+#' Uses [stats::cor.test()] to compute p-values of correlations
+#'  detected using [stats::cor()].
+#' @param correlations_l
+#'  A dataframe with autocorrelations, but pivoted longer
+#' @param cor_args
+#'  Further arguments for [stats::cor()] and [stats::cor.test()].
+#'    Default: method = "pearson" and use = "complete.obs"
+#' @return
+#'  An updated dataframe of autocorrelations with added p-values
+extract_cor_p_values <- function(correlations_l, cor_args) {
+  for (i in seq_len(nrow(correlations_l))) {
+    cor_args_cp <- cor_args[!names(cor_args) %in% c("use")]
+    coef_a <- correlations_l[i, "coefficientA"][[1]]
+    coef_b <- correlations_l[i, "coefficientB"][[1]]
+    cor_args_cp$y <- cor_args_cp$x[, coef_b]
+    cor_args_cp$x <- cor_args_cp$x[, coef_a]
+    if ((cor_args$use == "everything") &&
+          (anyNA(cor_args$x) || anyNA(cor_args$y))) {
+      correlations_l[i, "p_value"] <- NA_real_
+    } else if (length(cor_args_cp$x) == 0) {
+      correlations_l[i, "p_value"] <- NA_real_
+    }
+
+    cor_stats <- do.call(
+      stats::cor.test,
+      cor_args_cp
+    )
+
+    correlations_l[i, "p_value"] <- cor_stats$p.value
+  }
+
+  correlations_l
 }

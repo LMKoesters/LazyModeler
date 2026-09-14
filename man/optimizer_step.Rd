@@ -13,6 +13,7 @@ optimizer_step(
   model_args,
   evaluation_methods,
   p_threshold = 0.05,
+  anv_p_value = NULL,
   direction = "backward",
   full_formula = NA
 )
@@ -36,6 +37,8 @@ Allowed evaluation methods: "aic", "aicc", "bic", or "anova".
 Default: c("anova")}
 
 \item{p_threshold}{p-value threshold for significance evaluation. Default: 0.05}
+
+\item{anv_p_value}{(Optional) The p-value calculated by an ANOVA test}
 
 \item{direction}{Direction of model selection. Default: "backward"}
 

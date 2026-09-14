@@ -97,8 +97,8 @@ test_that("handle_autocorrelations respects main effects", {
   )
 
   expect_equal(res$problematic_predictors,
-               c("log(x1)", "f1B:log(x1)", "f1C:log(x1)", "x2", "x1:x2", "x3",
-                 "x1:x3", "x5"))
+               c("log(x1)", "f1B:log(x1)", "f1C:log(x1)", "x3", "x1:x3", "x2",
+                 "x1:x2", "x5"))
   expect_equal(res$formula,
                y ~ x1 + x4 + f1)
 })
@@ -167,7 +167,7 @@ test_that("invalid input of threshold > 1 throws informative error", {
   )
 })
 
-test_that("input of two invalid columns throw informative error", {
+test_that("input of two invalid columns throws informative error", {
   d <- make_autocor_data()
 
   expect_error(
@@ -287,8 +287,7 @@ test_that("relevant autocorrelations columns for gam detected", {
                c("x2", "x3", "x2:x3"))
 })
 
-
-test_that("0 variance is rejected from autocorrelation data", {
+test_that("0 variance is rejected from autocorrelation data (low-level)", {
   d <- make_tiny_data()
   d$x1 <- 1
   formula <- y ~ x1 + x2 + f1 + I(x1^2) + x3:x2
@@ -315,7 +314,7 @@ test_that("0 variance is rejected from autocorrelation data", {
 test_that("0 variance is rejected from autocorrelation data", {
   d <- make_tiny_data()
   d$x1 <- 1
-  formula <- y ~ x1 + x2 + f1 + I(x1^2) + x3:x2
+  formula <- y ~ x1 + x2 + f1 + I(x1^2) + x3:x2 + x1:x2
 
   (res <- handle_autocorrelations(
     formula,
@@ -333,7 +332,7 @@ test_that("0 variance is rejected from autocorrelation data", {
     expect_warning(regex = "no variance after NA omission")
 
   expect_equal(res$problematic_predictors,
-               c("x1", "I(x1^2)"))
+               c("x1:x2", "x1", "I(x1^2)"))
 })
 
 test_that("formula related columns are recognized from matrix", {
@@ -351,4 +350,221 @@ test_that("formula related columns are recognized from matrix", {
 
   expect_equal(res$problematic_predictors,
                c("x1:x2"))
+})
+
+test_that("handle_autocorrelations uses pearson", {
+  d <- make_autocor_data()
+
+  # COMPUTE CORRELATIONS
+  threshold <- 0.8
+  cols <- c("x1", "x2", "x3")
+  cor_args <- list(
+    x = d[, cols],
+    use = "pairwise.complete.obs",
+    method = "pearson"
+  )
+  correlations <- as.data.frame(
+    do.call(stats::cor, cor_args[names(cor_args) %in% c("x", "use", "method")])
+  )
+  correlations_l <- cor_pivot_longer(correlations, "correlation") |>
+    dplyr::filter(.data$correlation >= threshold |
+                    .data$correlation <= -threshold)
+
+  # CORRPLOT MTEST
+  correlations_p_val <- as.data.frame(
+    corrplot::cor.mtest(d[, cols], method = "pearson")$p
+  )
+  corrplot_stats <- cor_pivot_longer(correlations_p_val, "p_value")
+  corrplot_stats <- correlations_l |>
+    dplyr::left_join(corrplot_stats,
+                     by = c("coefficientA", "coefficientB"))
+  corrplot_stats <- cor_sort_and_filter(
+    corrplot_stats,
+    threshold = threshold,
+    p_threshold = 0.05
+  )
+
+  # LAZYMODELER STATS
+  res <- handle_autocorrelations(
+    formula = y ~ x1 + x2 + x3,
+    data = d,
+    model_type = "glm",
+    cor_args = list(use = "pairwise.complete.obs",
+                    method = "pearson",
+                    exact = FALSE),
+    family = gaussian,
+    cols = cols,
+    remove = TRUE,
+    threshold = threshold,
+    p_threshold = 0.05
+  )
+  lazymodeler_stats <- res$autocorrelations_info
+
+  # TEST
+  for (i in seq_len(nrow(corrplot_stats))) {
+    coef_a <- corrplot_stats[i, "coefficientA"][[1]]
+    coef_b <- corrplot_stats[i, "coefficientB"][[1]]
+    expect_equal(corrplot_stats[i, "p_value"][[1]],
+                 lazymodeler_stats[lazymodeler_stats$coefficientA == coef_a &
+                                     lazymodeler_stats$coefficientB == coef_b,
+                                   "p_value"][[1]])
+  }
+})
+
+test_that("handle_autocorrelations uses spearman", {
+  d <- make_autocor_data()
+
+  # COMPUTE CORRELATIONS
+  threshold <- 0.8
+  cols <- c("x1", "x2", "x3")
+  cor_args <- list(
+    x = d[, cols],
+    use = "pairwise.complete.obs",
+    method = "spearman"
+  )
+  correlations <- as.data.frame(
+    do.call(stats::cor, cor_args[names(cor_args) %in% c("x", "use", "method")])
+  )
+  correlations_l <- cor_pivot_longer(correlations, "correlation") |>
+    dplyr::filter(.data$correlation >= threshold |
+                    .data$correlation <= -threshold)
+
+  # CORRPLOT MTEST
+  correlations_p_val <- as.data.frame(
+    corrplot::cor.mtest(d[, cols], method = "spearman")$p
+  )
+  corrplot_stats <- cor_pivot_longer(correlations_p_val, "p_value")
+  corrplot_stats <- correlations_l |>
+    dplyr::left_join(corrplot_stats,
+                     by = c("coefficientA", "coefficientB"))
+  corrplot_stats <- cor_sort_and_filter(
+    corrplot_stats,
+    threshold = threshold,
+    p_threshold = 0.05
+  )
+
+  # LAZYMODELER STATS
+  res <- handle_autocorrelations(
+    formula = y ~ x1 + x2 + x3,
+    data = d,
+    model_type = "glm",
+    cor_args = list(use = "pairwise.complete.obs",
+                    method = "spearman",
+                    exact = FALSE),
+    family = gaussian,
+    cols = cols,
+    remove = TRUE,
+    threshold = threshold,
+    p_threshold = 0.05
+  )
+  lazymodeler_stats <- res$autocorrelations_info
+
+  # TEST
+  for (i in seq_len(nrow(corrplot_stats))) {
+    coef_a <- corrplot_stats[i, "coefficientA"][[1]]
+    coef_b <- corrplot_stats[i, "coefficientB"][[1]]
+    expect_equal(corrplot_stats[i, "p_value"][[1]],
+                 lazymodeler_stats[lazymodeler_stats$coefficientA == coef_a &
+                                     lazymodeler_stats$coefficientB == coef_b,
+                                   "p_value"][[1]])
+  }
+})
+
+test_that("handle_autocorrelations throws error on NAs when use=all.obs", {
+  d <- make_autocor_data()
+  d[40, "x1"] <- NA
+
+  threshold <- 0.8
+  cols <- c("x1", "x2", "x3")
+
+  (handle_autocorrelations(
+    formula = y ~ x1 + x2 + x3,
+    data = d,
+    model_type = "glm",
+    cor_args = list(use = "all.obs",
+                    method = "pearson",
+                    exact = FALSE),
+    family = gaussian,
+    cols = cols,
+    remove = TRUE,
+    threshold = threshold,
+    p_threshold = 0.05
+  )) |>
+    expect_error(regexp = "your data contains NAs")
+})
+
+test_that("handle_autocorrelations error: 0 complete and use=complete.obs", {
+  d <- make_autocor_data()
+  d[1:40, "x1"] <- NA
+  d[41:80, "x2"] <- NA
+
+  threshold <- 0.8
+  cols <- c("x1", "x2", "x3")
+
+  (res <- handle_autocorrelations(
+    formula = y ~ x1 + x2 + x3,
+    data = d,
+    model_type = "glm",
+    cor_args = list(use = "complete.obs",
+                    method = "pearson",
+                    exact = FALSE),
+    family = gaussian,
+    cols = cols,
+    remove = TRUE,
+    threshold = threshold,
+    p_threshold = 0.05
+  )) |>
+    expect_error(regexp = "your data does not contain complete cases")
+})
+
+test_that("handle_autocorrelations NULL when use=na.or.complete", {
+  d <- make_autocor_data()
+  d[1:40, "x1"] <- NA
+  d[41:80, "x2"] <- NA
+
+  threshold <- 0.8
+  cols <- c("x1", "x2", "x3")
+
+  res <- handle_autocorrelations(
+    formula = y ~ x1 + x2 + x3,
+    data = d,
+    model_type = "glm",
+    cor_args = list(use = "na.or.complete",
+                    method = "pearson",
+                    exact = FALSE),
+    family = gaussian,
+    cols = cols,
+    remove = TRUE,
+    threshold = threshold,
+    p_threshold = 0.05
+  )
+
+  expect_equal(res$autocorrelations_info,
+               NULL)
+})
+
+test_that("handle_autocorrelations NULL when use=everything", {
+  d <- make_autocor_data()
+  d[1:40, "x1"] <- NA
+  d[41:80, "x2"] <- NA
+
+  threshold <- 0.8
+  cols <- c("x1", "x2", "x3")
+
+  res <- handle_autocorrelations(
+    formula = y ~ x1 + x2 + x3,
+    data = d,
+    model_type = "glm",
+    cor_args = list(use = "everything",
+                    method = "pearson",
+                    exact = FALSE),
+    family = gaussian,
+    cols = cols,
+    remove = TRUE,
+    threshold = threshold,
+    p_threshold = 0.05
+  )
+
+  expect_equal(res$autocorrelations_info,
+               NULL)
 })

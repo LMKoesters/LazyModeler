@@ -12,7 +12,7 @@ optimize_forward(
   family = stats::gaussian,
   model_args = list(),
   evaluation_methods = c("anova"),
-  p_threshold,
+  p_threshold = 0.05,
   trace = TRUE
 )
 }

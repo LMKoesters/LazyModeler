@@ -22,7 +22,6 @@ Depends: R (>= 4.4.0)
 Imports: 
     car,
     colorspace,
-    corrplot,
     dplyr,
     formula.tools,
     ggplot2,
@@ -42,7 +41,8 @@ Imports:
     tidyr,
     withr,
     zeallot
-Suggests: 
+Suggests:
+    corrplot,
     see,
     testthat (>= 3.0.0)
 Config/testthat/edition: 3

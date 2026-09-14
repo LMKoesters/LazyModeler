@@ -9,7 +9,7 @@ compare_models(
   models,
   direction,
   old_model_assessments,
-  p_threshold = 0.05,
+  anv_p_value = NULL,
   delta = 2
 )
 }
@@ -24,10 +24,10 @@ Default: c("anova")}
 
 \item{old_model_assessments}{The evaluation results of the previous model}
 
-\item{p_threshold}{p-value threshold for significance evaluation. Default: 0.05}
+\item{anv_p_value}{(Optional) The p-value calculated by an ANOVA test}
 
 \item{delta}{Minimal value by which the two models must differ for the newer model to
-be rejected}
+be rejected. Default: 2}
 }
 \value{
 Information on whether or not the model has improved and the results

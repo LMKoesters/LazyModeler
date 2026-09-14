@@ -4,13 +4,13 @@
 \alias{check_variance}
 \title{Check for variance of relevant formula terms}
 \usage{
-check_variance(data_ext, term_map)
+check_variance(data_matrix, term_map)
 }
 \arguments{
-\item{term_map}{A dataframe with column names and corresponding formula terms}
-
 \item{data_matrix}{Underlying data matrix for autocorrelation detection and downstream
 model creation. Should include transforms, interactions, etc.}
+
+\item{term_map}{A dataframe with column names and corresponding formula terms}
 }
 \value{
 A filtered term map including only columns with variance

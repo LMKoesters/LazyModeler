@@ -8,9 +8,9 @@ main effects/interactions}
 sort_term_map(term_map, sort = TRUE)
 }
 \arguments{
-\item{sort}{Whether to sort the term map by interactions/main effects}
+\item{term_map}{A dataframe with column names and corresponding formula terms}
 
-\item{m_matrix}{A dataframe with column names and corresponding formula terms}
+\item{sort}{Whether to sort the term map by interactions/main effects}
 }
 \value{
 A (sorted) term map including information on interactions with

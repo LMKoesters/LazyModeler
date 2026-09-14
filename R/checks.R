@@ -261,11 +261,11 @@ check_plot_interactions <- function(interactions) {
 #'  A dataframe with column names and corresponding formula terms
 #' @returns
 #'  A filtered term map including only columns with variance
-check_variance <- function(data_ext, term_map) {
+check_variance <- function(data_matrix, term_map) {
   has_no_variance <- vapply(
     term_map$column,
     function(col) {
-      x <- data_ext[col]
+      x <- data_matrix[col]
       x <- x[!is.na(x)]
       !(length(x) > 1 && length(unique(x)) > 1)
     },
@@ -321,4 +321,62 @@ check_base_formula <- function(base_formula, formula) {
   }
 
   base_formula
+}
+
+#' Checks default arguments for autocorrelation testing
+#'
+#' Checks whether all base arguments are present in user-provided
+#'  argument list for autocorrelation testing
+#' @param cor_args
+#'  Further arguments for [stats::cor()].
+#' @returns
+#'  An updated list of [stats::cor()] arguments
+check_cor_args <- function(cor_args) {
+  if (!"method" %in% names(cor_args)) {
+    cor_args$method <- c("pearson")
+  }
+
+  if (!"use" %in% names(cor_args)) {
+    cor_args$use <- "complete.obs"
+  }
+
+  if ("conf.level" %in% names(cor_args)) {
+    paste(
+      "We do not allow the use of 'conf.level' for stats::cor.test().",
+      "We will remove it from the argument list."
+    )
+  }
+
+  if ("alternative" %in% names(cor_args)) {
+    paste(
+      "We do not allow the use of 'alternative' for stats::cor.test().",
+      "We will remove it from the argument list."
+    )
+  }
+
+  cor_args
+}
+
+#' Checks partial argument matching
+#'
+#' Checks user arguments against list of accepted arguments and throws error
+#'  on partial argument matching
+#' @param call
+#'  User function call
+#' @param func
+#'  Function called by user
+check_user_args <- function(call, func) {
+  supplied <- names(as.list(call)[-1])
+  supplied <- supplied[nzchar(supplied)]
+  valid <- setdiff(names(formals(func)), "...")
+  invalid <- setdiff(supplied, valid)
+  
+  if (length(invalid) > 0) {
+    stop(
+      sprintf(
+        "Unknown or partially matched argument(s): %s",
+        paste(invalid, collapse = ", ")
+      )
+    )
+  }
 }

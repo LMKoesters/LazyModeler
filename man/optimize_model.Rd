@@ -46,6 +46,8 @@ optimize_model(
 Options: "lm", "glm", "lmer", "glmer",
 "nlme", "gam", and "nls".}
 
+\item{...}{Must be empty. Unsupported arguments will result in an error.}
+
 \item{family}{A character string or call describing the family used for model calculation.
 See \link[stats:family]{stats::family} for options. Can also be "automatic".
 Default: gaussian}
@@ -97,7 +99,7 @@ and main effects. Removal of predictors will start with the evaluation of
 correlations between main effects and will remove blocking interactions
 when removing a main effect.}
 
-\item{cor_args}{Further arguments for \code{\link[stats:cor]{stats::cor()}}.
+\item{cor_args}{Further arguments for \code{\link[stats:cor]{stats::cor()}} and \code{\link[stats:cor.test]{stats::cor.test()}}.
 Default: method = "pearson" and use = "complete.obs"}
 
 \item{p_threshold}{p-value threshold for significance evaluation. Default: 0.05}

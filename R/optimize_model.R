@@ -10,6 +10,8 @@
 #'  Model type to be used as character string.
 #'    Options: "lm", "glm", "lmer", "glmer",
 #'    "nlme", "gam", and "nls".
+#' @param ...
+#'  Must be empty. Unsupported arguments will result in an error.
 #' @param family
 #'  A character string or call describing the family used for model calculation.
 #'    See [stats::family] for options. Can also be "automatic".
@@ -62,7 +64,7 @@
 #'    correlations between main effects and will remove blocking interactions
 #'    when removing a main effect.
 #' @param cor_args
-#'  Further arguments for [stats::cor()].
+#'  Further arguments for [stats::cor()] and [stats::cor.test()].
 #'    Default: method = "pearson" and use = "complete.obs"
 #' @param p_threshold
 #'  p-value threshold for significance evaluation. Default: 0.05
@@ -168,14 +170,7 @@ optimize_model <- function(
     categorical_stat_test = "wilcox",
     plot_type = "boxplot",
     plot_curve = TRUE) {
-
-  if (length(list(...)) > 0L) {
-    stop(
-      "Unknown argument(s): ",
-      paste(names(...), collapse = ", "),
-      call. = FALSE
-    )
-  }
+  check_user_args(sys.call(), LazyModeler::optimize_model)
 
   check_model_type(model_type, model_args)
   formula <- check_formula(formula, data)

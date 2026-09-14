@@ -39,11 +39,8 @@ cor_sort_and_filter <- function(correlations_w_p, threshold, p_threshold) {
     dplyr::select(!tidyr::any_of(c("sorted_coefA",
                                    "sorted_coefB",
                                    "comparison"))) |>
-    dplyr::filter(
-      ((.data$correlation >= threshold) |
-         (.data$correlation <= -threshold)) &
-        (.data$p_value < p_threshold)
-    ) |>
+    dplyr::filter(!is.na(.data$p_value) &
+                    .data$p_value < p_threshold) |>
     tibble::add_column(note = NA)
 }
 
@@ -714,7 +711,7 @@ map_col_to_term <- function(m_matrix, formula) {
 
 #' Adds interactions and sorts a term-to-column dataframe by
 #'  main effects/interactions
-#' @param m_matrix
+#' @param term_map
 #'  A dataframe with column names and corresponding formula terms
 #' @param sort
 #'  Whether to sort the term map by interactions/main effects
@@ -897,7 +894,8 @@ omit_na_from_model_data <- function(formula,
       model_type,
       family,
       model_args_cp,
-      fit = FALSE)
+      fit = FALSE
+    )
   } else if (model_type == "gam") {
     model <- create_model(
       temporary_formula,
@@ -905,7 +903,8 @@ omit_na_from_model_data <- function(formula,
       model_type,
       family,
       model_args_cp,
-      fit = FALSE)
+      fit = FALSE
+    )
     mf <- model$mf
   } else {
     mf <- stats::model.frame(

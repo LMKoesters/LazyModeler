@@ -4,7 +4,7 @@
 \alias{get_addable_terms}
 \title{Get addable terms}
 \usage{
-get_addable_terms(formula, model, model_type)
+get_addable_terms(formula, model, model_type, p_threshold = 0.05)
 }
 \arguments{
 \item{formula}{The full formula to get terms to add from}
@@ -13,6 +13,8 @@ get_addable_terms(formula, model, model_type)
 
 \item{model_type}{The type of model to get removable terms for. Can be either "glm", "lm",
 "glmer", "lmer", or "gam"}
+
+\item{p_threshold}{p-value threshold for significance evaluation. Default: 0.05}
 }
 \value{
 A dataframe with terms to add and the name of the p-value column

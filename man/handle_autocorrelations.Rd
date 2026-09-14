@@ -41,7 +41,7 @@ Default: TRUE}
 
 \item{p_threshold}{p-value threshold for significance evaluation}
 
-\item{cor_args}{Further arguments for \code{\link[stats:cor]{stats::cor()}}.
+\item{cor_args}{Further arguments for \code{\link[stats:cor]{stats::cor()}} and \code{\link[stats:cor.test]{stats::cor.test()}}.
 Default: method = "pearson" and use = "complete.obs"}
 
 \item{model_args}{A named list of additional arguments given directly to model call}
