@@ -476,14 +476,14 @@ extract_cor_p_values <- function(correlations_l, cor_args) {
       correlations_l[i, "p_value"] <- NA_real_
     } else if (length(cor_args_cp$x) == 0) {
       correlations_l[i, "p_value"] <- NA_real_
+    } else {
+      cor_stats <- do.call(
+        stats::cor.test,
+        cor_args_cp
+      )
+      
+      correlations_l[i, "p_value"] <- cor_stats$p.value
     }
-
-    cor_stats <- do.call(
-      stats::cor.test,
-      cor_args_cp
-    )
-
-    correlations_l[i, "p_value"] <- cor_stats$p.value
   }
 
   correlations_l
