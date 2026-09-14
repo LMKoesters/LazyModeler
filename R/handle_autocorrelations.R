@@ -121,7 +121,7 @@ handle_autocorrelations <- function(
     if (!any(complete)) {
       stop(
         paste(
-          "You have specified use=complete.cases, but your data does not",
+          "You have specified use=complete.obs, but your data does not",
           "contain complete cases. Please check and run again."
         )
       )
@@ -150,7 +150,7 @@ handle_autocorrelations <- function(
 
   # COMPUTE P-VALUES
   ## remove NAs
-  if (cor_args$use == "complete.cases" || cor_args$use == "na.or.complete") {
+  if (cor_args$use == "complete.obs" || cor_args$use == "na.or.complete") {
     complete <- stats::complete.cases(cor_args$x)
     cor_args$x <- cor_args$x[complete, ]
   }
