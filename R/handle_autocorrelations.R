@@ -472,7 +472,7 @@ extract_cor_p_values <- function(correlations_l, cor_args) {
     cor_args_cp$y <- cor_args_cp$x[, coef_b]
     cor_args_cp$x <- cor_args_cp$x[, coef_a]
     if ((cor_args$use == "everything") &&
-          (anyNA(cor_args$x) || anyNA(cor_args$y))) {
+          (anyNA(cor_args_cp$x) || anyNA(cor_args_cp$y))) {
       correlations_l[i, "p_value"] <- NA_real_
     } else if (length(cor_args_cp$x) == 0) {
       correlations_l[i, "p_value"] <- NA_real_
