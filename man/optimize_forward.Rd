@@ -13,7 +13,8 @@ optimize_forward(
   model_args = list(),
   evaluation_methods = c("anova"),
   p_threshold = 0.05,
-  trace = TRUE
+  trace = TRUE,
+  delta = 2
 )
 }
 \arguments{
@@ -37,6 +38,11 @@ Default: c("anova")}
 \item{p_threshold}{p-value threshold for significance evaluation. Default: 0.05}
 
 \item{trace}{Whether to return the selection history. Default. TRUE}
+
+\item{delta}{Used as a minimal distance between model performances that needs to be
+present for a candidate model to be considered an improvement over the
+last computed model within the model selection process.
+Default: 2}
 }
 \value{
 The selected model with evaluation metrics and (if trace = TRUE)

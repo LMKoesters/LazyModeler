@@ -2,7 +2,7 @@ test_that("glm is optimized (backward simplification)", {
   d <- make_significant_factors_data()
 
   (m <- simplify_model(
-    formula = y ~ x1 + I(x1^2) + f2 + f1:x1 + x1 * x2 + x1:x3,
+    formula = y ~ I(x1^2) + f2 + f1 * x1 + x1 * x2 + x1 * x3,
     data = d,
     model_type = "glm",
     model_args = list(),
@@ -11,6 +11,10 @@ test_that("glm is optimized (backward simplification)", {
     family = gaussian
   )) |>
     expect_no_error()
+
+  expect_equal(stats::formula(m$final_model),
+               y ~ f2 + f1 + x1 + x2,
+               ignore_attr = ".Environment")
 
   history <- m$history
   for (i in 1:(length(history) - 1)) {
@@ -43,6 +47,10 @@ test_that("lm is optimized (backward simplification)", {
   )) |>
     expect_no_error()
 
+  expect_equal(stats::formula(m$final_model),
+               y ~ x1 + x3 + f1,
+               ignore_attr = ".Environment")
+
   history <- m$history
   for (i in 1:(length(history) - 1)) {
     m1 <- history[[names(history)[[i]]]]
@@ -74,6 +82,10 @@ test_that("glmer is optimized (backward simplification)", {
   )) |>
     expect_no_error()
 
+  expect_equal(stats::formula(m$final_model),
+               y ~ x1 + x2 + x3 + (1 | grp),
+               ignore_attr = ".Environment")
+
   history <- m$history
   for (i in 1:(length(history) - 1)) {
     m1 <- history[[names(history)[[i]]]]
@@ -104,6 +116,10 @@ test_that("lmer is optimized (backward simplification)", {
   )) |>
     expect_no_error()
 
+  expect_equal(stats::formula(m$final_model),
+               y ~ x1 + x2 + (1 | grp) + x1:x2,
+               ignore_attr = ".Environment")
+
   history <- m$history
   for (i in 1:(length(history) - 1)) {
     m1 <- history[[names(history)[[i]]]]
@@ -121,37 +137,55 @@ test_that("lmer is optimized (backward simplification)", {
   }
 })
 
-# TODO
-# test_that("gam is optimized (backward simplification)", {
-#   d <- make_gam_data()
-# 
-#   (m <- simplify_model(
-#     formula = y ~ s(x1) + x2 + x3 + f1,
-#     data = d,
-#     model_type = "gam",
-#     model_args = list(),
-#     evaluation_methods = c("aic", "aicc", "bic", "anova"),
-#     direction = "backward",
-#     family = gaussian
-#   )) |>
-#     expect_no_error()
-# 
-#   history <- m$history
-#   for (i in 1:(length(history) - 1)) {
-#     m1 <- history[[names(history)[[i]]]]
-#     m2 <- history[[names(history)[[i + 1]]]]
-#     if (((length(m2$assessments) == 0) &&
-#            (i == (length(history) - 1))) ||
-#           ((i == (length(history) - 1)) &&
-#              (!identical(m2$model, m$final_model)))) {
-#       break
-#     }
-#     expect_false(identical(m1$model, m2$model))
-#     for (eval_m in c("aic", "aicc", "bic")) {
-#       expect_true((m2$assessments[[eval_m]] - (m1$assessments[[eval_m]]) < 2))
-#     }
-#   }
-# })
+test_that("gam is optimized (backward simplification)", {
+  d <- make_gam_data()
+
+  (m <- simplify_model(
+    formula = y ~ s(x1) + x2 + x3 + f1 + x1:x2 + ti(x2),
+    data = d,
+    model_type = "gam",
+    model_args = list(),
+    evaluation_methods = c("aic", "aicc", "bic"),
+    direction = "backward",
+    family = gaussian
+  )) |>
+    expect_no_error()
+
+  expect_equal(stats::formula(m$final_model),
+               y ~ s(x1) + x2,
+               ignore_attr = ".Environment")
+
+  history <- m$history
+  for (i in 1:(length(history) - 1)) {
+    m1 <- history[[names(history)[[i]]]]
+    m2 <- history[[names(history)[[i + 1]]]]
+    if (((length(m2$assessments) == 0) &&
+           (i == (length(history) - 1))) ||
+          ((i == (length(history) - 1)) &&
+             (!identical(m2$model, m$final_model)))) {
+      break
+    }
+    expect_false(identical(m1$model, m2$model))
+    for (eval_m in c("aic", "aicc", "bic")) {
+      expect_true((m2$assessments[[eval_m]] - (m1$assessments[[eval_m]]) < 2))
+    }
+  }
+})
+
+test_that("gam warning when ANOVA is used", {
+  d <- make_gam_data()
+
+  simplify_model(
+    formula = y ~ s(x1) + x2 + x3 + f1 + x1:x2 + ti(x2),
+    data = d,
+    model_type = "gam",
+    model_args = list(),
+    evaluation_methods = c("anova", "aicc", "bic"),
+    direction = "backward",
+    family = gaussian
+  ) |>
+    expect_warning(regexp = "For GAMs, we do not recommend using ANOVA")
+})
 
 test_that("nls is returned as is", {
   d <- make_nls_data()
@@ -173,6 +207,29 @@ test_that("nls is returned as is", {
   expect_s3_class(m$final_model, "nls")
 })
 
+test_that("nls is returned as is (with only anova)", {
+  d <- make_nls_data()
+  start <- c(Asym = 5, k = 0.6, offset = .1, slope = .5)
+
+  (m <- simplify_model(
+    formula = y ~ offset + Asym * (1 - exp(-k * x)) + slope * x,
+    data = d,
+    model_type = "nls",
+    model_args = list(
+      start = start
+    ),
+    evaluation_methods = c("anova"),
+    direction = "backward"
+  )) |>
+    expect_no_error()
+
+  expect_named(m, c("assessments", "final_model", "p_values"))
+  expect_s3_class(m$final_model, "nls")
+  expect_equal(stats::formula(m$final_model),
+               y ~ offset + Asym * (1 - exp(-k * x)) + slope * x,
+               ignore_attr = ".Environment")
+})
+
 test_that("nlme is returned as is", {
   d <- make_nlme_data()
   start <- c(Asym = 9, k = 0.7)
@@ -192,6 +249,9 @@ test_that("nlme is returned as is", {
 
   expect_named(m, c("assessments", "final_model", "p_values"))
   expect_s3_class(m$final_model, c("nlme", "lme"))
+  expect_equal(stats::formula(m$final_model),
+               y ~ Asym * exp(-k * t),
+               ignore_attr = ".Environment")
 })
 
 test_that("omit NAs works", {
@@ -228,6 +288,10 @@ test_that("Shorthand y ~ . is accepted (backward)", {
     family = gaussian
   )) |>
     expect_no_error()
+
+  expect_equal(stats::formula(m$final_model),
+               y ~ f1 + f2 + x1 + x2,
+               ignore_attr = ".Environment")
 
   history <- m$history
   for (i in 1:(length(history) - 1)) {

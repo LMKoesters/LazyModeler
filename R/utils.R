@@ -209,8 +209,9 @@ compare_models <- function(evaluation_methods,
   for (eval_m in evaluation_methods[evaluation_methods != "anova"]) {
     res <- evaluators[[eval_m]](models[[1]])
     evaluation_results[eval_m] <- res
-    diff <- res - old_model_assessments[[eval_m]]
-    if (diff > delta) {
+    diff <- old_model_assessments[[eval_m]] - res
+    if ((direction == "backward" && diff < -delta) ||
+        (direction == "forward" && diff <= delta)) {
       return(
         list("has_improved" = FALSE,
              "assessments" = evaluation_results)
@@ -275,22 +276,21 @@ get_removable_terms <- function(model,
                                 model_type,
                                 p_threshold = 0.05) {
   if (model_type == "gam") {
-    pterms <- summary(model)$pTerms.table |>
+    gam_summary <- summary(model)
+    pterms <- gam_summary$pTerms.table |>
       as.data.frame() |>
       tibble::rownames_to_column(var = "predictor")
-    adjustable_terms <- summary(model)$s.table |>
+    current_terms <- stats::terms(
+      stats::formula(model),
+      specials = c("s", "te", "ti", "t2")
+    )
+    droppable <- stats::drop.scope(current_terms)
+    adjustable_terms <- gam_summary$s.table |>
       as.data.frame() |>
       tibble::rownames_to_column(var = "predictor") |>
-      dplyr::bind_rows(pterms)
-
+      dplyr::bind_rows(pterms) |>
+      dplyr::filter(.data$predictor %in% droppable)
     p_col <- "p-value"
-  } else if (model_type == "nls") {
-    adjustable_terms <- stats::coef(summary(model)) |>
-      as.data.frame() |>
-      tibble::rownames_to_column(var = "predictor")
-
-    p_col <- colnames(adjustable_terms)[[grep("Pr\\(",
-                                              colnames(adjustable_terms))]]
   } else {
     family <- stats::family(model)$family
 
@@ -302,6 +302,7 @@ get_removable_terms <- function(model,
     p_col <- colnames(adjustable_terms)[[grep("Pr\\(",
                                               colnames(adjustable_terms))]]
   }
+
   adjustable_terms <- adjustable_terms |>
     dplyr::filter((.data$predictor != "<none>") &
                     (.data[[p_col]] >= p_threshold)) |>
@@ -334,7 +335,8 @@ get_addable_terms <- function(formula,
                                 specials = c("s", "te", "ti", "t2"))
     adjustable_terms <- stats::add.scope(current_terms, upper_terms)
     adjustable_terms <- data.frame(list(predictor = adjustable_terms))
-    p_col <- "predictor"
+    p_col <- "p-value"
+    adjustable_terms[[p_col]] <- NA
   } else {
     family <- stats::family(model)$family
     stats_test <- get_stats_test(model_type, family)
@@ -357,12 +359,12 @@ get_addable_terms <- function(formula,
 
     p_col <- colnames(adjustable_terms)[[grep("Pr\\(",
                                               colnames(adjustable_terms))]]
+    adjustable_terms <- adjustable_terms |>
+      dplyr::filter((.data$predictor != "<none>") &
+                      (.data[[p_col]] < p_threshold)) |>
+      dplyr::arrange(.data[[p_col]])
   }
 
-  adjustable_terms <- adjustable_terms |>
-    dplyr::filter((.data$predictor != "<none>") &
-                    (.data[[p_col]] < p_threshold)) |>
-    dplyr::arrange(.data[[p_col]])
   list(adjustable_terms, p_col)
 }
 

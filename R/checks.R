@@ -22,7 +22,8 @@ check_model_type <- function(model_type, model_args) {
     warning(
       paste("You did not specify the nls model parameter 'start'.",
             "If you actively decided against using 'start', you can",
-            "safely ignore this message.")
+            "safely ignore this message."),
+      call. = FALSE
     )
   }
 }
@@ -82,7 +83,8 @@ check_model_family <- function(family = NULL,
         get_family_character(family),
         paste(valid_families, collapse = ", or "),
         valid_families_info$notice
-      )
+      ),
+      call. = FALSE
     )
   }
 
@@ -125,7 +127,8 @@ check_response_data_format <- function(response_col, response_data) {
           "type integer, please correct the column's formatting and restart."
         ),
         response_col
-      )
+      ),
+      call. = FALSE
     )
   }
 }
@@ -141,13 +144,14 @@ check_response_data_format <- function(response_col, response_data) {
 #' @returns A list containing all valid families and a notice explaining
 #'  the family choice
 check_cbind_model_family <- function(data, pasted_response) {
+  # TODO should the first two variables only be used for model family OR should the formula be updated??
   if (length(pasted_response) > 3) {
-    warning(paste(
-      "It seems like you have specified more than two variables",
+    warning(
+      paste("It seems like you have specified more than two variables",
       "within cbind(). This is not supported. We will only consider the first",
       "two variables. If you wish to correct your formula, please stop and",
       "rerun LazyModeler."
-    ))
+    ), call. = FALSE)
   }
 
   col1 <- pasted_response[[2]]
@@ -203,7 +207,7 @@ check_formula <- function(formula, data, add_main = TRUE) {
               "integrity and correct coefficient interpretation.",
               "Please add the following main effects to your formula: %s"),
         paste(missing_main_effects, collapse = ", ")
-      ))
+      ), call. = FALSE)
     } else {
       warning(sprintf(
         paste("We have noticed that certain main effects are missing from",
@@ -211,7 +215,7 @@ check_formula <- function(formula, data, add_main = TRUE) {
               "integrity and correct coefficient interpretation.",
               "We will add the following main effects to your formula: %s"),
         paste(missing_main_effects, collapse = ", ")
-      ))
+      ), call. = FALSE)
       for (main_effect in missing_main_effects) {
         d <- paste(". ~ . +", main_effect)
         formula <- stats::update(stats::as.formula(formula), d)
@@ -238,13 +242,13 @@ check_plot_interactions <- function(interactions) {
   if (any(interactions$not_twoway)) {
     warning(paste("We have recognized interactions with more than two",
                   "variables. These interactions will not be plotted.",
-                  sep = " "))
+                  sep = " "), call. = FALSE)
   }
   if (any(interactions$only_cat)) {
     warning(paste("We have recognized interactions between two factors.",
                   "We currently do not support plotting of these types of",
                   "interactions.",
-                  sep = " "))
+                  sep = " "), call. = FALSE)
   }
 
   interactions[(!interactions$not_twoway) & (!interactions$only_cat), ]
@@ -283,7 +287,8 @@ check_variance <- function(data_matrix, term_map) {
           sep = " "
         ),
         paste(has_no_variance, collapse = ", ")
-      )
+      ),
+      call. = FALSE
     )
   }
 
@@ -316,7 +321,8 @@ check_base_formula <- function(base_formula, formula) {
               "method call.",
               collapse = " "),
         deparse1(base_formula)
-      )
+      ),
+      call. = FALSE
     )
   }
 
@@ -379,6 +385,43 @@ check_user_args <- function(call, func) {
         "Unknown or partially matched argument(s): %s",
         paste(invalid, collapse = ", ")
       )
+    )
+  }
+}
+
+#' Checks if gam formula and evaluation metric are fine
+#'
+#' Checks for gam formulas whether smooth terms are included and 
+#'  whether user has specified ANOVA as an evaluation metric. If so,
+#'  a warning is issued as smooth terms rely on different test statistics than
+#'  parametric terms.
+#' @param formula
+#'  Upper formula to be used for model creation/selection
+#' @param evaluation_methods
+#'  Character vector with methods to use for model evaluation.
+#'  Allowed evaluation methods: "aic", "aicc", "bic", or "anova".
+check_gam_anova <- function(formula, evaluation_methods) {
+  terms <- stats::terms(
+    formula,
+    specials = c("s", "te", "ti", "t2")
+  )
+
+  specials <- attr(terms, "specials")
+  if (length(unlist(specials))) {
+    warning(
+      paste(
+        "For GAMs, we do not recommend using ANOVA as an evaluation metric for",
+        "model selection.",
+        "Keep in mind that we still rely on ANOVA p-values to exclude terms",
+        "from addition or removal from a given model within a simplification",
+        "step based on the provided p-threshold.",
+        "Since significance tests for parametric and smooth terms",
+        "are based on different test statistics, their p-values should not,",
+        "however, be used to rank competing terms directly.",
+        "Consider switching to a model-level criterion such as AIC, AICc,",
+        "or BIC."
+      ),
+      call. = FALSE
     )
   }
 }

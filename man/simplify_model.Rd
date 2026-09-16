@@ -14,7 +14,8 @@ simplify_model(
   family = stats::gaussian,
   p_threshold = 0.05,
   trace = TRUE,
-  base_formula = NA
+  base_formula = NA,
+  delta = 2
 )
 }
 \arguments{
@@ -41,6 +42,11 @@ Default: c("anova")}
 
 \item{base_formula}{The lower formula used for forward model selection. Only required if
 direction = "forward", otherwise this is NA}
+
+\item{delta}{Used as a minimal distance between model performances that needs to be
+present for a candidate model to be considered an improvement over the
+last computed model within the model selection process.
+Default: 2}
 }
 \value{
 The selected model with evaluation metrics and (if trace = TRUE)

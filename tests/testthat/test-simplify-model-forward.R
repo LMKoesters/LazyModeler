@@ -13,6 +13,10 @@ test_that("glm is optimized (forward selection)", {
   )) |>
     expect_no_error()
 
+  expect_equal(stats::formula(m$final_model),
+               y ~ x1 + f2 + x2 + x1:f1,
+               ignore_attr = ".Environment")
+
   history <- m$history
   for (i in 1:(length(history) - 1)) {
     m1 <- history[[names(history)[[i]]]]
@@ -44,6 +48,10 @@ test_that("lm is optimized (forward selection)", {
     direction = "forward"
   )) |>
     expect_no_error()
+
+  expect_equal(stats::formula(m$final_model),
+               y ~ x1 + x3 + f1,
+               ignore_attr = ".Environment")
 
   history <- m$history
   for (i in 1:(length(history) - 1)) {
@@ -77,6 +85,10 @@ test_that("glmer is optimized (forward selection)", {
   )) |>
     expect_no_error()
 
+  expect_equal(stats::formula(m$final_model),
+               y ~ (1 | grp) + x1 + x2 + x3,
+               ignore_attr = ".Environment")
+
   history <- m$history
   for (i in 1:(length(history) - 1)) {
     m1 <- history[[names(history)[[i]]]]
@@ -94,7 +106,7 @@ test_that("glmer is optimized (forward selection)", {
   }
 })
 
-test_that("lmer is optimized (backward simplification)", {
+test_that("lmer is optimized (forward simplification)", {
   d <- make_lmer_data()
 
   (m <- simplify_model(
@@ -108,6 +120,10 @@ test_that("lmer is optimized (backward simplification)", {
   )) |>
     expect_no_error()
 
+  expect_equal(stats::formula(m$final_model),
+               y ~ (1 | grp) + x1 + x2,
+               ignore_attr = ".Environment")
+
   history <- m$history
   for (i in 1:(length(history) - 1)) {
     m1 <- history[[names(history)[[i]]]]
@@ -125,51 +141,41 @@ test_that("lmer is optimized (backward simplification)", {
   }
 })
 
-# TODO
-# test_that("gam is optimized (forward simplification)", {
-#   d <- make_gam_data()
-# 
-#   m <- simplify_model(
-#     formula = y ~ s(x1) + x2 + x3 + f1,
-#     base_formula = y ~ 1,
-#     data = d,
-#     model_type = "gam",
-#     model_args = list(),
-#     evaluation_methods = c("aic", "aicc", "bic", "anova"),
-#     direction = "forward",
-#     family = gaussian
-#   )
-#   
-#   print(m)
-#   
-#   # (m <- simplify_model(
-#   #   formula = y ~ s(x1) + x2 + x3 + f1,
-#   #   base_formula = y ~ 1,
-#   #   data = d,
-#   #   model_type = "gam",
-#   #   model_args = list(),
-#   #   evaluation_methods = c("aic", "aicc", "bic", "anova"),
-#   #   direction = "forward",
-#   #   family = gaussian
-#   # )) |>
-#   #   expect_no_error()
-#   # 
-#   # history <- m$history
-#   # for (i in 1:(length(history) - 1)) {
-#   #   m1 <- history[[names(history)[[i]]]]
-#   #   m2 <- history[[names(history)[[i + 1]]]]
-#   #   if (((length(m2$assessments) == 0) &&
-#   #          (i == (length(history) - 1))) ||
-#   #         ((i == (length(history) - 1)) &&
-#   #            (!identical(m2$model, m$final_model)))) {
-#   #     break
-#   #   }
-#   #   expect_false(identical(m1$model, m2$model))
-#   #   for (eval_m in c("aic", "aicc", "bic")) {
-#   #     expect_true((m2$assessments[[eval_m]] - (m1$assessments[[eval_m]]) < 2))
-#   #   }
-#   # }
-# })
+test_that("gam is optimized (forward simplification)", {
+  d <- make_gam_data()
+
+  (m <- simplify_model(
+    formula = y ~ s(x1) + x2 + x3 + f1 + x1:x2 + ti(x2),
+    base_formula = y ~ 1,
+    data = d,
+    model_type = "gam",
+    model_args = list(),
+    evaluation_methods = c("aic", "aicc", "bic"),
+    direction = "forward",
+    family = gaussian
+  )) |>
+    expect_no_error()
+
+  expect_equal(stats::formula(m$final_model),
+               y ~ s(x1) + x2,
+               ignore_attr = ".Environment")
+
+  history <- m$history
+  for (i in 1:(length(history) - 1)) {
+    m1 <- history[[names(history)[[i]]]]
+    m2 <- history[[names(history)[[i + 1]]]]
+    if (((length(m2$assessments) == 0) &&
+           (i == (length(history) - 1))) ||
+          ((i == (length(history) - 1)) &&
+             (!identical(m2$model, m$final_model)))) {
+      break
+    }
+    expect_false(identical(m1$model, m2$model))
+    for (eval_m in c("aic", "aicc", "bic")) {
+      expect_true((m2$assessments[[eval_m]] - (m1$assessments[[eval_m]]) < 2))
+    }
+  }
+})
 
 test_that("Shorthand y ~ . is accepted (forward)", {
   d <- make_significant_factors_data()
@@ -185,6 +191,10 @@ test_that("Shorthand y ~ . is accepted (forward)", {
     family = gaussian
   )) |>
     expect_no_error()
+
+  expect_equal(stats::formula(m$final_model),
+               y ~ x1 + f1 + f2 + x2,
+               ignore_attr = ".Environment")
 
   history <- m$history
   for (i in 1:(length(history) - 1)) {
@@ -226,4 +236,34 @@ test_that("ANOVA-only works (forward)", {
 
   expect_equal(formula(res$final_model),
                y ~ x2)
+})
+
+test_that("delta is propagated", {
+  d <- make_significant_factors_data()
+
+  m1 <- simplify_model(
+    formula = y ~ x1 + I(x1^2) + f2 + f1:x1 + x1 * x2 + x1:x3,
+    base_formula = y ~ 1,
+    data = d,
+    model_type = "glm",
+    model_args = list(),
+    evaluation_methods = c("aic", "aicc"),
+    direction = "forward",
+    family = gaussian,
+    delta = 1
+  )
+
+  m4 <- simplify_model(
+    formula = y ~ x1 + I(x1^2) + f2 + f1:x1 + x1 * x2 + x1:x3,
+    base_formula = y ~ 1,
+    data = d,
+    model_type = "glm",
+    model_args = list(),
+    evaluation_methods = c("aic", "aicc"),
+    direction = "forward",
+    family = gaussian,
+    delta = 4
+  )
+
+  expect_false(isTRUE(all.equal(m1, m4)))
 })

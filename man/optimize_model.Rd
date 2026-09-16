@@ -25,6 +25,7 @@ optimize_model(
   ac_columns = c(),
   cor_args = list(method = c("pearson"), use = "complete.obs"),
   p_threshold = 0.05,
+  delta = 2,
   psi_boot_repl = 100,
   psi_k = 2,
   round_p = 5,
@@ -102,7 +103,19 @@ when removing a main effect.}
 \item{cor_args}{Further arguments for \code{\link[stats:cor]{stats::cor()}} and \code{\link[stats:cor.test]{stats::cor.test()}}.
 Default: method = "pearson" and use = "complete.obs"}
 
-\item{p_threshold}{p-value threshold for significance evaluation. Default: 0.05}
+\item{p_threshold}{p-value threshold for significance evaluation during autocorrelation
+testing and model simplification.
+Default: 0.05}
+
+\item{delta}{Used as a minimal distance between model performances that needs to be
+present for a candidate model to be considered an improvement over the
+last computed model within the model selection process. The logic goes
+like this: During both backward and forward selection, the bigger model
+needs to show substantially better metrics than the smaller model,
+otherwise the smaller model is selected. A bigger delta will require an
+even more substantial improvement over the smaller model for the bigger
+model to be chosen.
+Default: 2}
 
 \item{psi_boot_repl}{A number or list of psi bootstrap replicates.
 Default: 100}

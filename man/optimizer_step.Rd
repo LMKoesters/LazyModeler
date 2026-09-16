@@ -15,7 +15,9 @@ optimizer_step(
   p_threshold = 0.05,
   anv_p_value = NULL,
   direction = "backward",
-  full_formula = NA
+  full_formula = NA,
+  candidate = NULL,
+  delta = 2
 )
 }
 \arguments{
@@ -44,6 +46,18 @@ Default: c("anova")}
 
 \item{full_formula}{Upper formula to be used with forward model selection.
 Should be NA if direction = "backward"}
+
+\item{candidate}{The name of the candidate to add from the formula. Only relevant for GAMs.}
+
+\item{delta}{Used as a minimal distance between model performances that needs to be
+present for a candidate model to be considered an improvement over the
+last computed model within the model selection process.
+Default: 2}
+}
+\value{
+A list covering the newly adjustable terms based on the new model,
+model assessments using the specified evaluation methods,
+the new model, and the info whether to proceed with the selection process
 }
 \description{
 Takes a step in the model selection process; either forward or backward

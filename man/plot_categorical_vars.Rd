@@ -20,7 +20,7 @@ plot_categorical_vars(
 
 \item{m_frame}{A model frame. See \code{\link[stats:model.frame]{stats::model.frame()}}}
 
-\item{model_overview}{An overview of model coefficients withe estimates and p-values}
+\item{model_overview}{An overview of model coefficients with estimates and p-values}
 
 \item{test}{Either "t.test" or "wilcox".
 Used to calculate statistics for regression plots of categorical variables.

@@ -15,7 +15,8 @@ determine_best_pred(
   family = stats::gaussian,
   model_args = list(),
   evaluation_methods = c("anova"),
-  p_threshold = 0.05
+  p_threshold = 0.05,
+  delta = 2
 )
 }
 \arguments{
@@ -43,6 +44,11 @@ Allowed evaluation methods: "aic", "aicc", "bic", or "anova".
 Default: c("anova")}
 
 \item{p_threshold}{p-value threshold for significance evaluation. Default: 0.05}
+
+\item{delta}{Used as a minimal distance between model performances that needs to be
+present for a candidate model to be considered an improvement over the
+last computed model within the model selection process.
+Default: 2}
 }
 \value{
 The best predictor to add/remove, alongside the updated model and

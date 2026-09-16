@@ -25,6 +25,11 @@
 #' @param base_formula
 #'  The lower formula used for forward model selection. Only required if
 #'    direction = "forward", otherwise this is NA
+#' @param delta
+#'  Used as a minimal distance between model performances that needs to be
+#'    present for a candidate model to be considered an improvement over the
+#'    last computed model within the model selection process.
+#'    Default: 2
 #' @returns
 #'  The selected model with evaluation metrics and (if trace = TRUE)
 #'    the selection history
@@ -62,7 +67,8 @@ simplify_model <- function(
     family = stats::gaussian,
     p_threshold = 0.05,
     trace = TRUE,
-    base_formula = NA) {
+    base_formula = NA,
+    delta = 2) {
   evaluation_methods <- tolower(evaluation_methods)
   formula <- stats::formula(stats::terms(stats::as.formula(formula),
                                          data = data))
@@ -75,6 +81,11 @@ simplify_model <- function(
                     evaluation_methods,
                     p_threshold))
   }
+  
+  # CHECK GAM+ANOVA combo
+  if (model_type == "gam" && "anova" %in% evaluation_methods) {
+    check_gam_anova(formula, evaluation_methods)
+  }
 
   # OMIT NA
   data <- omit_na_from_model_data(
@@ -84,7 +95,7 @@ simplify_model <- function(
     family,
     model_args
   )
-  
+
   if (direction == "backward") {
     out <- optimize_backward(
       formula,
@@ -94,7 +105,8 @@ simplify_model <- function(
       model_args,
       evaluation_methods,
       p_threshold,
-      trace
+      trace,
+      delta = delta
     )
   } else {
     base_formula <- check_base_formula(base_formula, formula)
@@ -108,7 +120,8 @@ simplify_model <- function(
       model_args,
       evaluation_methods,
       p_threshold,
-      trace
+      trace,
+      delta = delta
     )
   }
   out
@@ -184,6 +197,11 @@ nls_nlme <- function(formula,
 #'  p-value threshold for significance evaluation. Default: 0.05
 #' @param trace
 #'  Whether to return the selection history. Default. TRUE
+#' @param delta
+#'  Used as a minimal distance between model performances that needs to be
+#'    present for a candidate model to be considered an improvement over the
+#'    last computed model within the model selection process.
+#'    Default: 2
 #' @returns
 #'  The selected model with evaluation metrics and (if trace = TRUE)
 #'    the selection history
@@ -196,7 +214,8 @@ optimize_forward <- function(
     model_args = list(),
     evaluation_methods = c("anova"),
     p_threshold = 0.05,
-    trace = TRUE) {
+    trace = TRUE,
+    delta = 2) {
   history <- list()
   current_formula <- base_formula
   optimize <- "proceed"
@@ -243,7 +262,8 @@ optimize_forward <- function(
                                          family,
                                          model_args,
                                          evaluation_methods,
-                                         p_threshold)
+                                         p_threshold,
+                                         delta = delta)
 
     if (typeof(best_pred_info) != "list") {
       if (optimize == "revert") {
@@ -306,6 +326,11 @@ optimize_forward <- function(
 #'  Default: c("anova")
 #' @param p_threshold
 #'  p-value threshold for significance evaluation. Default: 0.05
+#' @param delta
+#'  Used as a minimal distance between model performances that needs to be
+#'    present for a candidate model to be considered an improvement over the
+#'    last computed model within the model selection process.
+#'    Default: 2
 #' @returns
 #'  The best predictor to add/remove, alongside the updated model and
 #'    information on whether to continue the selection process or revert to
@@ -320,7 +345,8 @@ determine_best_pred <- function(predictors_to_adjust,
                                 family = stats::gaussian,
                                 model_args = list(),
                                 evaluation_methods = c("anova"),
-                                p_threshold = 0.05) {
+                                p_threshold = 0.05,
+                                delta = 2) {
   best_pred_info <- NA
   best_pred <- NA
   best_step_res <- NA
@@ -352,7 +378,9 @@ determine_best_pred <- function(predictors_to_adjust,
                                p_threshold,
                                anv_p_value,
                                direction = direction,
-                               full_formula = full_formula)
+                               full_formula = full_formula,
+                               candidate = predictor,
+                               delta = delta)
 
     if (step_res$optimize == "proceed") {
       if (typeof(best_pred_info) == "list") {
@@ -403,6 +431,11 @@ determine_best_pred <- function(predictors_to_adjust,
 #'  p-value threshold for significance evaluation. Default: 0.05
 #' @param trace
 #'  Whether to return the selection history. Default. TRUE
+#' @param delta
+#'  Used as a minimal distance between model performances that needs to be
+#'    present for a candidate model to be considered an improvement over the
+#'    last computed model within the model selection process.
+#'    Default: 2
 #' @returns
 #'  The selected model with evaluation metrics and (if trace = TRUE)
 #'    the selection history
@@ -414,7 +447,8 @@ optimize_backward <- function(
     model_args = list(),
     evaluation_methods = c("anova"),
     p_threshold = 0.05,
-    trace = TRUE) {
+    trace = TRUE,
+    delta = 2) {
   history <- list()
   last_model_info <- NA
   optimize <- "proceed"
@@ -458,7 +492,8 @@ optimize_backward <- function(
                                          family,
                                          model_args,
                                          evaluation_methods,
-                                         p_threshold)
+                                         p_threshold,
+                                         delta = delta)
 
     if (typeof(best_pred_info) != "list") {
       if (optimize == "revert") {
@@ -521,6 +556,17 @@ optimize_backward <- function(
 #' @param full_formula
 #'  Upper formula to be used with forward model selection.
 #'    Should be NA if direction = "backward"
+#' @param candidate
+#'  The name of the candidate to add from the formula. Only relevant for GAMs.
+#' @param delta
+#'  Used as a minimal distance between model performances that needs to be
+#'    present for a candidate model to be considered an improvement over the
+#'    last computed model within the model selection process.
+#'    Default: 2
+#' @returns
+#'  A list covering the newly adjustable terms based on the new model,
+#'    model assessments using the specified evaluation methods,
+#'    the new model, and the info whether to proceed with the selection process
 optimizer_step <- function(formula,
                            data,
                            model_type,
@@ -531,7 +577,9 @@ optimizer_step <- function(formula,
                            p_threshold = 0.05,
                            anv_p_value = NULL,
                            direction = "backward",
-                           full_formula = NA) {
+                           full_formula = NA,
+                           candidate = NULL,
+                           delta = 2) {
   has_last_model <- typeof(last_model_info) == "list"
   if (!has_last_model) {
     model <- create_model(formula,
@@ -543,6 +591,18 @@ optimizer_step <- function(formula,
     model <- stats::update(last_model_info$model,
                            formula = formula,
                            na.action = stats::na.fail)
+  }
+  
+  if (is.na(anv_p_value) && model_type == "gam") {
+    gam_summary <- summary(model)
+    pterms <- gam_summary$pTerms.table |>
+      as.data.frame() |>
+      tibble::rownames_to_column(var = "predictor")
+    all_terms <- gam_summary$s.table |>
+      as.data.frame() |>
+      tibble::rownames_to_column(var = "predictor") |>
+      dplyr::bind_rows(pterms)
+    anv_p_value <- all_terms[all_terms$predictor == candidate, "p-value"][[1]]
   }
 
   if (direction == "backward") {
@@ -575,7 +635,8 @@ optimizer_step <- function(formula,
                                     list(model, last_model_info$model),
                                     direction,
                                     last_model_info$assessments,
-                                    anv_p_value)
+                                    anv_p_value,
+                                    delta = delta)
   out$assessments <- assessed_models$assessments
 
   if (has_last_model &&
