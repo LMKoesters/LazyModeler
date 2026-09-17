@@ -135,7 +135,7 @@ Please note that the LazyModeler project is released with a [`CODE_OF_CONDUCT.md
 
 # Important note
 
-The model selection procedures implemented in LazyModeler are provided for convenience and exploratory analysis, and reflect practices recommended in widely used applied statistics literature [Crawley 2007;  Crawley 2015]. Users should be aware, however, that statistical inference reported from a model chosen in a data-driven way may be anticonservative (e.g., p-values may appear smaller than they truly are, confidence intervals narrower). This issue is known as post-selection inference (PSI). Specialized methods have been developed to address it, for instance [Lee et al. 2016], but they are not yet broadly applicable across the full range of model classes supported by LazyModeler. We have implemented PSI for (generalized) linear regression models based on the 'selcorr' R package (Cattaneo 2021), but users are free to use the retained model from LazyModeler for more sophisticated PSI analyses.
+The model selection procedures implemented in LazyModeler are provided for convenience and exploratory analysis, and reflect practices recommended in widely used applied statistics literature [Crawley 2007; Crawley 2015]. Users should be aware, however, that statistical inference reported from a model chosen in a data-driven way may be anticonservative (e.g., p-values may appear smaller than they truly are, confidence intervals are narrower). This issue is known as post-selection inference (PSI). Specialized methods have been developed to address it, for instance in [Lee et al. 2016], but they are not yet broadly applicable across the full range of model classes supported by LazyModeler. We have implemented PSI for (generalized) linear regression models based on the 'selcorr' R package (Cattaneo 2021), but users are free to use the retained model from LazyModeler for more sophisticated PSI analyses.
 
 # References
 
@@ -178,7 +178,7 @@ Maps for r*. <https://doi.org/10.5281/zenodo.4679423>.
 
 Hastie, T. (2023). gam: Generalized Additive Models. <https://cran.r-project.org/web/>.
 
-Karbstein, K., Tomasello, S., and Hoda{\v c}, L., Lorberg, E., Daubert, M., H{\"o}randl, E.
+Karbstein, K., Tomasello, S., and Hodac, L., Lorberg, E., Daubert, M., Hörandl, E.
 (2021). Moving beyond Assumptions: Polyploidy and Environmental Effects Explain a Geographical
 Parthenogenesis Scenario in European Plants. Molecular Ecology, 30 (11): 2659-2675.
 <https://doi.org/10.1111/mec.15919>.
