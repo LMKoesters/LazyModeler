@@ -14,7 +14,7 @@
 # Statement of need
 
 Statistical modeling describes the process of finding a mathematical function with specific statistical assumptions that best fits the observed data (Crawley, 2007, 2015; Henley et al., 2020).
-This process attempts, in practice, to find a (causal) relationship between a dependent response variable `y` and an independent predictor variable `x` for any postulated hypothesis. For statistical inference and graphics in science, the programming environment R (R Core Team, 2024) has become highly popular.
+This process attempts, in practice, to find a (causal) relationship between a dependent response variable `y` and an independent predictor variable `x` for any postulated hypothesis. For statistical inference and graphics in science, the programming environment R (R Core Team, 2026) has become highly popular.
 
 Our R package `LazyModeler` enables users to automatically remove autocorrelated variables, choose between several types of (non)linear regression models (e.g., LM, GLM, LMER, GLMER, GAM, or NLMER), perform stepwise model simplification, check model quality, plot coefficient estimates and relationships, and generate the output of the final model.
 
@@ -69,7 +69,9 @@ A common usage requires an input data frame as well as a starting term for the m
 
 To calculate the model, the user can provide the type of linear model to calculate (default: "glm"), and the family (default: "gaussian"). The user can also decide on the simplification direction (a character vector containing "forward" for forward selection, "backward" for backward simplification, or both). If no simplification is desired, setting `simplify_model = FALSE` yields the original model without simplification.
 
-The following example generates and optimizes a generalized linear model using the provided plant dataset and a term that includes plant reproductive, geographic, ecological, and cytogenetic information. The aim of the model is to identify the cytogenetic (ploidy levels [2n, 4n, etc.]), environmental (altitude in meters above sea level, latitude, longitude, WorldClim solar radiation [kJ m⁻² day⁻¹], BioClim annual mean temperature [°C], and BioClim isothermality [ratio of mean diurnal range to temperature annual range * 100]) factors that determine the production of sexual seeds (ratio of sexually to asexually formed seeds [%]) in the facultatively asexual model plant group _Ranunculus auricomus_ (Ranunculaceae). Please see Karbstein et al. 2021 for more details. The pipeline checks for correlations between the values of the provided data frame columns and removes autocorrelated variables. The autocorrelation-cleaned term is then used for backward simplification of the model. Finally, the information on the coefficients of the simplified model is plotted. To access the final model, the user can navigate to `models_with_info` within the result, then either to `forward` or `backward` depending on the chosen selection/simplification procedure, and then to `final_model`. The plots are stored alongside the model within `plots` - these plots cover the result of `performance::check_model()`, as well as the regression, estimate, and effect size plots.
+The following example generates and optimizes a generalized linear model using the provided plant dataset and a term that includes plant reproductive, geographic, ecological, and cytogenetic information. The aim of the model is to identify the cytogenetic (ploidy levels [2n, 4n, etc.]), environmental (altitude in meters above sea level, latitude, longitude, WorldClim solar radiation [kJ m⁻² day⁻¹], BioClim annual mean temperature [°C], and BioClim isothermality [ratio of mean diurnal range to temperature annual range * 100]) factors that determine the production of sexual seeds (ratio of sexually to asexually formed seeds [%]) in the facultatively asexual model plant group _Ranunculus auricomus_ (Ranunculaceae). Please see Karbstein et al. 2021 for more details. 
+
+The pipeline checks for correlations between the values of the provided data frame columns and removes autocorrelated variables. The autocorrelation-cleaned term is then used for backward simplification of the model. Finally, the information on the coefficients of the simplified model is plotted. To access the final model, the user can navigate to `models_with_info` within the result, then either to `forward` or `backward` depending on the chosen selection/simplification procedure, and then to `final_model`. The plots are stored alongside the model within `plots` - these plots cover the result of `performance::check_model()`, as well as the regression, estimate, and effect size plots.
 
 
 ``` r
@@ -135,7 +137,7 @@ Please note that the LazyModeler project is released with a [`CODE_OF_CONDUCT.md
 
 # Important note
 
-The model selection procedures implemented in LazyModeler are provided for convenience and exploratory analysis, and reflect practices recommended in widely used applied statistics literature [Crawley 2007;  Crawley 2015]. Users should be aware, however, that statistical inference reported from a model chosen in a data-driven way may be anticonservative (e.g., p-values may appear smaller than they truly are, confidence intervals narrower). This issue is known as post-selection inference (PSI). Specialized methods have been developed to address it, for instance [Lee et al. 2016], but they are not yet broadly applicable across the full range of model classes supported by LazyModeler. We have implemented PSI for (generalized) linear regression models based on the 'selcorr' R package (Cattaneo 2021), but users are free to use the retained model from LazyModeler for more sophisticated PSI analyses.
+The model selection procedures implemented in LazyModeler are provided for convenience and exploratory analysis, and reflect practices recommended in widely used applied statistics literature [Crawley 2007; Crawley 2015]. Users should be aware, however, that statistical inference reported from a model chosen in a data-driven way may be anticonservative (e.g., p-values may appear smaller than they truly are, confidence intervals are narrower). This issue is known as post-selection inference (PSI). Specialized methods have been developed to address it, for instance in [Lee et al. 2016], but they are not yet broadly applicable across the full range of model classes supported by LazyModeler. We have implemented PSI for (generalized) linear regression models based on the 'selcorr' R package (Cattaneo 2021), but users are free to use the retained model from LazyModeler for more sophisticated PSI analyses.
 
 # References
 
@@ -178,7 +180,7 @@ Maps for r*. <https://doi.org/10.5281/zenodo.4679423>.
 
 Hastie, T. (2023). gam: Generalized Additive Models. <https://cran.r-project.org/web/>.
 
-Karbstein, K., Tomasello, S., and Hoda{\v c}, L., Lorberg, E., Daubert, M., H{\"o}randl, E.
+Karbstein, K., Tomasello, S., and Hodac, L., Lorberg, E., Daubert, M., Hörandl, E.
 (2021). Moving beyond Assumptions: Polyploidy and Environmental Effects Explain a Geographical
 Parthenogenesis Scenario in European Plants. Molecular Ecology, 30 (11): 2659-2675.
 <https://doi.org/10.1111/mec.15919>.
@@ -204,7 +206,7 @@ Open Source Software* 6 (60): 3139.
 Pinheiro, J., Bates, D., & R Core Team. (2025). Nlme: Linear and nonlinear mixed effects
 models. <https://doi.org/10.32614/CRAN.package.nlme>.
 
-R Core Team. (2024). R: a language and environment for statistical computing. 
+R Core Team. (2026). R: a language and environment for statistical computing. 
 R Foundation for Statistical Computing. <https://www.r-project.org/>
 
 Römermann, C., Bucher, S. F., Hahn, M., & Bernhardt-Römermann, M. (2016). Plant
