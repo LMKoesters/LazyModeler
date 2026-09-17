@@ -14,7 +14,7 @@
 # Statement of need
 
 Statistical modeling describes the process of finding a mathematical function with specific statistical assumptions that best fits the observed data (Crawley, 2007, 2015; Henley et al., 2020).
-This process attempts, in practice, to find a (causal) relationship between a dependent response variable `y` and an independent predictor variable `x` for any postulated hypothesis. For statistical inference and graphics in science, the programming environment R (R Core Team, 2024) has become highly popular.
+This process attempts, in practice, to find a (causal) relationship between a dependent response variable `y` and an independent predictor variable `x` for any postulated hypothesis. For statistical inference and graphics in science, the programming environment R (R Core Team, 2026) has become highly popular.
 
 Our R package `LazyModeler` enables users to automatically remove autocorrelated variables, choose between several types of (non)linear regression models (e.g., LM, GLM, LMER, GLMER, GAM, or NLMER), perform stepwise model simplification, check model quality, plot coefficient estimates and relationships, and generate the output of the final model.
 
@@ -204,7 +204,7 @@ Open Source Software* 6 (60): 3139.
 Pinheiro, J., Bates, D., & R Core Team. (2025). Nlme: Linear and nonlinear mixed effects
 models. <https://doi.org/10.32614/CRAN.package.nlme>.
 
-R Core Team. (2024). R: a language and environment for statistical computing. 
+R Core Team. (2026). R: a language and environment for statistical computing. 
 R Foundation for Statistical Computing. <https://www.r-project.org/>
 
 Römermann, C., Bucher, S. F., Hahn, M., & Bernhardt-Römermann, M. (2016). Plant
