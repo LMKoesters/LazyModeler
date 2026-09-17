@@ -425,3 +425,19 @@ check_gam_anova <- function(formula, evaluation_methods) {
     )
   }
 }
+
+#' Stops run when not enough valid columns were detected
+#' @param cols
+#'  Character vector with valid columns for autocorrelation detection
+not_enough_valid_cols <- function(cols) {
+  stop(
+    sprintf(
+      paste(
+        "We were unable to detect enough valid columns for testing against",
+        "autocorrelations. Please check whether the columns included in",
+        "your dataframe and formula match. Columns found were: %s"
+      ),
+      paste(cols, collapse = " ")
+    )
+  )
+}

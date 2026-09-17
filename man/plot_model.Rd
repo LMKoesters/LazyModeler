@@ -6,7 +6,10 @@
 \usage{
 plot_model(
   model,
+  data,
   model_type,
+  family,
+  model_args = list(),
   quality_assessment = "baseR",
   test = "wilcox",
   plot_type = "boxplot",
@@ -17,6 +20,8 @@ plot_model(
 }
 \arguments{
 \item{model}{A model for which to plot features}
+
+\item{data}{Unscaled data underlying model}
 
 \item{model_type}{Model type to be used as character string.
 Options: "lm", "glm", "gam"}

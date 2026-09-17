@@ -68,6 +68,9 @@ handle_autocorrelations <- function(
   if (length(cols) > 0) {
     terms <- attr(stats::terms.formula(formula), "term.labels")
     cols <- cols[cols %in% terms]
+    if (length(cols) < 2) {
+      not_enough_valid_cols(cols)
+    }
     cor_formula <- stats::reformulate(cols)
   } else {
     cor_formula <- formula
@@ -90,16 +93,7 @@ handle_autocorrelations <- function(
   }
 
   if (length(unique(term_map_cor$term)) < 2) {
-    stop(
-      sprintf(
-        paste(
-          "We were unable to detect enough valid columns for testing against",
-          "autocorrelations. Please check whether the columns included in your",
-          "dataframe and formula match. Columns found were: %s"
-        ),
-        paste(term_map_cor$term, collapse = " ")
-      )
-    )
+    not_enough_valid_cols(term_map_cor$term)
   }
 
   c(term_map_cor, has_no_variance) %<-% check_variance(data_ext, term_map_cor)

@@ -770,6 +770,49 @@ format_cor_data <- function(
     family,
     model_args = list()) {
   model_args$na.action <- stats::na.pass
+  m_matrix <- get_model_matrix(
+    data,
+    formula,
+    model_type,
+    family,
+    model_args = model_args
+  )
+
+  term_map <- map_col_to_term(m_matrix, formula)
+  m_matrix <- m_matrix |>
+    as.data.frame() |>
+    dplyr::select(-c("(Intercept)"))
+  list(m_matrix = m_matrix, term_map = term_map)
+}
+
+#' Format data for detection of autocorrelations
+#'
+#' Format input data for detection of autocorrelations
+#'  by calculating the model matrix that allows autocorrelation testing
+#'  for interactions, transforms, and factor variables.
+#' @param formula
+#'  A formula used for downstream model creation and simplification
+#' @param data
+#'  Underlying data for autocorrelation detection and downstream
+#'    model creation
+#' @param model_type
+#'  Model type to be used as character string.
+#'  Options: "lm", "glm", "lmer", "glmer",
+#'  "nlme", "gam", and "nls"
+#' @param family
+#'  A character string or call describing the family used for model calculation.
+#'    See [stats::family] for options.
+#' @param model_args
+#'  A named list of additional arguments given directly to model call
+#' @return
+#'  Dataframe with interactions, transforms,
+#'    and factor variables as numeric columns
+get_model_matrix <- function(
+    data,
+    formula,
+    model_type,
+    family,
+    model_args = list()) {
   if (model_type %in% c("lm", "glm")) {
     model_frame <- create_model(
       formula,
@@ -779,7 +822,7 @@ format_cor_data <- function(
       model_args,
       fit = FALSE
     )
-
+    
     m_matrix <- stats::model.matrix(
       formula,
       model_frame,
@@ -800,7 +843,7 @@ format_cor_data <- function(
         data = data
       ))
     }
-
+    
     setup <- do.call(func, params)
     m_matrix <- setup$X
     formula <- lme4::nobars(formula)
@@ -815,7 +858,7 @@ format_cor_data <- function(
       fit = FALSE
     )
     formula <- stats::formula(model_frame$pterms)
-
+    
     model_frame <- create_model(
       formula,
       data,
@@ -826,12 +869,8 @@ format_cor_data <- function(
     )
     m_matrix <- model_frame$X
   }
-
-  term_map <- map_col_to_term(m_matrix, formula)
-  m_matrix <- m_matrix |>
-    as.data.frame() |>
-    dplyr::select(-c("(Intercept)"))
-  list(m_matrix = m_matrix, term_map = term_map)
+  
+  m_matrix
 }
 
 #' Translate autocorrelated or zero variance data columns to formula terms
