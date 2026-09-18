@@ -7,9 +7,12 @@ test_that("plotting of formula with 0 interactions successful", {
     model_type = "glm",
     model_args = list()
   )
-  (p <- plot_model(model = final_model,
-                   model_type = "glm",
-                   quality_assessment = "baseR"))
+  p <- plot_model(model = final_model,
+                  data = d,
+                  model_type = "glm",
+                  family = gaussian,
+                  quality_assessment = "baseR")
+
   expect_equal(names(p), c("quality_check", "estimates", "effect_sizes",
                            "categorical_variables", "relationships"))
 })
@@ -25,7 +28,9 @@ test_that("plotting of formula with 0 categorical variables successful", {
   )
 
   (p <- plot_model(model = final_model,
+                   data = d,
                    model_type = "glm",
+                   family = gaussian,
                    quality_assessment = "baseR"))
   expect_equal(names(p), c("quality_check", "estimates", "effect_sizes",
                            "categorical_variables", "relationships"))
@@ -49,7 +54,9 @@ test_that("plotting of formula with 0 numerical variables successful", {
   )
 
   (p <- plot_model(model = final_model,
+                   data = d,
                    model_type = "glm",
+                   family = gaussian,
                    quality_assessment = "baseR"))
 
   expect_equal(names(p), c("quality_check", "estimates", "effect_sizes",
@@ -61,14 +68,16 @@ test_that("plotting of interactions between >2 vars throws warning", {
   d <- make_significant_factors_data()
 
   final_model <- create_model(
-    formula = y ~ x1 + I(x1^2) + f2 + x1:f2 + x1:x2:f2 + x1:x2,
+    formula = y ~ x1 + I(x1^2) + f2 + x1:f2 + x1:x2:f2 + x1 * x2,
     data = d,
     model_type = "glm",
     model_args = list()
   )
 
   (p <- plot_model(model = final_model,
+                   data = d,
                    model_type = "glm",
+                   family = gaussian,
                    quality_assessment = "baseR")) |>
     expect_warning(regexp = "interactions with more than two variables")
 })
@@ -84,7 +93,9 @@ test_that("plotting of interactions between factors throws warning", {
   )
 
   (p <- plot_model(model = final_model,
+                   data = d,
                    model_type = "glm",
+                   family = gaussian,
                    quality_assessment = "baseR")) |>
     expect_warning(regexp = "interactions between two factors")
 })
@@ -96,12 +107,18 @@ test_that("plot output formatted correctly", {
     formula = y ~ x1 + I(x1^2) + f2 + x1:f2 + x1:x2,
     data = d,
     model_type = "glm",
-    model_args = list()
+    model_args = list(
+      contrasts = list(
+        f2 = "contr.sum"
+      )
+    )
   )
 
-  (p <- plot_model(model = final_model,
-                   model_type = "glm",
-                   quality_assessment = "baseR"))
+  p <- plot_model(model = final_model,
+                  data = d,
+                  model_type = "glm",
+                  family = gaussian,
+                  quality_assessment = "baseR")
 
   expect_equal(names(p), c("quality_check", "estimates", "effect_sizes",
                            "categorical_variables", "relationships"))
@@ -127,7 +144,9 @@ test_that("glm with performance successful", {
     model_args = list()
   )
   (p <- plot_model(model = final_model,
+                   data = d,
                    model_type = "glm",
+                   family = gaussian,
                    quality_assessment = "performance")) |>
     expect_no_error()
 
@@ -147,7 +166,9 @@ test_that("gam plots successfully", {
   )
 
   (p <- plot_model(model = final_model,
+                   data = d,
                    model_type = "gam",
+                   family = gaussian,
                    quality_assessment = "baseR")) |>
     expect_no_error()
 
@@ -166,7 +187,9 @@ test_that("glmer plots successfully", {
   )
 
   (p <- plot_model(model = final_model,
+                   data = d,
                    model_type = "glmer",
+                   family = gaussian,
                    quality_assessment = "baseR")) |>
     expect_no_error()
 
@@ -184,7 +207,9 @@ test_that("lmer plots successfully", {
   )
 
   (p <- plot_model(model = final_model,
+                   data = d,
                    model_type = "lmer",
+                   family = gaussian,
                    quality_assessment = "baseR")) |>
     expect_no_error()
 

@@ -5,10 +5,9 @@
 \title{Plot numeric variables}
 \usage{
 plot_numeric_vars(
+  plot_data,
   numeric_vars,
   response,
-  m_frame,
-  m_matrix,
   model_overview,
   model_type,
   family,
@@ -19,13 +18,11 @@ plot_numeric_vars(
 )
 }
 \arguments{
+\item{plot_data}{Unscaled data with relevant columns for plotting}
+
 \item{numeric_vars}{A vector with names of numeric variables}
 
 \item{response}{A string representing the response variable}
-
-\item{m_frame}{A model frame. See \code{\link[stats:model.frame]{stats::model.frame()}}}
-
-\item{m_matrix}{A model frame. See \code{\link[stats:model.matrix]{stats::model.matrix()}}}
 
 \item{model_overview}{An overview of model coefficients withe estimates and p-values}
 
@@ -42,6 +39,8 @@ Options: "lm", "glm", "gam"}
 \code{\link[ggplot2:geom_point]{ggplot2::geom_point()}} for more information. Default: "jitter"}
 
 \item{group_var}{A grouping variable for coloring}
+
+\item{m_matrix}{A model frame. See \code{\link[stats:model.matrix]{stats::model.matrix()}}}
 }
 \value{
 Plots of numeric variables

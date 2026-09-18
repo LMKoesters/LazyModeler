@@ -4,18 +4,31 @@
 \alias{add_reference_factors}
 \title{Add reference factor levels}
 \usage{
-add_reference_factors(model_overview, categorical_vars, interactions)
+add_reference_factors(
+  data,
+  model_overview,
+  categorical_vars,
+  term_map,
+  mixed_interactions,
+  contrasts_arg
+)
 }
 \arguments{
+\item{data}{Underlying model data}
+
 \item{model_overview}{Overview of model coefficients with estimates and p-values}
 
 \item{categorical_vars}{Dataframe with categorical variables and factor levels}
 
-\item{interactions}{Dataframe with interactions and underlying main effects}
+\item{term_map}{A dataframe with column names and corresponding formula terms}
+
+\item{mixed_interactions}{Dataframe with interactions and underlying main effects of
+numeric-categorical interactions}
+
+\item{contrasts_args}{Contrasts portion of model arguments}
 }
 \value{
-Updated model overview with information on interactions and categorical
-coefficients.
+Updated model overview with information on reference levels.
 }
 \description{
 Add reference factor levels

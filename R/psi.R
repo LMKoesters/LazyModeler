@@ -2,10 +2,10 @@
 #'
 #' Runs [selcorr::selcorr()] and creates plot for comparison of raw and
 #'  corrected p-values
-#' @param final_formula
-#'  Formula of the final model selected in [LazyModeler::simplify_model()]
-#' @param final_data
-#'  Data of the final model selected in [LazyModeler::simplify_model()]
+#' @param final_model
+#'  The final model selected in [LazyModeler::simplify_model()]
+#' @param data
+#'  Data of the model
 #' @param final_p_values
 #'  P-values of the final model selected in [LazyModeler::simplify_model()]
 #' @param model_type
@@ -35,8 +35,8 @@
 #'  A list with a model overview with raw and corrected p-values,
 #'    a plot for comparison of raw and corrected p-values,
 #'    and the updated model
-run_psi <- function(final_formula,
-                    final_data,
+run_psi <- function(selected_model,
+                    data,
                     final_p_values,
                     model_type,
                     family = stats::gaussian,
@@ -47,7 +47,16 @@ run_psi <- function(final_formula,
                     stat_type = 3,
                     p_threshold = 0.05,
                     label_size = 2.5) {
-  final_model <- prepare_num_model(final_formula,
+  final_formula <- stats::formula(selected_model)
+  final_data <- omit_na_from_model_data(
+    final_formula,
+    data,
+    model_type,
+    family,
+    model_args
+  )
+  final_model <- prepare_num_model(selected_model,
+                                   final_formula,
                                    final_data,
                                    model_type,
                                    family,
@@ -111,7 +120,7 @@ update_final_formula <- function(final_formula,
                                  corrected_p_values) {
   terms <- corrected_p_values$predictor
   interactions <- extract_interactions(terms)
-  cat_vars <- extract_categorical_vars(stats::model.frame(final_data))
+  cat_vars <- extract_categorical_vars(final_data)
 
   factor_info <- interactions |>
     dplyr::left_join(cat_vars, by = c("main_effect" = "trait")) |>
@@ -218,6 +227,8 @@ get_corrected_p_values <- function(final_model,
 
 #' Prepare numeric model
 #'
+#' @param selected_model
+#'  The model computed during the selection process
 #' @param final_formula
 #'  Formula of the final model selected in [LazyModeler::simplify_model()]
 #' @param final_data
@@ -233,43 +244,60 @@ get_corrected_p_values <- function(final_model,
 #' @returns
 #'  A numeric-only version of the final model, where categorical variables
 #'    are split into separate columns
-prepare_num_model <- function(final_formula,
+prepare_num_model <- function(selected_model,
+                              final_formula,
                               final_data,
                               model_type,
                               family = stats::gaussian,
                               model_args = list()) {
   final_formula <- check_formula(final_formula, final_data, add_main = TRUE)
-
-  full_model <- create_model(
-    final_formula,
+  c(data,
+    categorical_vars,
+    numeric_vars,
+    mixed_interactions,
+    term_map) %<-% extract_terms_per_category(
     final_data,
+    selected_model,
     model_type,
     family,
     model_args
   )
 
-  model_overview <- stats::coef(summary(full_model)) |>
-    as.data.frame() |>
-    tibble::rownames_to_column(var = "predictor")
-  c(categorical_vars,
-    term_factors,
-    numeric_var) %<-% get_term_factors(full_model,
-                                       model_type,
-                                       model_overview)
-  categorical_vars <- categorical_vars |>
-    dplyr::rename(trait_term = "predictor") |>
-    dplyr::mutate(predictor = .data$trait_term,
-                  main_effect = .data$term)
-  term_factors <- term_factors |>
-    dplyr::rename(trait_term = "interaction") |>
-    dplyr::bind_rows(categorical_vars[, c("term", "trait_term",
-                                          "predictor", "main_effect")])
+  ref_levels <- get_term_reference_levels(categorical_vars,
+                                          data,
+                                          term_map,
+                                          mixed_interactions[
+                                            mixed_interactions$is_cat,
+                                            c("predictor", "main_effect")
+                                          ],
+                                          model_args$contrasts)
 
-  data <- stats::model.frame(full_model)
-  m_matrix <- stats::model.matrix(full_model)
+  term_factors <- ref_levels[, c("term", "column", "main_effect")] |>
+    dplyr::rename(trait_term = "column") |>
+    dplyr::mutate(
+      is_interaction = dplyr::case_when(
+        stringr::str_detect(.data$term, "(^[^(].+:)|(:.+[^)]$)") ~ TRUE,
+        TRUE ~ FALSE
+      )
+    )
+  interactions <- term_factors |>
+    dplyr::filter(.data$is_interaction) |>
+    dplyr::select(-dplyr::any_of("main_effect")) |>
+    dplyr::mutate(predictor = .data$trait_term,
+                  main_effect = .data$term) |>
+    tidyr::separate_longer_delim(c("predictor", "main_effect"),
+                                 delim = ":")
+
+  term_factors <- term_factors |>
+    dplyr::filter(!.data$is_interaction) |>
+    dplyr::mutate(predictor = .data$trait_term) |>
+    dplyr::bind_rows(interactions)
+
+  data <- stats::model.frame(selected_model)
+  m_matrix <- stats::model.matrix(selected_model)
   m_matrix <- m_matrix[, attr(m_matrix, "assign") != 0L, drop = FALSE] |>
     as.data.frame()
-  formula <- stats::formula(full_model)
+  formula <- stats::formula(selected_model)
 
   cat_main_added <- c()
   for (term in unique(term_factors$term)) {

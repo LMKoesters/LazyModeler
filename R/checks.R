@@ -144,14 +144,18 @@ check_response_data_format <- function(response_col, response_data) {
 #' @returns A list containing all valid families and a notice explaining
 #'  the family choice
 check_cbind_model_family <- function(data, pasted_response) {
-  # TODO should the first two variables only be used for model family OR should the formula be updated??
+  # TODO should the first two variables only be used for model family OR
+  #   TODO should the formula be updated??
   if (length(pasted_response) > 3) {
     warning(
-      paste("It seems like you have specified more than two variables",
-      "within cbind(). This is not supported. We will only consider the first",
-      "two variables. If you wish to correct your formula, please stop and",
-      "rerun LazyModeler."
-    ), call. = FALSE)
+      paste(
+        "It seems like you have specified more than two variables within",
+        "cbind(). This is not supported. We will only consider the first",
+        "two variables. If you wish to correct your formula, please stop",
+        "and rerun LazyModeler."
+      ),
+      call. = FALSE
+    )
   }
 
   col1 <- pasted_response[[2]]
@@ -236,9 +240,9 @@ check_formula <- function(formula, data, add_main = TRUE) {
 #' @returns A filtered interactions dataframe supported for plotting
 check_plot_interactions <- function(interactions) {
   interactions <- interactions |>
-    dplyr::group_by(.data$interaction) |>
+    dplyr::group_by(.data$predictor) |>
     dplyr::mutate(not_twoway = dplyr::n() > 2,
-                  only_cat = all(!.data$is_numeric))
+                  only_cat = all(.data$is_cat))
   if (any(interactions$not_twoway)) {
     warning(paste("We have recognized interactions with more than two",
                   "variables. These interactions will not be plotted.",
@@ -378,7 +382,7 @@ check_user_args <- function(call, func) {
   supplied <- supplied[nzchar(supplied)]
   valid <- setdiff(names(formals(func)), "...")
   invalid <- setdiff(supplied, valid)
-  
+
   if (length(invalid) > 0) {
     stop(
       sprintf(
@@ -391,7 +395,7 @@ check_user_args <- function(call, func) {
 
 #' Checks if gam formula and evaluation metric are fine
 #'
-#' Checks for gam formulas whether smooth terms are included and 
+#' Checks for gam formulas whether smooth terms are included and
 #'  whether user has specified ANOVA as an evaluation metric. If so,
 #'  a warning is issued as smooth terms rely on different test statistics than
 #'  parametric terms.

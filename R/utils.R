@@ -211,7 +211,7 @@ compare_models <- function(evaluation_methods,
     evaluation_results[eval_m] <- res
     diff <- old_model_assessments[[eval_m]] - res
     if ((direction == "backward" && diff < -delta) ||
-        (direction == "forward" && diff <= delta)) {
+          (direction == "forward" && diff <= delta)) {
       return(
         list("has_improved" = FALSE,
              "assessments" = evaluation_results)
@@ -481,7 +481,7 @@ extract_categorical_vars <- function(model_frame) {
     dplyr::mutate(
       dplyr::across(
         dplyr::everything(),
-        ~ paste0(dplyr::cur_column(), as.character(.x))
+        ~ as.character(.x)
       )
     )
 
@@ -529,43 +529,35 @@ make_interaction_combinations <- function(x, y) {
 
 #' Add reference factor levels
 #'
+#' @param data
+#'  Underlying model data
 #' @param model_overview
 #'  Overview of model coefficients with estimates and p-values
 #' @param categorical_vars
 #'  Dataframe with categorical variables and factor levels
-#' @param interactions
-#'  Dataframe with interactions and underlying main effects
+#' @param term_map
+#'  A dataframe with column names and corresponding formula terms
+#' @param mixed_interactions
+#'  Dataframe with interactions and underlying main effects of
+#'    numeric-categorical interactions
+#' @param contrasts_args
+#'  Contrasts portion of model arguments
 #' @returns
-#'  Updated model overview with information on interactions and categorical
-#'    coefficients.
-add_reference_factors <- function(model_overview,
+#'  Updated model overview with information on reference levels.
+add_reference_factors <- function(data,
+                                  model_overview,
                                   categorical_vars,
-                                  interactions) {
-  ref_interactions <- interactions |>
-    dplyr::group_by(.data$term) |>
-    dplyr::filter((!all(.data$is_numeric)) &
-                    (!.data$interaction %in% model_overview$predictor)) |>
-    dplyr::ungroup() |>
-    dplyr::select(c("interaction", "term")) |>
-    dplyr::rename(predictor = "interaction") |>
-    dplyr::mutate(is_ref = TRUE) |>
-    dplyr::distinct(.data$predictor, .keep_all = TRUE)
-
-  interactions_sub <- interactions |>
-    dplyr::select(c("interaction", "term")) |>
-    dplyr::rename(predictor = "interaction") |>
-    dplyr::filter(!.data$predictor %in% ref_interactions$predictor) |>
-    dplyr::distinct(.data$predictor, .keep_all = TRUE)
-
-  ref_categorical_vars <- categorical_vars |>
-    dplyr::select(c("predictor", "term")) |>
-    dplyr::mutate(is_ref = TRUE) |>
-    dplyr::filter((!.data$predictor %in% model_overview$predictor))
-
-  categorical_vars_sub <- categorical_vars |>
-    dplyr::select(c("predictor", "term")) |>
-    dplyr::filter(!.data$predictor %in% ref_categorical_vars$predictor)
-
+                                  term_map,
+                                  mixed_interactions,
+                                  contrasts_arg) {
+  ref_levels <- get_term_reference_levels(categorical_vars,
+                                          data,
+                                          term_map,
+                                          mixed_interactions[
+                                            mixed_interactions$is_cat,
+                                            c("predictor", "main_effect")
+                                          ],
+                                          contrasts_arg)
 
   if (length(grep("Pr\\(", colnames(model_overview))) == 0) {
     model_overview$p_value <- 1
@@ -577,37 +569,25 @@ add_reference_factors <- function(model_overview,
   }
 
   model_overview <- model_overview |>
-    dplyr::left_join(interactions_sub, by = "predictor") |>
-    dplyr::left_join(categorical_vars_sub, by = "predictor") |>
-    dplyr::mutate(term = ifelse(is.na(.data$term.x),
-                                ifelse(is.na(.data$term.y),
-                                       .data$predictor,
-                                       .data$term.y),
-                                .data$term.x)) |>
-    dplyr::select(-c("term.x", "term.y")) |>
-    dplyr::mutate(is_ref = FALSE) |>
-    dplyr::bind_rows(ref_interactions) |>
-    dplyr::bind_rows(ref_categorical_vars) |>
-    dplyr::mutate(is_cat = ifelse(
-      (.data$predictor %in% interactions$interaction[interactions$is_numeric]) |
-        (.data$predictor %in% categorical_vars$predictor), TRUE, FALSE
-    ),
-    Estimate = ifelse(is.na(.data$Estimate), 0, .data$Estimate),
-    term = ifelse(is.na(.data$term), .data$predictor, .data$term),
-    is_interaction = dplyr::case_when(
-      .data$predictor %in% interactions$interaction ~ TRUE,
-      TRUE ~ FALSE
-    )) |>
+    dplyr::full_join(ref_levels,
+                     by = c("predictor" = "column")) |>
+    dplyr::mutate(is_ref = .data$reference == .data$predictor,
+                  term = ifelse(is.na(.data$term),
+                                .data$predictor,
+                                .data$term)) |>
     dplyr::arrange(dplyr::desc(.data$term), .data$is_ref) |>
     dplyr::mutate(
       formatted_pred = dplyr::case_when(
-        !.data$is_ref & .data$is_cat ~ paste0("italic(", .data$predictor, ")"),
+        !.data$is_ref & .data$term %in% categorical_vars ~ paste0(
+          "italic(",
+          .data$predictor, ")"
+        ),
         .data$is_ref ~ paste0("bold(", .data$predictor, ")"),
         TRUE ~ .data$predictor
       ),
       formatted_pred = factor(
         .data$formatted_pred,
-        levels = .data$formatted_pred
+        levels = unique(.data$formatted_pred)
       ),
       significance = dplyr::case_when(
         .data[[p_col]] < 0.001 ~ "***",
@@ -615,7 +595,22 @@ add_reference_factors <- function(model_overview,
         .data[[p_col]] < 0.05 ~ "*",
         TRUE ~ "ns"
       )
-    )
+    ) |>
+    dplyr::mutate(Estimate = ifelse(is.na(.data$Estimate),
+                                    0,
+                                    .data$Estimate),
+                  is_interaction = dplyr::case_when(
+                    stringr::str_detect(
+                      .data$predictor, "(^[^(].+:)|(:.+[^)]$)"
+                    ) ~ TRUE,
+                    TRUE ~ FALSE
+                  ),
+                  is_cat = !is.na(.data$main_effect))
+
+  model_overview$predictor <- factor(
+    model_overview$predictor,
+    levels = unique(model_overview$predictor)
+  )
 
   formatted_labels <- lapply(model_overview$formatted_pred, function(x) {
     if (grepl("^italic", x) || grepl("^bold", x)) {
@@ -626,71 +621,6 @@ add_reference_factors <- function(model_overview,
   })
 
   list(model_overview, formatted_labels)
-}
-
-#' Get all factor levels as terms
-#'
-#' Lists all factor level terms, including in interactions
-#' @param model
-#'  A model to extract terms from
-#' @param model_type
-#'  Model type to be used as character string.
-#'  Options: "lm" or "glm"
-#' @param model_overview
-#'  Overview of model coefficients with estimates and p-values
-#' @returns
-#'  A dataframe with interactions covering at least one categorical variable
-#'    with their factor levels and a dataframe with non-interaction
-#'    categorical variables with their factor levels
-get_term_factors <- function(model,
-                             model_type,
-                             model_overview) {
-  categorical_vars <- extract_categorical_vars(stats::model.frame(model))
-  categorical_vars <- categorical_vars |>
-    dplyr::rename(predictor = "trait", term = "var") |>
-    dplyr::filter(!.data$term %in% model_overview$predictor) |>
-    dplyr::left_join(model_overview, by = "predictor")
-
-  if (model_type %in% c("lmer", "glmer")) {
-    formula <- reformulas::nobars(
-      stats::formula(model)
-    )
-  } else {
-    formula <- stats::formula(model)
-  }
-  terms <- attr(stats::terms.formula(formula), "term.labels")
-  interactions <- extract_interactions(terms)
-
-  interactions <- interactions |>
-    dplyr::rename(term = "predictor") |>
-    dplyr::left_join(categorical_vars[, c("term", "predictor")],
-                     by = c("main_effect" = "term"),
-                     relationship = "many-to-many") |>
-    dplyr::mutate(is_numeric = is.na(.data$predictor),
-                  predictor = ifelse(is.na(.data$predictor),
-                                     .data$main_effect,
-                                     .data$predictor))
-
-  if (nrow(interactions) > 0) {
-    interactions_w_traits <- interactions |>
-      dplyr::group_by(.data$term) |>
-      dplyr::group_modify(make_interaction_combinations) |>
-      dplyr::ungroup()
-    interactions <- interactions_w_traits |>
-      dplyr::left_join(interactions, by = c("term", "predictor"))
-  } else {
-    interactions <- tibble::tibble("term" = character(),
-                                   "main_effect" = character(),
-                                   "predictor" = character(),
-                                   "interaction" = character(),
-                                   "is_numeric" = logical())
-  }
-
-  numeric_vars <- setdiff(setdiff(terms,
-                                  categorical_vars$term),
-                          interactions$term)
-
-  list(categorical_vars, interactions, numeric_vars)
 }
 
 #' Maps model.matrix column names to terms
@@ -704,7 +634,6 @@ map_col_to_term <- function(m_matrix, formula) {
   assign <- attr(m_matrix, "assign")
   term_labels <- attr(stats::terms(formula), "term.labels")
   column_terms <- term_labels[assign]
-
   data.frame(
     column = colnames(m_matrix)[colnames(m_matrix) != "(Intercept)"],
     term = column_terms
@@ -822,7 +751,7 @@ get_model_matrix <- function(
       model_args,
       fit = FALSE
     )
-    
+
     m_matrix <- stats::model.matrix(
       formula,
       model_frame,
@@ -843,10 +772,10 @@ get_model_matrix <- function(
         data = data
       ))
     }
-    
+
     setup <- do.call(func, params)
     m_matrix <- setup$X
-    formula <- lme4::nobars(formula)
+    formula <- reformulas::nobars(formula)
   } else if (model_type == "gam") {
     # extract parametric formula for detection of autocorrelations
     model_frame <- create_model(
@@ -858,7 +787,7 @@ get_model_matrix <- function(
       fit = FALSE
     )
     formula <- stats::formula(model_frame$pterms)
-    
+
     model_frame <- create_model(
       formula,
       data,
@@ -869,7 +798,7 @@ get_model_matrix <- function(
     )
     m_matrix <- model_frame$X
   }
-  
+
   m_matrix
 }
 
@@ -920,12 +849,12 @@ omit_na_from_model_data <- function(formula,
                                     data,
                                     model_type,
                                     family,
-                                    model_args = c()) {
+                                    model_args = list()) {
   model_args_cp <- model_args
   model_args_cp$na.action <- stats::na.pass
   data$temporary_na_action_id <- seq_len(nrow(data))
   temporary_formula <- stats::update(
-    stats::as.formula(formula),
+    formula,
     paste(". ~ . +", "temporary_na_action_id")
   )
   if (model_type %in% c("glm", "lm")) {
@@ -962,4 +891,260 @@ omit_na_from_model_data <- function(formula,
   data <- data[data$temporary_na_action_id %in% keep_ids, , drop = FALSE] |>
     dplyr::select(-"temporary_na_action_id")
   data
+}
+
+#' Formats data for plotting
+#' @param model
+#'  The final model after model selection
+#' @param formula
+#'  The final model formula
+#' @param data
+#'  The unscaled data; original input to [LazyModeler::optimize_model()]
+#' @param m_matrix
+#'  Matrix of model
+#' @param term_map
+#'  A dataframe with column names and corresponding formula terms
+#' @param model_type
+#'  Model type to be used as character string.
+#'    Options: "lm", "glm", "gam".
+#' @param family
+#'  A character string or call describing the family used for model calculation.
+#'    See [stats::family] for options. Can also be "automatic".
+#' @param model_args
+#'  A named list of additional model arguments
+#' @return
+#'  Formatted data for plotting with info on categorical and numeric variables
+#'    and interactions
+format_plot_data <- function(model,
+                             formula,
+                             data,
+                             m_matrix,
+                             term_map,
+                             model_type,
+                             family,
+                             model_args = list()) {
+  # OMIT NA
+  data <- omit_na_from_model_data(
+    formula,
+    data,
+    model_type,
+    family,
+    model_args
+  )
+
+  # compute unscaled model matrix
+  unscaled_matrix <- get_model_matrix(
+    data,
+    formula,
+    model_type,
+    family,
+    model_args = model_args
+  )
+  # quick check: same length of
+  rows_scaled <- rownames(m_matrix)
+
+  if (nrow(m_matrix) != nrow(unscaled_matrix)) {
+    stop(
+      paste(
+        "There's a difference between the number of rows of data used for the",
+        "model and the number of rows of data used to create an unscaled model",
+        "matrix for plotting. Please open an issue at",
+        "https://github.com/LMKoesters/LazyModeler stating the model_args",
+        "used for this run."
+      )
+    )
+  }
+
+  # subset rows used for modeling
+  data <- data[rownames(data) %in% rows_scaled, ]
+
+  # get categorical columns
+  categorical_vars <- extract_categorical_vars(stats::model.frame(model))$var |>
+    unique()
+
+  # get interactions
+  interactions <- extract_interactions(term_map$term) |>
+    dplyr::mutate(is_cat = .data$main_effect %in% categorical_vars) |>
+    dplyr::group_by(.data$predictor) |>
+    dplyr::mutate(contains_cat = any(.data$is_cat)) |>
+    dplyr::ungroup()
+  numeric_only_interactions <- unique(
+    interactions$predictor[!interactions$contains_cat]
+  )
+  mixed_interactions <- interactions[interactions$contains_cat, ] |>
+    dplyr::distinct(.data$predictor, .data$main_effect, .keep_all = TRUE)
+  mixed_interactions_numeric <- mixed_interactions[
+    !mixed_interactions$main_effect %in% categorical_vars, "main_effect"
+  ]
+  mixed_interactions_categoric <- mixed_interactions[
+    mixed_interactions$main_effect %in% categorical_vars, "main_effect"
+  ]
+
+  # get numeric columns
+  numeric_vars <- term_map$term[!term_map$term %in% categorical_vars &
+                                  !term_map$term %in% interactions$predictor]
+
+  # get data
+  data_columns <- unique(unlist(c(
+    categorical_vars,
+    mixed_interactions_categoric
+  )))
+  plot_data_from_data <- data[, data_columns, drop = FALSE]
+  matrix_columns <- unique(unlist(c(numeric_vars,
+                                    numeric_only_interactions,
+                                    mixed_interactions_numeric)))
+  plot_data_from_matrix <- as.data.frame(unscaled_matrix)[, matrix_columns,
+                                                          drop = FALSE]
+
+  # add response to data
+  # TODO test with cbind() - will probably fail there
+  response_str <- deparse1(formula.tools::lhs(formula))
+  plot_data_response <- data[, response_str, drop = FALSE]
+  plot_data <- cbind(plot_data_from_data,
+                     plot_data_from_matrix,
+                     plot_data_response)
+  list(plot_data,
+       categorical_vars,
+       unique(unlist(c(numeric_vars,
+                       numeric_only_interactions))),
+       mixed_interactions)
+}
+
+#' Omit NAs from model data
+#' @param categorical_vars
+#'  Character vector with categorical column names relevant to the model
+#' @param data
+#'  Underlying model data
+#' @param term_map
+#'  A dataframe with column names and corresponding formula terms
+#' @param interaction_to_cat
+#'  Dataframe with interactions and their categorical components
+#' @param contrasts_arg
+#'  Part of model_args that specifies model contrast behaviour
+#' @return
+#'  Dataframe with reference per categorical variables
+get_term_reference_levels <- function(categorical_vars,
+                                      data,
+                                      term_map,
+                                      interaction_to_cat,
+                                      contrasts_arg = NULL) {
+  refs <- vapply(categorical_vars, function(var) {
+    contrast <- NULL
+    if (!is.null(contrasts_arg) &&
+          var %in% names(contrasts_arg)) {
+      contrast <- contrasts_arg[[var]]
+      if (is.character(contrast)) {
+        contrast <- get(contrast, mode = "function")(nlevels(data[[var]]))
+        rownames(contrast) <- levels(data[[var]])
+      }
+    } else {
+      contrast <- stats::contrasts(data[[var]])
+    }
+
+    ref_id <- which(rowSums(abs(contrast)) == 0)
+    if (length(ref_id) != 1) return(NA_character_)
+    rownames(contrast)[ref_id]
+  }, character(1))
+
+  refs_df <- tibble::enframe(
+    refs,
+    name = "predictor",
+    value = "reference"
+  ) |>
+    as.data.frame() |>
+    dplyr::mutate(column = paste0(.data$predictor, .data$reference))
+
+  refs_df <- term_map |>
+    dplyr::left_join(interaction_to_cat,
+                     by = c("term" = "predictor"),
+                     relationship = "many-to-many") |>
+    dplyr::mutate(
+      main_effect = ifelse(
+        is.na(.data$main_effect), .data$term, .data$main_effect
+      )
+    ) |>
+    dplyr::left_join(refs_df[, c("predictor", "reference")],
+                     by = c("main_effect" = "predictor")) |>
+    dplyr::filter(.data$main_effect %in% categorical_vars) |>
+    dplyr::mutate(
+      reference = ifelse(
+        is.na(.data$reference),
+        .data$reference,
+        stringr::str_replace(
+          .data$term,
+          .data$main_effect,
+          paste0(.data$main_effect, .data$reference)
+        )
+      )
+    )
+
+  if (nrow(refs_df) > 1 && !all(is.na(refs_df$reference))) {
+    refs_df <- data.frame(column = unique(refs_df$reference)) |>
+      dplyr::filter(!is.na(.data$column)) |>
+      dplyr::left_join(refs_df[, c("term", "main_effect", "reference")],
+                       by = c("column" = "reference")) |>
+      dplyr::mutate(reference = .data$column) |>
+      dplyr::distinct(.keep_all = TRUE) |>
+      dplyr::bind_rows(refs_df)
+  }
+
+  refs_df
+}
+
+#' Extracts numeric and categorical variables as well as interactions related
+#'  to a model
+#' @param data
+#'  The unscaled model data
+#' @param model
+#'  The computed model
+#' @param model_type
+#'  Model type to be used as character string.
+#'    Options: "lm", "glm", "lmer", "glmer", and "gam".
+#' @param family
+#'  A character string or call describing the family used for model calculation.
+#'    See [stats::family] for options. Can also be "automatic".
+#' @param model_args
+#'  A named list of additional arguments given directly to model call
+#' @return
+#'  A comprehensive dataframe with columns for plotting, numeric and categorical
+#'    variables as character vectors as well as
+#'    numeric:categorical interactions in a dataframe,
+#'    a dataframe containing all traits related to terms relevant to the model.
+extract_terms_per_category <- function(
+    data,
+    model,
+    model_type,
+    family,
+    model_args) {
+  if (model_type == "gam") {
+    formula <- stats::formula(model$pterms)
+    full_formula <- stats::formula(model$pterms)
+    m_matrix <- stats::model.matrix(
+      model$pterms,
+      data = model$model
+    )
+  } else {
+    formula <- reformulas::nobars(stats::formula(model))
+    full_formula <- stats::formula(model)
+    m_matrix <- stats::model.matrix(model)
+  }
+  term_map <- map_col_to_term(m_matrix, formula)
+
+  c(plot_data,
+    categorical_vars,
+    numeric_vars,
+    mixed_interactions) %<-% format_plot_data(model,
+                                              full_formula,
+                                              data,
+                                              m_matrix,
+                                              term_map,
+                                              model_type,
+                                              family,
+                                              model_args)
+
+  list(plot_data,
+       categorical_vars,
+       numeric_vars,
+       mixed_interactions,
+       term_map)
 }

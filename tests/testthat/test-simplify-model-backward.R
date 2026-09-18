@@ -205,6 +205,9 @@ test_that("nls is returned as is", {
 
   expect_named(m, c("assessments", "final_model", "p_values"))
   expect_s3_class(m$final_model, "nls")
+  expect_equal(stats::formula(m$final_model),
+               y ~ offset + Asym * (1 - exp(-k * x)) + slope * x,
+               ignore_attr = ".Environment")
 })
 
 test_that("nls is returned as is (with only anova)", {

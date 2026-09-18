@@ -1,6 +1,6 @@
 test_that("Unknown arguments throw error", {
   d <- make_autocor_data()
-  
+
   optimize_model(
     formula = y ~ x1 + x2 + x3 + f1 + I(x1^2),
     data = d,
@@ -13,7 +13,7 @@ test_that("Unknown arguments throw error", {
 
 test_that("Partially matching arguments throw error", {
   d <- make_autocor_data()
-  
+
   optimize_model(
     formula = y ~ x1 + x2 + x3 + f1 + I(x1^2),
     data = d,
@@ -26,7 +26,7 @@ test_that("Partially matching arguments throw error", {
 
 test_that("optimize_model returns expected structure", {
   d <- make_autocor_data()
-  
+
   res <- optimize_model(
     formula = y ~ x1 + x2 + x3 + f1 + I(x1^2),
     data = d,
@@ -35,7 +35,7 @@ test_that("optimize_model returns expected structure", {
     directions = c("backward", "forward"),
     base_formula = y ~ 1
   )
-  
+
   expect_type(res, "list")
   expect_named(res, c("autocorrelation_result", "models_with_info"))
   expect_named(

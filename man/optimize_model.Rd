@@ -41,7 +41,8 @@ optimize_model(
 \arguments{
 \item{formula}{The formula to be used with the model. Can be either quote() or formula().}
 
-\item{data}{Dataframe with response and predictors as columns.}
+\item{data}{Dataframe with response and predictors as columns. Note that we require
+regular sequential rownames. Custom rownames will be lost.}
 
 \item{model_type}{Model type to be used as character string.
 Options: "lm", "glm", "lmer", "glmer",

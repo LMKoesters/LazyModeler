@@ -5,26 +5,23 @@
 \title{Plot interactions}
 \usage{
 plot_interactions(
-  interactions,
+  plot_data,
+  mixed_interactions,
   response,
-  m_frame,
-  m_matrix,
   model_overview,
   model_type,
   family,
-  plot_curve = TRUE,
+  plot_curve = FALSE,
   round_p = 5,
   point_position = "jitter"
 )
 }
 \arguments{
-\item{interactions}{Dataframe with interactions}
+\item{plot_data}{Unscaled data with relevant columns for plotting}
+
+\item{mixed_interactions}{Dataframe with interactions between numeric and categorical variables}
 
 \item{response}{A string representing the response variable}
-
-\item{m_frame}{A model frame. See \code{\link[stats:model.frame]{stats::model.frame()}}}
-
-\item{m_matrix}{A model frame. See \code{\link[stats:model.matrix]{stats::model.matrix()}}}
 
 \item{model_overview}{An overview of model coefficients withe estimates and p-values}
 
@@ -33,16 +30,13 @@ Options: "lm", "glm", "gam"}
 
 \item{family}{The model family}
 
-\item{plot_curve}{Whether to plot \code{\link[ggplot2:geom_smooth]{ggplot2::geom_smooth()}} in regression plots. Default: TRUE}
-
 \item{round_p}{Convenience parameter for automatic rounding of p-values. Default: 5}
 
 \item{point_position}{Position adjustment for model feature plots. See the position paramter of
 \code{\link[ggplot2:geom_point]{ggplot2::geom_point()}} for more information. Default: "jitter"}
 }
 \value{
-Plots of interactions between numeric variables or between a numeric and a
-categorical variable
+Plots of interactions between a numeric and a categorical variable
 }
 \description{
 Plot interactions

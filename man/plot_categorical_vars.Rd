@@ -5,20 +5,20 @@
 \title{Plot categorical variables}
 \usage{
 plot_categorical_vars(
+  plot_data,
   categorical_vars,
   response,
-  m_frame,
   model_overview,
   test = "wilcox",
   plot_type = "boxplot"
 )
 }
 \arguments{
+\item{plot_data}{Unscaled data with relevant columns for plotting}
+
 \item{categorical_vars}{A dataframe with categorical variables and corresponding factor levels}
 
 \item{response}{A string representing the response variable}
-
-\item{m_frame}{A model frame. See \code{\link[stats:model.frame]{stats::model.frame()}}}
 
 \item{model_overview}{An overview of model coefficients with estimates and p-values}
 

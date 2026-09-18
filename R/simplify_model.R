@@ -73,6 +73,11 @@ simplify_model <- function(
   formula <- stats::formula(stats::terms(stats::as.formula(formula),
                                          data = data))
 
+  # CHECK GAM+ANOVA combo
+  if (model_type == "gam" && "anova" %in% evaluation_methods) {
+    check_gam_anova(formula, evaluation_methods)
+  }
+
   if (model_type %in% c("nls", "nlme")) {
     return(nls_nlme(formula,
                     data,
@@ -80,11 +85,6 @@ simplify_model <- function(
                     model_args,
                     evaluation_methods,
                     p_threshold))
-  }
-  
-  # CHECK GAM+ANOVA combo
-  if (model_type == "gam" && "anova" %in% evaluation_methods) {
-    check_gam_anova(formula, evaluation_methods)
   }
 
   # OMIT NA
@@ -592,7 +592,7 @@ optimizer_step <- function(formula,
                            formula = formula,
                            na.action = stats::na.fail)
   }
-  
+
   if (is.na(anv_p_value) && model_type == "gam") {
     gam_summary <- summary(model)
     pterms <- gam_summary$pTerms.table |>

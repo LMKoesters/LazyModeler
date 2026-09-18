@@ -5,7 +5,8 @@
 #' @param formula
 #'  The formula to be used with the model. Can be either quote() or formula().
 #' @param data
-#'  Dataframe with response and predictors as columns.
+#'  Dataframe with response and predictors as columns. Note that we require
+#'    regular sequential rownames. Custom rownames will be lost.
 #' @param model_type
 #'  Model type to be used as character string.
 #'    Options: "lm", "glm", "lmer", "glmer",
@@ -194,6 +195,7 @@ optimize_model <- function(
                                  lhs = formula.tools::lhs(formula))
   }
   out <- list()
+  rownames(data) <- seq_len(nrow(data))
 
   # AUTOCORRELATIONS
   autocor_supported <- model_type %in% c("lm", "glm", "lmer", "glmer", "gam")
@@ -251,12 +253,10 @@ optimize_model <- function(
 
       # PSI
       if ((model_type %in% c("glm", "lm")) && use_psi) {
-        final_formula <- res$final_model$formula
-        final_data <- stats::model.frame(res$final_model)
         final_p_values <- res$p_values
 
-        psi_result <- run_psi(final_formula,
-                              final_data,
+        psi_result <- run_psi(res$final_model,
+                              data,
                               final_p_values,
                               model_type,
                               family,
@@ -284,12 +284,13 @@ optimize_model <- function(
       model_out[[direction]]$final_model <- model_to_plot
     }
 
-    if (model_type %in% c("glm", "lm", "gam") && plot_relationships) {
-      # TODO this has no effect on plotting,
-      #   but it should actually be used for plotting
-      # if (scale_predictors) data <- original_data
+    plotting_allowed <- c("glm", "lm", "glmer", "lmer", "gam")
+    if (model_type %in% plotting_allowed && plot_relationships) {
       plots <- plot_model(model_to_plot,
+                          if (scale_predictors) original_data else data,
                           model_type,
+                          family,
+                          model_args,
                           quality_assessment,
                           categorical_stat_test,
                           plot_type,

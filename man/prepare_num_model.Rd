@@ -5,6 +5,7 @@
 \title{Prepare numeric model}
 \usage{
 prepare_num_model(
+  selected_model,
   final_formula,
   final_data,
   model_type,
@@ -13,6 +14,8 @@ prepare_num_model(
 )
 }
 \arguments{
+\item{selected_model}{The model computed during the selection process}
+
 \item{final_formula}{Formula of the final model selected in \code{\link[=simplify_model]{simplify_model()}}}
 
 \item{final_data}{Data of the final model selected in \code{\link[=simplify_model]{simplify_model()}}}

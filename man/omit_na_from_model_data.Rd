@@ -4,7 +4,7 @@
 \alias{omit_na_from_model_data}
 \title{Omit NAs from model data}
 \usage{
-omit_na_from_model_data(formula, data, model_type, family, model_args = c())
+omit_na_from_model_data(formula, data, model_type, family, model_args = list())
 }
 \arguments{
 \item{formula}{Upper formula to be used for model creation/selection}

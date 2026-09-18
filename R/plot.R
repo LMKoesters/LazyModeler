@@ -92,6 +92,8 @@ plot_psi <- function(psi_info,
 #'  visualizing the relationship between the response variable and predictors
 #' @param model
 #'  A model for which to plot features
+#' @param data
+#'  Unscaled data underlying model
 #' @param model_type
 #'  Model type to be used as character string.
 #'  Options: "lm", "glm", "gam"
@@ -136,7 +138,9 @@ plot_psi <- function(psi_info,
 #'  # numeric and categorical variables using boxplots where possible
 #'  p <- plot_model(
 #'   final_model,
+#'   plants,
 #'   model_type = "glm",
+#'   family = "quasibinomial",
 #'   plot_type = "boxplot",
 #'   point_position = "jitter",
 #'   test = "wilcox",
@@ -144,21 +148,26 @@ plot_psi <- function(psi_info,
 #'  )
 #' @export
 plot_model <- function(model,
+                       data,
                        model_type,
+                       family = stats::gaussian,
+                       model_args = list(),
                        quality_assessment = "baseR",
                        test = "wilcox",
                        plot_type = "boxplot",
                        plot_curve = TRUE,
                        round_p = 5,
                        point_position = "jitter") {
-  model_plots <- list()
 
+  # BASIC QUALITY ASSESSMENT
+  model_plots <- list()
   model_plots$quality_check <- assess_basic_model_quality(
     model,
     quality_assessment,
     model_type
   )
 
+  # SETUP
   if (model_type == "gam") {
     p_table <- summary(model)$p.table
     model_overview <- p_table |>
@@ -169,95 +178,62 @@ plot_model <- function(model,
       as.data.frame() |>
       tibble::rownames_to_column(var = "predictor")
   }
+  response_str <- deparse1(formula.tools::lhs(stats::formula(model)))
 
-  m_matrix <- stats::model.matrix(model)
-  m_frame <- stats::model.frame(model)
-  if (model_type %in% c("lmer", "glmer")) {
-    formula <- reformulas::nobars(
-      stats::formula(model)
-    )
-  } else {
-    formula <- stats::formula(model)
-  }
-  response_str <- deparse1(formula.tools::lhs(formula))
-  c(categorical_vars,
-    interactions,
-    numeric_vars) %<-% prepare_plot_data(model,
-                                         model_type,
-                                         model_overview)
+  c(plot_data,
+    categorical_vars,
+    numeric_vars,
+    mixed_interactions,
+    term_map) %<-% extract_terms_per_category(
+    data,
+    model,
+    model_type,
+    family,
+    model_args
+  )
 
-  if (model_type == "gam") {
-    s_table <- summary(model)$s.table
-    numeric_vars <- numeric_vars[!numeric_vars %in% rownames(s_table)]
-  }
-
-  c(model_overview,
-    formatted_labels) %<-% add_reference_factors(model_overview,
-                                                 categorical_vars,
-                                                 interactions)
+  c(model_overview, formatted_labels) %<-% add_reference_factors(
+    plot_data,
+    model_overview,
+    categorical_vars,
+    term_map,
+    mixed_interactions,
+    model_args$contrasts
+  )
 
   model_plots$estimates <- plot_estimates(model_overview,
                                           formatted_labels)
   model_plots$effect_sizes <- plot_effect_sizes(model_overview,
                                                 formatted_labels)
-  categorical_plots <- plot_categorical_vars(categorical_vars,
+  categorical_plots <- plot_categorical_vars(plot_data,
+                                             categorical_vars,
                                              response_str,
-                                             m_frame,
                                              model_overview,
                                              test,
                                              plot_type)
-  family <- stats::family(model)$family
-  numeric_plots <- plot_numeric_vars(numeric_vars,
+  numeric_plots <- plot_numeric_vars(plot_data,
+                                     numeric_vars,
                                      response_str,
-                                     m_frame,
-                                     m_matrix,
                                      model_overview,
                                      model_type,
                                      family,
                                      plot_curve,
                                      round_p,
                                      point_position)
-  interaction_plots <- plot_interactions(interactions,
+  interaction_plots <- plot_interactions(plot_data,
+                                         mixed_interactions,
                                          response_str,
-                                         m_frame,
-                                         m_matrix,
                                          model_overview,
                                          model_type,
                                          family,
-                                         plot_curve,
                                          round_p,
                                          point_position)
+
   model_plots$categorical_variables <- categorical_plots
   model_plots$relationships <- c(numeric_plots,
                                  interaction_plots)
 
   model_plots
-}
-
-#' Prepare data for plotting
-#'
-#' @param model
-#'  A model for which to plot features
-#' @param model_type
-#'  Model type to be used as character string.
-#'  Options: "lm", "glm", "gam"
-#' @param model_overview
-#'  An overview of model coefficients with estimates and p-values
-#' @returns
-#'  Categorical variables, interactions, and numeric variables
-prepare_plot_data <- function(model,
-                              model_type,
-                              model_overview) {
-  model_overview <- model_overview |>
-    dplyr::mutate(
-      effect_direction = dplyr::case_when(
-        .data$Estimate < 0 ~ "negative",
-        TRUE ~ "positive"
-      )
-    )
-
-  # TODO may be problematic when contrasts is provided
-  get_term_factors(model, model_type, model_overview)
 }
 
 #' Assess basic model quality
@@ -344,8 +320,7 @@ assess_basic_model_quality <- function(
 #'  A list with formatted labels (italic and bold for factor levels)
 #' @returns
 #'  An estimate plot
-plot_estimates <- function(model_overview,
-                           formatted_labels) {
+plot_estimates <- function(model_overview, formatted_labels) {
   p <- ggplot2::ggplot(
     model_overview,
     ggplot2::aes(x = .data$Estimate, y = .data$formatted_pred)
@@ -391,8 +366,12 @@ plot_effect_sizes <- function(model_overview,
         .data$Estimate > 0 ~ (.data$Estimate_abs / .data$Est_sum) * 100,
         .data$Estimate < 0 ~ (.data$Estimate_abs / .data$Est_sum) * -100
       )
-    ) |>
-    dplyr::arrange(dplyr::desc(.data$`Effect size`))
+    )
+  model_overview$predictor <- factor(
+    model_overview$predictor,
+    levels = rev(levels(model_overview$predictor))
+  )
+  formatted_labels <- rev(formatted_labels)
 
   p <- ggplot2::ggplot(
     model_overview,
@@ -413,14 +392,14 @@ plot_effect_sizes <- function(model_overview,
 
 #' Plot categorical variables
 #'
+#' @param plot_data
+#'  Unscaled data with relevant columns for plotting
 #' @param categorical_vars
 #'  A dataframe with categorical variables and corresponding factor levels
 #' @param response
 #'  A string representing the response variable
-#' @param m_frame
-#'  A model frame. See [stats::model.frame()]
 #' @param model_overview
-#'  An overview of model coefficients withe estimates and p-values
+#'  An overview of model coefficients with estimates and p-values
 #' @param test
 #'  Either "t.test" or "wilcox".
 #'  Used to calculate statistics for regression plots of categorical variables.
@@ -431,17 +410,17 @@ plot_effect_sizes <- function(model_overview,
 #'  Default: "boxplot"
 #' @returns
 #'  Plots of categorical variables alongside results of statistical tests
-plot_categorical_vars <- function(categorical_vars,
+plot_categorical_vars <- function(plot_data,
+                                  categorical_vars,
                                   response,
-                                  m_frame,
                                   model_overview,
                                   test = "wilcox",
                                   plot_type = "boxplot") {
   stat_results <- list()
   plots <- list()
-  for (cat_var in unique(categorical_vars$term)) {
-    c(m_frame_w_letters,
-      stat_result) %<-% run_stats(m_frame,
+  for (cat_var in unique(categorical_vars)) {
+    c(data_w_letters,
+      stat_result) %<-% run_stats(plot_data,
                                   response,
                                   cat_var,
                                   test = test)
@@ -453,7 +432,7 @@ plot_categorical_vars <- function(categorical_vars,
         trait = stringr::str_remove(.data$predictor, paste0("^", .data$term))
       )
 
-    m_frame_w_letters <- m_frame_w_letters |>
+    data_w_letters <- data_w_letters |>
       dplyr::left_join(model_overview[, c("trait", "is_ref", "significance")],
                        by = stats::setNames(
                          object = "trait",
@@ -464,13 +443,13 @@ plot_categorical_vars <- function(categorical_vars,
         TRUE ~ .data$significance
       ))
 
-    y_lim_min <- min(m_frame_w_letters[!is.na(m_frame_w_letters[[response]]),
-                                       response])
-    y_lim_max <- max(m_frame_w_letters[!is.na(m_frame_w_letters[[response]]),
-                                       response])
+    y_lim_min <- min(data_w_letters[!is.na(data_w_letters[[response]]),
+                                    response])
+    y_lim_max <- max(data_w_letters[!is.na(data_w_letters[[response]]),
+                                    response])
 
     p <- ggplot2::ggplot(
-      data = m_frame_w_letters,
+      data = data_w_letters,
       ggplot2::aes(x = .data[[cat_var]], y = .data[[response]])
     ) +
       ggplot2::scale_color_viridis_d(option = "G", end = 0.9) +
@@ -522,12 +501,12 @@ plot_categorical_vars <- function(categorical_vars,
 
 #' Plot numeric variables
 #'
+#' @param plot_data
+#'  Unscaled data with relevant columns for plotting
 #' @param numeric_vars
 #'  A vector with names of numeric variables
 #' @param response
 #'  A string representing the response variable
-#' @param m_frame
-#'  A model frame. See [stats::model.frame()]
 #' @param m_matrix
 #'  A model frame. See [stats::model.matrix()]
 #' @param model_overview
@@ -548,10 +527,9 @@ plot_categorical_vars <- function(categorical_vars,
 #'  A grouping variable for coloring
 #' @returns
 #'  Plots of numeric variables
-plot_numeric_vars <- function(numeric_vars,
+plot_numeric_vars <- function(plot_data,
+                              numeric_vars,
                               response,
-                              m_frame,
-                              m_matrix,
                               model_overview,
                               model_type,
                               family,
@@ -560,20 +538,17 @@ plot_numeric_vars <- function(numeric_vars,
                               point_position = "jitter",
                               group_var = NA) {
   plots <- list()
-  is_interaction <- typeof(group_var) == "logical"
-  if (is_interaction) {
+  no_interaction <- typeof(group_var) == "logical"
+  if (no_interaction) {
     group_var <- "3644fc2ee6434fc78b66cfedea549a36"
-    m_frame[group_var] <- "trait"
+    plot_data[group_var] <- "trait"
   }
-
   for (numeric_var in numeric_vars) {
-    m_frame[numeric_var] <- m_matrix[, numeric_var]
-
     significance <- model_overview[
       model_overview["predictor"] == numeric_var,
       "significance"
     ]
-    if ("Estimate" %in% colnames(model_overview)) {
+    if ("Estimate" %in% colnames(model_overview) && no_interaction) {
       estimate <- round(
         model_overview[
           model_overview["predictor"] == numeric_var,
@@ -585,8 +560,8 @@ plot_numeric_vars <- function(numeric_vars,
       estimate <- "NA"
     }
     est_len <- length(as.character(estimate))
-    x_max <- max(m_frame[[numeric_var]])
-    x_min <- min(m_frame[[numeric_var]])
+    x_max <- max(plot_data[[numeric_var]])
+    x_min <- min(plot_data[[numeric_var]])
     if (estimate > 0 || is.na(estimate)) {
       box_pos <- x_min + (abs((abs(x_max) - abs(x_min))) * (est_len * .2))
     } else {
@@ -594,7 +569,7 @@ plot_numeric_vars <- function(numeric_vars,
     }
     plot_label <- stringr::str_interp("estimate = ${estimate}\n${significance}")
 
-    if (is_interaction) {
+    if (no_interaction) {
       plot_title <- stringr::str_interp(
         "Regression of coefficient: ${numeric_var}"
       )
@@ -604,7 +579,7 @@ plot_numeric_vars <- function(numeric_vars,
       )
     }
 
-    p <- ggplot2::ggplot(data = m_frame,
+    p <- ggplot2::ggplot(data = plot_data,
                          ggplot2::aes(x = .data[[numeric_var]],
                                       y = .data[[response]])) +
       ggplot2::geom_point(ggplot2::aes(color = .data[[group_var]],
@@ -623,9 +598,8 @@ plot_numeric_vars <- function(numeric_vars,
                         vjust = 1, hjust = .5) +
       ggplot2::labs(title = plot_title)
 
-    if (is_interaction) {
-      p <- p +
-        ggplot2::guides(fill = "none", color = "none")
+    if (no_interaction) {
+      p <- p + ggplot2::guides(fill = "none", color = "none")
     }
 
     if (plot_curve && significance != "ns") {
@@ -638,7 +612,11 @@ plot_numeric_vars <- function(numeric_vars,
         )
     }
 
-    plots[[numeric_var]] <- p
+    if (no_interaction) {
+      plots[[numeric_var]] <- p
+    } else {
+      plots[[paste0(numeric_var, group_var)]] <- p
+    }
   }
 
   plots
@@ -646,14 +624,12 @@ plot_numeric_vars <- function(numeric_vars,
 
 #' Plot interactions
 #'
-#' @param interactions
-#'  Dataframe with interactions
+#' @param plot_data
+#'  Unscaled data with relevant columns for plotting
+#' @param mixed_interactions
+#'  Dataframe with interactions between numeric and categorical variables
 #' @param response
 #'  A string representing the response variable
-#' @param m_frame
-#'  A model frame. See [stats::model.frame()]
-#' @param m_matrix
-#'  A model frame. See [stats::model.matrix()]
 #' @param model_overview
 #'  An overview of model coefficients withe estimates and p-values
 #' @param model_type
@@ -661,58 +637,38 @@ plot_numeric_vars <- function(numeric_vars,
 #'  Options: "lm", "glm", "gam"
 #' @param family
 #'  The model family
-#' @param plot_curve
-#'  Whether to plot [ggplot2::geom_smooth()] in regression plots. Default: TRUE
 #' @param round_p
 #'  Convenience parameter for automatic rounding of p-values. Default: 5
 #' @param point_position
 #'  Position adjustment for model feature plots. See the position paramter of
 #'    [ggplot2::geom_point()] for more information. Default: "jitter"
 #' @returns
-#'  Plots of interactions between numeric variables or between a numeric and a
-#'    categorical variable
-plot_interactions <- function(interactions,
+#'  Plots of interactions between a numeric and a categorical variable
+plot_interactions <- function(plot_data,
+                              mixed_interactions,
                               response,
-                              m_frame,
-                              m_matrix,
                               model_overview,
                               model_type,
                               family,
-                              plot_curve = TRUE,
+                              plot_curve = FALSE,
                               round_p = 5,
                               point_position = "jitter") {
-  interactions <- check_plot_interactions(interactions) |>
-    dplyr::group_by(.data$term) |>
-    dplyr::mutate(only_numeric = all(.data$is_numeric))
+  mixed_interactions <- check_plot_interactions(mixed_interactions)
 
-  numeric_vars <- unique(interactions$term[interactions$only_numeric])
-  numeric_plots <- plot_numeric_vars(numeric_vars,
-                                     response,
-                                     m_frame,
-                                     m_matrix,
-                                     model_overview,
-                                     model_type,
-                                     family,
-                                     plot_curve,
-                                     round_p,
-                                     point_position)
-
-  mixed_vars <- interactions[!interactions$only_numeric, ]
   mixed_plots <- list()
-  for (mixed_numeric_term in unique(mixed_vars$term)) {
-    numeric_var <- unique(mixed_vars$main_effect[
-      (mixed_vars$term == mixed_numeric_term) &
-        (mixed_vars$is_numeric)
+  for (mixed_numeric_term in unique(mixed_interactions$predictor)) {
+    cat_var <- unique(mixed_interactions$main_effect[
+      (mixed_interactions$predictor == mixed_numeric_term) &
+        (mixed_interactions$is_cat)
     ])
-    cat_var <- unique(mixed_vars$main_effect[
-      (mixed_vars$term == mixed_numeric_term) &
-        (!mixed_vars$is_numeric)
+    numeric_var <- unique(mixed_interactions$main_effect[
+      (mixed_interactions$predictor == mixed_numeric_term) &
+        (!mixed_interactions$is_cat)
     ])
 
-    p <- plot_numeric_vars(c(numeric_var),
+    p <- plot_numeric_vars(plot_data,
+                           c(numeric_var),
                            response,
-                           m_frame,
-                           m_matrix,
                            model_overview,
                            model_type,
                            family,
@@ -720,8 +676,8 @@ plot_interactions <- function(interactions,
                            round_p,
                            point_position,
                            group_var = cat_var)
-    mixed_plots[[mixed_numeric_term]] <- p[[numeric_var]]
+    mixed_plots[[mixed_numeric_term]] <- p[[names(p)[[1]]]]
   }
 
-  c(numeric_plots, mixed_plots)
+  mixed_plots
 }

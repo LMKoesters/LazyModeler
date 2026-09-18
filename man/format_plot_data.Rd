@@ -2,25 +2,42 @@
 % Please edit documentation in R/utils.R
 \name{format_plot_data}
 \alias{format_plot_data}
-\title{Omit NAs from model data}
+\title{Formats data for plotting}
 \usage{
-format_plot_data(model, formula, data, model_type, family, model_args = list())
+format_plot_data(
+  model,
+  formula,
+  data,
+  m_matrix,
+  term_map,
+  model_type,
+  family,
+  model_args = list()
+)
 }
 \arguments{
-\item{formula}{Upper formula to be used for model creation/selection}
+\item{model}{The final model after model selection}
 
-\item{data}{Underlying model data}
+\item{formula}{The final model formula}
 
-\item{model_type}{The type of model to be created. Can be either "glm", "lm", "glmer", "lmer",
-"gam", "nlme", or "nls"}
+\item{data}{The unscaled data; original input to \code{\link[=optimize_model]{optimize_model()}}}
 
-\item{family}{The model family. Default: gaussian}
+\item{m_matrix}{Matrix of model}
 
-\item{model_args}{Optional additional arguments to be given directly to the model call}
+\item{term_map}{A dataframe with column names and corresponding formula terms}
+
+\item{model_type}{Model type to be used as character string.
+Options: "lm", "glm", "gam".}
+
+\item{family}{A character string or call describing the family used for model calculation.
+See \link[stats:family]{stats::family} for options. Can also be "automatic".}
+
+\item{model_args}{A named list of additional model arguments}
 }
 \value{
-Model data without NAs
+Formatted data for plotting with info on categorical and numeric variables
+and interactions
 }
 \description{
-Omit NAs from model data
+Formats data for plotting
 }

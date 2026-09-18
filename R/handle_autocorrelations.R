@@ -475,7 +475,7 @@ extract_cor_p_values <- function(correlations_l, cor_args) {
         stats::cor.test,
         cor_args_cp
       )
-      
+
       correlations_l[i, "p_value"] <- cor_stats$p.value
     }
   }

@@ -8,7 +8,7 @@ plot_model(
   model,
   data,
   model_type,
-  family,
+  family = stats::gaussian,
   model_args = list(),
   quality_assessment = "baseR",
   test = "wilcox",
@@ -72,7 +72,9 @@ visualizing the relationship between the response variable and predictors
  # numeric and categorical variables using boxplots where possible
  p <- plot_model(
   final_model,
+  plants,
   model_type = "glm",
+  family = "quasibinomial",
   plot_type = "boxplot",
   point_position = "jitter",
   test = "wilcox",
