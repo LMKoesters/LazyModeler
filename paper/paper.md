@@ -8,7 +8,7 @@ tags:
 - (non)linear regression models (LM, GLM, LMER, GLMER, GAM, NLS, or NLMER)
 - relationship plotting
 
-date: "8 April 2026"
+date: "18 September 2026"
 output: pdf_document
 authors:
 - name: Lara M. Kösters
@@ -115,7 +115,7 @@ In summary, `LazyModeler` streamlines the process of building, simplifying, and 
 
 # Important note
 
-The model selection procedures implemented in `LazyModeler` are provided for convenience and exploratory analysis, and reflect practices recommended in widely used applied statistics literature [@Crawley2007; @Crawley2015]. Users should be aware, however, that statistical inference reported from a model chosen in a data-driven way may be anti-conservative (e.g., p-values may appear smaller than they truly are, confidence intervals narrower). This issue is known as post-selection inference (PSI). Specialized methods have been developed to address it [e.g., @Lee2016], but they are not yet broadly applicable across the full range of model classes supported by `LazyModeler`. We have implemented PSI for (generalized) linear regression models based on the 'selcorr' R package [@Cattaneo2021], but users are free to use the retained model from `LazyModeler` for more sophisticated PSI analyses.
+The model selection procedures implemented in `LazyModeler` are provided for convenience and exploratory analysis, and reflect practices recommended in widely used applied statistics literature [@Crawley2007; @Crawley2015]. Users should be aware, however, that statistical inference reported from a model chosen in a data-driven way may be anti-conservative (e.g., p-values may appear smaller than they truly are, confidence intervals are narrower, etc.). This issue is known as post-selection inference (PSI). Specialized methods have been developed to address it [e.g., @Lee2016], but they are not yet broadly applicable across the full range of model classes supported by `LazyModeler`. We have implemented PSI for (generalized) linear regression models based on the 'selcorr' R package [@Cattaneo2021], but users are free to use the retained model from `LazyModeler` for more sophisticated PSI analyses.
 
 # Code availability
 
