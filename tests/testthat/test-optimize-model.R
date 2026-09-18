@@ -33,6 +33,8 @@ test_that("optimize_model returns expected structure", {
     model_type = "glm",
     family = gaussian,
     directions = c("backward", "forward"),
+    detect_autocors = TRUE,
+    remove_autocors = TRUE,
     base_formula = y ~ 1
   )
 

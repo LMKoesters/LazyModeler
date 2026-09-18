@@ -108,7 +108,7 @@ simplify_model <- function(
       trace,
       delta = delta
     )
-  } else {
+  } else if (direction == "forward") {
     base_formula <- check_base_formula(base_formula, formula)
 
     out <- optimize_forward(
@@ -122,6 +122,16 @@ simplify_model <- function(
       p_threshold,
       trace,
       delta = delta
+    )
+  } else {
+    stop(
+      sprintf(
+        paste(
+          "You have specified an invalid direction %s. Please adjust",
+          "your settings and rerun."
+        ),
+        direction
+      )
     )
   }
   out

@@ -355,7 +355,7 @@ check_cor_args <- function(cor_args) {
       "We do not allow the use of 'conf.level' for stats::cor.test().",
       "We will remove it from the argument list."
     )
-    cor_args$conf.levle <- NULL
+    cor_args$conf.level <- NULL
   }
 
   if ("alternative" %in% names(cor_args)) {
