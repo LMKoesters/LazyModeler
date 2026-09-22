@@ -119,7 +119,7 @@ The model selection procedures implemented in `LazyModeler` are provided for con
 
 # Code availability
 
-The code including basic documentation and an exemplary testing dataset will be made available upon publication on [GitHub](https://github.com/LMKoesters/LazyModeler) and on [Comprehensive R Archive Network (CRAN)](https://cran.r-project.org).
+The code including basic documentation and an exemplary testing dataset will be made available upon publication on [GitHub](https://github.com/LMKoesters/LazyModeler).
 
 # Acknowledgements
 
