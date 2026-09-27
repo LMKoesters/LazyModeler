@@ -173,7 +173,7 @@ make_gam_data <- function(n = 150, seed = 42) {
   f1 <- factor(sample(c("A", "B", "C"), n, replace = TRUE))
 
   # non-linear effect
-  y <- sin(x1) + 0.4 * x2 + rnorm(n, sd = 0.25)
+  y <- sin(x1) + 2 * x2 + rnorm(n, sd = .1)
 
   data.frame(
     y = y,
