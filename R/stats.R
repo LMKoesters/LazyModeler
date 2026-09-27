@@ -142,6 +142,9 @@ prepare_stats_for_letters <- function(stat_result,
 #'  Predicting factor as string
 #' @param test
 #'  Test to run. Either "wilcox" or "t.test"
+#' @param p_threshold
+#'  p-value threshold for significance evaluation.
+#'    Default: 0.05
 #' @returns
 #'  List with
 #'    a) updated m_frame with letters indicating significant differences
@@ -150,37 +153,92 @@ prepare_stats_for_letters <- function(stat_result,
 run_stats <- function(m_frame,
                       response,
                       predictor,
-                      test = "wilcox") {
+                      test = "wilcox",
+                      p_threshold = 0.05) {
   if (test == "wilcox") {
-    stat_func <- stats::pairwise.wilcox.test
+    global_test = "kruskal"
   } else if (test == "t.test") {
-    stat_func <- stats::pairwise.t.test
+    global_test = "anova"
   } else {
-    warning("We only allow wilcox and t.test for statistical testing.")
-    return(list())
+    stop(paste0(
+      "We only allow wilcox and t.test for statistical testing.",
+      "Please adjust your choice accordingly."
+      )
+    )
   }
 
-  stat_result <- run_test(stat_func,
-                          m_frame,
-                          response,
-                          predictor)
-
-  m_frame <- add_letters(
+  c(global_result, global_p) %<-% run_global_test(
+    global_test,
+    m_frame,
     response,
-    predictor,
-    m_frame[, c(response, predictor)],
-    stat_result
+    predictor
+  )
+
+  if (global_p < p_threshold) {
+    stat_result <- run_posthoc_test(
+      test,
+      m_frame,
+      response,
+      predictor
+    )
+
+    m_frame <- add_letters(
+      response,
+      predictor,
+      m_frame[, c(response, predictor)],
+      stat_result
+    )
+  } else {
+    stat_result <- NA
+    m_frame$letter <- NA_character_
+  }
+
+  stat_result <- list(
+    global = global_result,
+    posthoc = stat_result
   )
 
   list(m_frame = m_frame,
        stat_result = stat_result)
 }
 
+#' Run global statistical test
+#'
+#' Runs either Kruskal-Wallis or Welch-Anova
+#' @param test
+#'  Statistical test to run (either kruskal or anova)
+#' @param m_frame
+#'  Data for statistical test
+#' @param response
+#'  Response variable as string
+#' @param predictor
+#'  Predicting factor as string
+#' @returns Returns boolean for (non-)significant global result
+run_global_test <- function(test,
+                            m_frame,
+                            response,
+                            predictor) {
+  if (test == "kruskal") {
+    global_test <- stats::kruskal.test(
+      m_frame[[response]] ~ m_frame[[predictor]]
+    )
+    global_p <- global_test$p.value
+  } else if (test == "anova") {
+    global_test <- stats::oneway.test(
+      m_frame[[response]] ~ m_frame[[predictor]],
+      var.equal = FALSE
+    )
+    global_p <- summary(global_test)[[1]][["Pr(>F)"]][1]
+  }
+
+  list(global_test, global_p)
+}
+
 #' Run statistical test
 #'
 #' Runs either wilcox or t.test
-#' @param stat_func
-#'  Statistical function to run
+#' @param test
+#'  Statistical test to run (either wilcox or t.test)
 #' @param m_frame
 #'  Data for statistical test
 #' @param response
@@ -188,33 +246,44 @@ run_stats <- function(m_frame,
 #' @param predictor
 #'  Predicting factor as string
 #' @returns Result of statistical test, pivoted from wide to long
-run_test <- function(stat_func,
-                     m_frame,
-                     response,
-                     predictor) {
-  stat_result <- withCallingHandlers(
-    as.data.frame(
-      stat_func(
-        m_frame[[response]],
-        m_frame[[predictor]]
-      )$p.value
-    ),
-    warning = function(w) {
-      if (grepl("cannot compute exact p-value with ties", w$message)) {
-        tryInvokeRestart("muffleWarning")
-        as.data.frame(
-          stats::pairwise.wilcox.test(
-            m_frame[[response]],
-            m_frame[[predictor]],
-            exact = FALSE
-          )$p.value
-        )
-      } else {
-        warning(w$message)
+run_posthoc_test <- function(test,
+                             m_frame,
+                             response,
+                             predictor) {
+  if (test == "wilcox") {
+    stat_result_post <- withCallingHandlers(
+      as.data.frame(
+        stats::pairwise.wilcox.test(
+          m_frame[[response]],
+          m_frame[[predictor]]
+        )$p.value
+      ),
+      warning = function(w) {
+        if (grepl("cannot compute exact p-value with ties", w$message)) {
+          tryInvokeRestart("muffleWarning")
+          as.data.frame(
+            stats::pairwise.wilcox.test(
+              m_frame[[response]],
+              m_frame[[predictor]],
+              exact = FALSE
+            )$p.value
+          )
+        } else {
+          warning(w$message)
+        }
       }
-    }
-  )
-  stat_result <- stat_result |>
+    )
+  } else if (test == "t.test") {
+    stat_result_post <- as.data.frame(
+      stats::pairwise.t.test(
+        m_frame[[response]],
+        m_frame[[predictor]],
+        var.equal = FALSE
+      )$p.value
+    )
+  }
+
+  stat_result_post <- stat_result_post |>
     tibble::rownames_to_column(var = "var1") |>
     tidyr::pivot_longer(
       cols = -c("var1"),
@@ -222,6 +291,6 @@ run_test <- function(stat_func,
       values_to = "p_value"
     ) |>
     dplyr::filter((.data$var1 != .data$var2) & (!is.na(.data$p_value)))
-
-  stat_result
+  
+  stat_result_post
 }

@@ -4,7 +4,7 @@
 \alias{run_stats}
 \title{Compute statistics}
 \usage{
-run_stats(m_frame, response, predictor, test = "wilcox")
+run_stats(m_frame, response, predictor, test = "wilcox", p_threshold = 0.05)
 }
 \arguments{
 \item{m_frame}{Data for test}
@@ -14,6 +14,9 @@ run_stats(m_frame, response, predictor, test = "wilcox")
 \item{predictor}{Predicting factor as string}
 
 \item{test}{Test to run. Either "wilcox" or "t.test"}
+
+\item{p_threshold}{p-value threshold for significance evaluation.
+Default: 0.05}
 }
 \value{
 List with

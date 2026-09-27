@@ -15,7 +15,8 @@ plot_model(
   plot_type = "boxplot",
   plot_curve = TRUE,
   round_p = 5,
-  point_position = "jitter"
+  point_position = "jitter",
+  p_threshold = 0.05
 )
 }
 \arguments{
@@ -25,6 +26,12 @@ plot_model(
 
 \item{model_type}{Model type to be used as character string.
 Options: "lm", "glm", "gam"}
+
+\item{family}{A character string or call describing the family used for model calculation.
+See \link[stats:family]{stats::family} for options. Can also be "automatic".
+Default: gaussian}
+
+\item{model_args}{A named list of additional arguments given directly to model call}
 
 \item{quality_assessment}{The mode of model quality assessment. Either "baseR" or "performance".
 Default: "baseR"}
@@ -43,6 +50,9 @@ Default: "boxplot"}
 
 \item{point_position}{Position adjustment for model feature plots. See the position paramter of
 \code{\link[ggplot2:geom_point]{ggplot2::geom_point()}} for more information}
+
+\item{p_threshold}{p-value threshold for significance evaluation of categorical variables.
+Default: 0.05}
 }
 \value{
 A list of plots (estimate, regression, and effect size)

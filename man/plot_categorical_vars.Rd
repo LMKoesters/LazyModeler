@@ -10,7 +10,8 @@ plot_categorical_vars(
   response,
   model_overview,
   test = "wilcox",
-  plot_type = "boxplot"
+  plot_type = "boxplot",
+  p_threshold = 0.05
 )
 }
 \arguments{
@@ -29,6 +30,9 @@ Default: "wilcox"}
 \item{plot_type}{Either "boxplot" or "violin".
 Used to plot regression plots for categorical variables.
 Default: "boxplot"}
+
+\item{p_threshold}{p-value threshold for significance evaluation.
+Default: 0.05}
 }
 \value{
 Plots of categorical variables alongside results of statistical tests

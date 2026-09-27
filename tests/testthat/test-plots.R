@@ -158,7 +158,7 @@ test_that("gam plots successfully", {
   d <- make_gam_data()
 
   final_model <- create_model(
-    formula = y ~ s(x1) + x2 + x3 + f1,
+    formula = y ~ s(x1) + x2 + f1 + x1 * f1 + I(x3^2),
     data = d,
     model_type = "gam",
     model_args = list(),

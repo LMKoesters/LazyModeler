@@ -20,6 +20,8 @@ run_psi(
 )
 }
 \arguments{
+\item{selected_model}{The final model selected in \code{\link[=simplify_model]{simplify_model()}}}
+
 \item{data}{Data of the model}
 
 \item{final_p_values}{P-values of the final model selected in \code{\link[=simplify_model]{simplify_model()}}}
@@ -46,8 +48,6 @@ penalty in the model selection. The default k = 2 corresponds to the AIC.}
 
 \item{label_size}{Size of labels within post-selection inference plot.
 Default: 2.5}
-
-\item{final_model}{The final model selected in \code{\link[=simplify_model]{simplify_model()}}}
 }
 \value{
 A list with a model overview with raw and corrected p-values,

@@ -9,7 +9,7 @@ get_term_reference_levels(
   data,
   term_map,
   interaction_to_cat,
-  contrasts_arg = NULL
+  contrasts_args = NULL
 )
 }
 \arguments{
@@ -21,7 +21,7 @@ get_term_reference_levels(
 
 \item{interaction_to_cat}{Dataframe with interactions and their categorical components}
 
-\item{contrasts_arg}{Part of model_args that specifies model contrast behaviour}
+\item{contrasts_args}{Part of model_args that specifies model contrast behaviour}
 }
 \value{
 Dataframe with reference per categorical variables

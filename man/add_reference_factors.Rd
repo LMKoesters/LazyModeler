@@ -10,7 +10,7 @@ add_reference_factors(
   categorical_vars,
   term_map,
   mixed_interactions,
-  contrasts_arg
+  contrasts_args
 )
 }
 \arguments{

@@ -111,11 +111,11 @@ Default: 0.05}
 \item{delta}{Used as a minimal distance between model performances that needs to be
 present for a candidate model to be considered an improvement over the
 last computed model within the model selection process. The logic goes
-like this: During both backward and forward selection, the bigger model
-needs to show substantially better metrics than the smaller model,
-otherwise the smaller model is selected. A bigger delta will require an
-even more substantial improvement over the smaller model for the bigger
-model to be chosen.
+like this: During both backward and forward selection, the bigger
+(more complex) model needs to show substantially better metrics than the
+smaller (less complex) model, otherwise the smaller model is selected.
+A bigger delta will require an even more substantial improvement over the
+smaller model for the bigger model to be chosen.
 Default: 2}
 
 \item{psi_boot_repl}{A number or list of psi bootstrap replicates.
@@ -153,7 +153,7 @@ final simplified/expanded models with further information and plots
 }
 \description{
 Optimize model by removing autocorrelations and variables
-that do not significantly predict response variable.
+that do not significantly predict the response variable.
 }
 \examples{
 # setup

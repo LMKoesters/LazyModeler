@@ -97,6 +97,12 @@ plot_psi <- function(psi_info,
 #' @param model_type
 #'  Model type to be used as character string.
 #'  Options: "lm", "glm", "gam"
+#' @param family
+#'  A character string or call describing the family used for model calculation.
+#'    See [stats::family] for options. Can also be "automatic".
+#'    Default: gaussian
+#' @param model_args
+#'  A named list of additional arguments given directly to model call
 #' @param quality_assessment
 #'  The mode of model quality assessment. Either "baseR" or "performance".
 #'    Default: "baseR"
@@ -115,6 +121,9 @@ plot_psi <- function(psi_info,
 #' @param point_position
 #'  Position adjustment for model feature plots. See the position paramter of
 #'    [ggplot2::geom_point()] for more information
+#' @param p_threshold
+#'  p-value threshold for significance evaluation of categorical variables.
+#'    Default: 0.05
 #' @return
 #'  A list of plots (estimate, regression, and effect size)
 #'  and statistics for categorical variables.
@@ -157,7 +166,8 @@ plot_model <- function(model,
                        plot_type = "boxplot",
                        plot_curve = TRUE,
                        round_p = 5,
-                       point_position = "jitter") {
+                       point_position = "jitter",
+                       p_threshold = 0.05) {
 
   # BASIC QUALITY ASSESSMENT
   model_plots <- list()
@@ -210,7 +220,8 @@ plot_model <- function(model,
                                              response_str,
                                              model_overview,
                                              test,
-                                             plot_type)
+                                             plot_type,
+                                             p_threshold)
   numeric_plots <- plot_numeric_vars(plot_data,
                                      numeric_vars,
                                      response_str,
@@ -226,6 +237,7 @@ plot_model <- function(model,
                                          model_overview,
                                          model_type,
                                          family,
+                                         plot_curve,
                                          round_p,
                                          point_position)
 
@@ -358,6 +370,7 @@ plot_estimates <- function(model_overview, formatted_labels) {
 plot_effect_sizes <- function(model_overview,
                               formatted_labels) {
   model_overview <- model_overview |>
+    dplyr::filter(.data$predictor != "(Intercept)") |>
     dplyr::mutate(
       Estimate_abs = abs(.data$Estimate),
       Est_sum = sum(.data$Estimate_abs),
@@ -408,6 +421,9 @@ plot_effect_sizes <- function(model_overview,
 #'  Either "boxplot" or "violin".
 #'  Used to plot regression plots for categorical variables.
 #'  Default: "boxplot"
+#' @param p_threshold
+#'  p-value threshold for significance evaluation.
+#'    Default: 0.05
 #' @returns
 #'  Plots of categorical variables alongside results of statistical tests
 plot_categorical_vars <- function(plot_data,
@@ -415,7 +431,8 @@ plot_categorical_vars <- function(plot_data,
                                   response,
                                   model_overview,
                                   test = "wilcox",
-                                  plot_type = "boxplot") {
+                                  plot_type = "boxplot",
+                                  p_threshold = 0.05) {
   stat_results <- list()
   plots <- list()
   for (cat_var in unique(categorical_vars)) {
@@ -423,7 +440,8 @@ plot_categorical_vars <- function(plot_data,
       stat_result) %<-% run_stats(plot_data,
                                   response,
                                   cat_var,
-                                  test = test)
+                                  test,
+                                  p_threshold)
     stat_results[[cat_var]] <- stat_result
 
     model_overview <- model_overview |>
@@ -448,6 +466,8 @@ plot_categorical_vars <- function(plot_data,
     y_lim_max <- max(data_w_letters[!is.na(data_w_letters[[response]]),
                                     response])
 
+    y_lim_mult <- if (any(!is.na(data_w_letters$letter))) 1.15 else 1.05
+
     p <- ggplot2::ggplot(
       data = data_w_letters,
       ggplot2::aes(x = .data[[cat_var]], y = .data[[response]])
@@ -455,12 +475,12 @@ plot_categorical_vars <- function(plot_data,
       ggplot2::scale_color_viridis_d(option = "G", end = 0.9) +
       ggplot2::scale_fill_viridis_d(option = "G", end = 0.9) +
       ggplot2::scale_y_continuous(
-        limits = c(y_lim_min, y_lim_max * 1.15),
+        limits = c(y_lim_min, y_lim_max * y_lim_mult),
         expand = ggplot2::expansion(mult = c(0, .05))
       ) +
       ggplot2::geom_text(
         ggplot2::aes(x = .data[[cat_var]], label = .data$letter),
-        y = y_lim_max * 1.15,
+        y = y_lim_max * y_lim_mult,
         check_overlap = TRUE
       ) +
       ggplot2::geom_text(
@@ -507,8 +527,6 @@ plot_categorical_vars <- function(plot_data,
 #'  A vector with names of numeric variables
 #' @param response
 #'  A string representing the response variable
-#' @param m_matrix
-#'  A model frame. See [stats::model.matrix()]
 #' @param model_overview
 #'  An overview of model coefficients withe estimates and p-values
 #' @param model_type
@@ -611,7 +629,6 @@ plot_numeric_vars <- function(plot_data,
           se = FALSE
         )
     }
-
     if (no_interaction) {
       plots[[numeric_var]] <- p
     } else {
@@ -637,6 +654,8 @@ plot_numeric_vars <- function(plot_data,
 #'  Options: "lm", "glm", "gam"
 #' @param family
 #'  The model family
+#' @param plot_curve
+#'  Whether to plot [ggplot2::geom_smooth()] in regression plots. Default: FALSE
 #' @param round_p
 #'  Convenience parameter for automatic rounding of p-values. Default: 5
 #' @param point_position

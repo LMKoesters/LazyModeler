@@ -549,7 +549,7 @@ add_reference_factors <- function(data,
                                   categorical_vars,
                                   term_map,
                                   mixed_interactions,
-                                  contrasts_arg) {
+                                  contrasts_args) {
   ref_levels <- get_term_reference_levels(categorical_vars,
                                           data,
                                           term_map,
@@ -557,7 +557,7 @@ add_reference_factors <- function(data,
                                             mixed_interactions$is_cat,
                                             c("predictor", "main_effect")
                                           ],
-                                          contrasts_arg)
+                                          contrasts_args)
 
   if (length(grep("Pr\\(", colnames(model_overview))) == 0) {
     model_overview$p_value <- 1
@@ -1019,7 +1019,7 @@ format_plot_data <- function(model,
 #'  A dataframe with column names and corresponding formula terms
 #' @param interaction_to_cat
 #'  Dataframe with interactions and their categorical components
-#' @param contrasts_arg
+#' @param contrasts_args
 #'  Part of model_args that specifies model contrast behaviour
 #' @return
 #'  Dataframe with reference per categorical variables
@@ -1027,12 +1027,12 @@ get_term_reference_levels <- function(categorical_vars,
                                       data,
                                       term_map,
                                       interaction_to_cat,
-                                      contrasts_arg = NULL) {
+                                      contrasts_args = NULL) {
   refs <- vapply(categorical_vars, function(var) {
     contrast <- NULL
-    if (!is.null(contrasts_arg) &&
-          var %in% names(contrasts_arg)) {
-      contrast <- contrasts_arg[[var]]
+    if (!is.null(contrasts_args) &&
+          var %in% names(contrasts_args)) {
+      contrast <- contrasts_args[[var]]
       if (is.character(contrast)) {
         contrast <- get(contrast, mode = "function")(nlevels(data[[var]]))
         rownames(contrast) <- levels(data[[var]])
@@ -1118,7 +1118,7 @@ extract_terms_per_category <- function(
     model_args) {
   if (model_type == "gam") {
     formula <- stats::formula(model$pterms)
-    full_formula <- stats::formula(model$pterms)
+    full_formula <- formula
     m_matrix <- stats::model.matrix(
       model$pterms,
       data = model$model

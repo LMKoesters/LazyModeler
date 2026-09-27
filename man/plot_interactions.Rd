@@ -30,6 +30,8 @@ Options: "lm", "glm", "gam"}
 
 \item{family}{The model family}
 
+\item{plot_curve}{Whether to plot \code{\link[ggplot2:geom_smooth]{ggplot2::geom_smooth()}} in regression plots. Default: FALSE}
+
 \item{round_p}{Convenience parameter for automatic rounding of p-values. Default: 5}
 
 \item{point_position}{Position adjustment for model feature plots. See the position paramter of

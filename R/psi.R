@@ -2,7 +2,7 @@
 #'
 #' Runs [selcorr::selcorr()] and creates plot for comparison of raw and
 #'  corrected p-values
-#' @param final_model
+#' @param selected_model
 #'  The final model selected in [LazyModeler::simplify_model()]
 #' @param data
 #'  Data of the model

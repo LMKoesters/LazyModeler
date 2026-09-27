@@ -39,8 +39,6 @@ Options: "lm", "glm", "gam"}
 \code{\link[ggplot2:geom_point]{ggplot2::geom_point()}} for more information. Default: "jitter"}
 
 \item{group_var}{A grouping variable for coloring}
-
-\item{m_matrix}{A model frame. See \code{\link[stats:model.matrix]{stats::model.matrix()}}}
 }
 \value{
 Plots of numeric variables
