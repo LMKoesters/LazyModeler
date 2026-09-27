@@ -15,6 +15,7 @@ test_that("Binomial distribution is correctly identified", {
   d <- make_unformatted_binary_data()
 
   (family <- check_model_family(
+    "glm",
     NULL,
     automatic = TRUE,
     data = d,
@@ -30,6 +31,7 @@ test_that("Gaussian distribution is correctly identified", {
   d <- make_tiny_data()
 
   (family <- check_model_family(
+    "glm",
     NULL,
     automatic = TRUE,
     data = d,
@@ -44,6 +46,7 @@ test_that("Quasibinomial distribution is correctly identified", {
   d <- make_tiny_proportions_data()
 
   check_model_family(
+    "glm",
     NULL,
     automatic = TRUE,
     data = d,
@@ -56,6 +59,7 @@ test_that("Poisson distribution is correctly identified", {
   d <- make_tiny_poisson_data()
 
   (family <- check_model_family(
+    "glm",
     NULL,
     automatic = TRUE,
     data = d,
@@ -71,6 +75,7 @@ test_that("Warning on non-automatic incorrect family", {
   d <- make_tiny_poisson_data()
 
   (family <- check_model_family(
+    "glm",
     "binomial",
     automatic = FALSE,
     data = d,
@@ -86,6 +91,7 @@ test_that("Family as closure is accepted", {
   d <- make_tiny_poisson_data()
 
   (family <- check_model_family(
+    "glm",
     poisson,
     automatic = FALSE,
     data = d,
@@ -100,6 +106,7 @@ test_that("Response is transformed in check_model_family", {
   d <- make_tiny_data()
 
   (family <- check_model_family(
+    "glm",
     NULL,
     automatic = TRUE,
     data = d,
@@ -114,8 +121,8 @@ test_that("Response is transformed in check_model_family", {
 test_that("Binomial cbind is accepted", {
   d <- make_grouped_data()
 
-
   (family <- check_model_family(
+    "glm",
     "binomial",
     automatic = FALSE,
     data = d,

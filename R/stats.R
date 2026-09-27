@@ -156,15 +156,14 @@ run_stats <- function(m_frame,
                       test = "wilcox",
                       p_threshold = 0.05) {
   if (test == "wilcox") {
-    global_test = "kruskal"
+    global_test <- "kruskal"
   } else if (test == "t.test") {
-    global_test = "anova"
+    global_test <- "anova"
   } else {
     stop(paste0(
       "We only allow wilcox and t.test for statistical testing.",
       "Please adjust your choice accordingly."
-      )
-    )
+    ))
   }
 
   c(global_result, global_p) %<-% run_global_test(
@@ -291,6 +290,6 @@ run_posthoc_test <- function(test,
       values_to = "p_value"
     ) |>
     dplyr::filter((.data$var1 != .data$var2) & (!is.na(.data$p_value)))
-  
+
   stat_result_post
 }

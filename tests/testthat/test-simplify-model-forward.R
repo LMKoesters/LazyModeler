@@ -145,7 +145,7 @@ test_that("gam is optimized (forward simplification)", {
   d <- make_gam_data()
 
   (m <- simplify_model(
-    formula = y ~ s(x1) + x2 + x3 + f1 + x1:x2 + ti(x2),
+    formula = y ~ s(x1) + x2 + x3 + f1 + f1:x3,
     base_formula = y ~ 1,
     data = d,
     model_type = "gam",
@@ -157,7 +157,7 @@ test_that("gam is optimized (forward simplification)", {
     expect_no_error()
 
   expect_equal(stats::formula(m$final_model),
-               y ~ s(x1) + x2,
+               y ~ x2 + s(x1),
                ignore_attr = ".Environment")
 
   history <- m$history

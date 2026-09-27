@@ -138,10 +138,10 @@ test_that("lmer is optimized (backward simplification)", {
 })
 
 test_that("gam is optimized (backward simplification)", {
-  d <- make_gam_data()
+  d <- make_gam_data(n = 1000)
 
   (m <- simplify_model(
-    formula = y ~ s(x1) + x2 + x3 + f1 + x1:x2 + ti(x2),
+    formula = y ~ s(x1) + x2 + x3 + f1 + f1:x3,
     data = d,
     model_type = "gam",
     model_args = list(),
@@ -149,7 +149,7 @@ test_that("gam is optimized (backward simplification)", {
     direction = "backward",
     family = gaussian
   )) |>
-    expect_no_error()
+   expect_no_error()
 
   expect_equal(stats::formula(m$final_model),
                y ~ s(x1) + x2,
