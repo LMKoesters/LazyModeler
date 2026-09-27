@@ -189,7 +189,8 @@ optimize_model <- function(
   check_model_type(model_type, model_args)
   formula <- check_formula(formula, data)
   if (model_type %in% c("glm", "glmer", "gam")) {
-    family <- check_model_family(family,
+    family <- check_model_family(model_type,
+                                 family,
                                  automatic = identical(family, "automatic"),
                                  data = data,
                                  lhs = formula.tools::lhs(formula))

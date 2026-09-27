@@ -32,6 +32,10 @@ check_model_type <- function(model_type, model_args) {
 #'
 #' Checks whether model family is supported and matches response data of
 #'  given formula
+#' @param model_type
+#'  Model type to be used as character string.
+#'    Options: "lm", "glm", "lmer", "glmer",
+#'    "nlme", "gam", and "nls".
 #' @param family
 #'  The chosen model family. Can be NULL if automatic == TRUE. Default: NULL
 #' @param automatic
@@ -44,11 +48,12 @@ check_model_type <- function(model_type, model_args) {
 #'    Default: NULL
 #' @returns
 #'  An appropriate model family for downstream model creation
-check_model_family <- function(family = NULL,
+check_model_family <- function(model_type,
+                               family = NULL,
                                automatic = TRUE,
                                data = NULL,
                                lhs = NULL) {
-  valid_families_info <- determine_model_family(data, lhs)
+  valid_families_info <- determine_model_family(model_type, data, lhs)
   valid_families <- valid_families_info$valid_families
 
   if (automatic) {
@@ -137,13 +142,17 @@ check_response_data_format <- function(response_col, response_data) {
 #'
 #' Checks which model family matches data when [cbind()]
 #'  was specified in formula
+#' @param model_type
+#'  Model type to be used as character string.
+#'    Options: "lm", "glm", "lmer", "glmer",
+#'    "nlme", "gam", and "nls".
 #' @param data
 #'  The underlying data to use when determining an appropriate model family
 #' @param pasted_response
 #'  Response as character
 #' @returns A list containing all valid families and a notice explaining
 #'  the family choice
-check_cbind_model_family <- function(data, pasted_response) {
+check_cbind_model_family <- function(model_type, data, pasted_response) {
   # TODO should the first two variables only be used for model family OR
   #   TODO should the formula be updated??
   if (length(pasted_response) > 3) {
@@ -161,8 +170,12 @@ check_cbind_model_family <- function(data, pasted_response) {
   col1 <- pasted_response[[2]]
   col2 <- pasted_response[[3]]
 
-  valid_families1 <- determine_model_family(data, str2lang(col1))$valid_families
-  valid_families2 <- determine_model_family(data, str2lang(col2))$valid_families
+  valid_families1 <- determine_model_family(
+    model_type, data, str2lang(col1)
+  )$valid_families
+  valid_families2 <- determine_model_family(
+    model_type, data, str2lang(col2)
+  )$valid_families
 
   if ("quasibinomial" %in% valid_families1 ||
         "quasibinomial" %in% valid_families2) {

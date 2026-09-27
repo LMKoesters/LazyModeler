@@ -4,9 +4,13 @@
 \alias{check_cbind_model_family}
 \title{Checks model family in case of \code{\link[=cbind]{cbind()}}}
 \usage{
-check_cbind_model_family(data, pasted_response)
+check_cbind_model_family(model_type, data, pasted_response)
 }
 \arguments{
+\item{model_type}{Model type to be used as character string.
+Options: "lm", "glm", "lmer", "glmer",
+"nlme", "gam", and "nls".}
+
 \item{data}{The underlying data to use when determining an appropriate model family}
 
 \item{pasted_response}{Response as character}

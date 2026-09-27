@@ -75,6 +75,10 @@ cor_prep_autocor <- function(autocorrelations, coefficients) {
 
 #' Determine appropriate model family
 #'
+#' @param model_type
+#'  Model type to be used as character string.
+#'    Options: "lm", "glm", "lmer", "glmer",
+#'    "nlme", "gam", and "nls".
 #' @param data
 #'  Data to consider when matching model family
 #' @param lhs
@@ -82,11 +86,11 @@ cor_prep_autocor <- function(autocorrelations, coefficients) {
 #' @returns
 #'  A character vector with valid families given the data and
 #'    a notice explaining the choice
-determine_model_family <- function(data, lhs) {
+determine_model_family <- function(model_type, data, lhs) {
   response_col <- paste(lhs, collapse = "")
 
   if (grepl("cbind", response_col)) {
-    return(check_cbind_model_family(data, paste(lhs)))
+    return(check_cbind_model_family(model_type, data, paste(lhs)))
   }
 
   if (!response_col %in% colnames(data)) {
@@ -109,13 +113,21 @@ determine_model_family <- function(data, lhs) {
                     "appropriate")
   } else if (is_num && (min(response_data) >= 0 &&
                           max(response_data) <= 1)) {
-    valid_families <- c("gaussian", "quasibinomial")
-    notice <- paste("Your values appear to be proportions.",
-                    "quasibinomial may be appropriate",
-                    "if values represent proportions from",
-                    "binomial trials and trial sizes are supplied as",
-                    "weights. Otherwise gaussian may be more",
-                    "appropriate.")
+    if (model_type == "glmer") {
+      valid_families <- c("gaussian")
+      notice <- paste("Your values appear to be proportions.",
+                      "Since quasibinomial is not suitable",
+                      "for GLMER models, gaussian may be",
+                      "appropriate for your data.")
+    } else {
+      valid_families <- c("gaussian", "quasibinomial")
+      notice <- paste("Your values appear to be proportions.",
+                      "quasibinomial may be appropriate",
+                      "if values represent proportions from",
+                      "binomial trials and trial sizes are supplied as",
+                      "weights. Otherwise gaussian may be more",
+                      "appropriate.")
+    }
   } else if (min(response_data) >= 0 && all(response_data %% 1 == 0)) {
     valid_families <- c("poisson")
     notice <- paste("Poisson assumes non-negative count data",

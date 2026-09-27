@@ -4,9 +4,13 @@
 \alias{determine_model_family}
 \title{Determine appropriate model family}
 \usage{
-determine_model_family(data, lhs)
+determine_model_family(model_type, data, lhs)
 }
 \arguments{
+\item{model_type}{Model type to be used as character string.
+Options: "lm", "glm", "lmer", "glmer",
+"nlme", "gam", and "nls".}
+
 \item{data}{Data to consider when matching model family}
 
 \item{lhs}{Left-hand-side of model formula (i.e., response term)}

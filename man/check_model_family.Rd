@@ -4,9 +4,19 @@
 \alias{check_model_family}
 \title{Check validity of model family}
 \usage{
-check_model_family(family = NULL, automatic = TRUE, data = NULL, lhs = NULL)
+check_model_family(
+  model_type,
+  family = NULL,
+  automatic = TRUE,
+  data = NULL,
+  lhs = NULL
+)
 }
 \arguments{
+\item{model_type}{Model type to be used as character string.
+Options: "lm", "glm", "lmer", "glmer",
+"nlme", "gam", and "nls".}
+
 \item{family}{The chosen model family. Can be NULL if automatic == TRUE. Default: NULL}
 
 \item{automatic}{Whether to automatically choose an appropriate family. Default: NULL}
