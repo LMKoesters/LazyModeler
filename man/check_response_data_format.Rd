@@ -4,12 +4,14 @@
 \alias{check_response_data_format}
 \title{Check for data type of response}
 \usage{
-check_response_data_format(response_col, response_data)
+check_response_data_format(response_col, response_data, response_type)
 }
 \arguments{
 \item{response_col}{The response column name}
 
 \item{response_data}{The response data points}
+
+\item{response_type}{The response data type}
 }
 \description{
 Checks whether formatting of response column matches data

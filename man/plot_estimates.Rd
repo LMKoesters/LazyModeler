@@ -4,12 +4,10 @@
 \alias{plot_estimates}
 \title{Plot estimates}
 \usage{
-plot_estimates(model_overview, formatted_labels)
+plot_estimates(model_overview)
 }
 \arguments{
 \item{model_overview}{Overview of model coefficients with estimates}
-
-\item{formatted_labels}{A list with formatted labels (italic and bold for factor levels)}
 }
 \value{
 An estimate plot

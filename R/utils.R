@@ -1,78 +1,3 @@
-#' Pivots correlations to long format
-#'
-#' @param correlations
-#'  The result of [corrplot::cor.mtest()] as a dataframe
-#' @param values_to
-#'  Column name for values
-#' @returns
-#'  A pivoted dataframe with correlations
-cor_pivot_longer <- function(correlations, values_to) {
-  correlations |>
-    tibble::rownames_to_column(var = "coefficientA") |>
-    tidyr::pivot_longer(
-      !"coefficientA",
-      names_to = "coefficientB",
-      values_to = values_to
-    ) |>
-    dplyr::filter(.data$coefficientA != .data$coefficientB)
-}
-
-#' Sort and filter correlations
-#'
-#' @param correlations_w_p
-#'  Dataframe with information on correlations between variables with p-values
-#' @param threshold
-#'  The threshold at which to consider two variables autocorrelated
-#' @param p_threshold
-#'  p-value threshold for significance evaluation
-#' @returns
-#'  A sorted dataframe of autocorrelations with a correlation coefficient
-#'  equal to or larger than threshold
-cor_sort_and_filter <- function(correlations_w_p, threshold, p_threshold) {
-  correlations_w_p |>
-    dplyr::mutate(
-      sorted_coefA = pmin(.data$coefficientA, .data$coefficientB),
-      sorted_coefB = pmax(.data$coefficientA, .data$coefficientB),
-      comparison = paste(.data$sorted_coefA, .data$sorted_coefB)
-    ) |>
-    dplyr::distinct(.data$comparison, .keep_all = TRUE) |>
-    dplyr::select(!tidyr::any_of(c("sorted_coefA",
-                                   "sorted_coefB",
-                                   "comparison"))) |>
-    dplyr::filter(!is.na(.data$p_value) &
-                    .data$p_value < p_threshold) |>
-    tibble::add_column(note = NA)
-}
-
-#' Format correlation information for removal of variables
-#'
-#' @param autocorrelations
-#'  Dataframe with autocorrelated variables with p-values
-#' @param coefficients
-#'  List of variables to consider for removal
-#' @returns
-#'  A dataframe with indexed variables and a dataframe with pairs of
-#'    autocorrelated variables
-cor_prep_autocor <- function(autocorrelations, coefficients) {
-  coefficients_df <- data.frame(
-    idx = seq_along(coefficients),
-    coefficient = coefficients
-  )
-
-  autocorrelations <- autocorrelations |>
-    dplyr::left_join(coefficients_df, by = c("coefficientA" = "coefficient")) |>
-    dplyr::left_join(coefficients_df, by = c("coefficientB" = "coefficient"),
-                     suffix = c("1", "2")) |>
-    dplyr::mutate(
-      idx_smaller = pmin(.data$idx1, .data$idx2),
-      idx_bigger = pmax(.data$idx1, .data$idx2)
-    ) |>
-    dplyr::arrange(dplyr::desc(.data$idx_bigger)) |>
-    dplyr::select(-c("idx1", "idx2"))
-
-  list(coefficients_df, autocorrelations)
-}
-
 #' Determine appropriate model family
 #'
 #' @param model_type
@@ -99,7 +24,11 @@ determine_model_family <- function(model_type, data, lhs) {
   }
 
   response_data <- data[!is.na(data[[response_col]]), response_col]
-  check_response_data_format(response_col, response_data)
+  check_response_data_format(
+    response_col,
+    response_data,
+    typeof(data[[response_col]])
+  )
   is_num <- is.numeric(response_data)
 
   if (is.logical(response_data) ||
@@ -442,24 +371,6 @@ new_model_is_better <- function(assess1, assess2, direction) {
   new_is_better >= (total / 2)
 }
 
-#' Remove autocorrelated predictors from formula
-#'
-#' @param formula
-#'  Formula to remove predictors from
-#' @param predictors
-#'  Predictors to remove
-#' @returns
-#'  Updated formula without autocorrelated predictors
-remove_autocor_predictors <- function(formula,
-                                      predictors) {
-  for (pred in predictors) {
-    d <- paste(". ~ . -", pred)
-    formula <- stats::update(formula, d)
-  }
-
-  formula
-}
-
 #' Extract numeric columns mentioned in formula
 #'
 #' @param formula
@@ -624,15 +535,7 @@ add_reference_factors <- function(data,
     levels = unique(model_overview$predictor)
   )
 
-  formatted_labels <- lapply(model_overview$formatted_pred, function(x) {
-    if (grepl("^italic", x) || grepl("^bold", x)) {
-      parse(text = as.character(x))[[1]]
-    } else {
-      as.character(x)
-    }
-  })
-
-  list(model_overview, formatted_labels)
+  model_overview
 }
 
 #' Maps model.matrix column names to terms
@@ -680,50 +583,6 @@ sort_term_map <- function(term_map, sort = TRUE) {
     dplyr::arrange(.data$is_interaction, .data$i)
 
   term_map
-}
-
-#' Format data for detection of autocorrelations
-#'
-#' Format input data for detection of autocorrelations
-#'  by calculating the model matrix that allows autocorrelation testing
-#'  for interactions, transforms, and factor variables.
-#' @param formula
-#'  A formula used for downstream model creation and simplification
-#' @param data
-#'  Underlying data for autocorrelation detection and downstream
-#'    model creation
-#' @param model_type
-#'  Model type to be used as character string.
-#'  Options: "lm", "glm", "lmer", "glmer",
-#'  "nlme", "gam", and "nls"
-#' @param family
-#'  A character string or call describing the family used for model calculation.
-#'    See [stats::family] for options.
-#' @param model_args
-#'  A named list of additional arguments given directly to model call
-#' @return
-#'  Dataframe with interactions, transforms,
-#'    and factor variables as numeric columns
-format_cor_data <- function(
-    data,
-    formula,
-    model_type,
-    family,
-    model_args = list()) {
-  model_args$na.action <- stats::na.pass
-  m_matrix <- get_model_matrix(
-    data,
-    formula,
-    model_type,
-    family,
-    model_args = model_args
-  )
-
-  term_map <- map_col_to_term(m_matrix, formula)
-  m_matrix <- m_matrix |>
-    as.data.frame() |>
-    dplyr::select(-c("(Intercept)"))
-  list(m_matrix = m_matrix, term_map = term_map)
 }
 
 #' Format data for detection of autocorrelations
@@ -903,123 +762,6 @@ omit_na_from_model_data <- function(formula,
   data <- data[data$temporary_na_action_id %in% keep_ids, , drop = FALSE] |>
     dplyr::select(-"temporary_na_action_id")
   data
-}
-
-#' Formats data for plotting
-#' @param model
-#'  The final model after model selection
-#' @param formula
-#'  The final model formula
-#' @param data
-#'  The unscaled data; original input to [LazyModeler::optimize_model()]
-#' @param m_matrix
-#'  Matrix of model
-#' @param term_map
-#'  A dataframe with column names and corresponding formula terms
-#' @param model_type
-#'  Model type to be used as character string.
-#'    Options: "lm", "glm", "gam".
-#' @param family
-#'  A character string or call describing the family used for model calculation.
-#'    See [stats::family] for options. Can also be "automatic".
-#' @param model_args
-#'  A named list of additional model arguments
-#' @return
-#'  Formatted data for plotting with info on categorical and numeric variables
-#'    and interactions
-format_plot_data <- function(model,
-                             formula,
-                             data,
-                             m_matrix,
-                             term_map,
-                             model_type,
-                             family,
-                             model_args = list()) {
-  # OMIT NA
-  data <- omit_na_from_model_data(
-    formula,
-    data,
-    model_type,
-    family,
-    model_args
-  )
-
-  # compute unscaled model matrix
-  unscaled_matrix <- get_model_matrix(
-    data,
-    formula,
-    model_type,
-    family,
-    model_args = model_args
-  )
-  # quick check: same length of
-  rows_scaled <- rownames(m_matrix)
-
-  if (nrow(m_matrix) != nrow(unscaled_matrix)) {
-    stop(
-      paste(
-        "There's a difference between the number of rows of data used for the",
-        "model and the number of rows of data used to create an unscaled model",
-        "matrix for plotting. Please open an issue at",
-        "https://github.com/LMKoesters/LazyModeler stating the model_args",
-        "used for this run."
-      )
-    )
-  }
-
-  # subset rows used for modeling
-  data <- data[rownames(data) %in% rows_scaled, ]
-
-  # get categorical columns
-  categorical_vars <- extract_categorical_vars(stats::model.frame(model))$var |>
-    unique()
-
-  # get interactions
-  interactions <- extract_interactions(term_map$term) |>
-    dplyr::mutate(is_cat = .data$main_effect %in% categorical_vars) |>
-    dplyr::group_by(.data$predictor) |>
-    dplyr::mutate(contains_cat = any(.data$is_cat)) |>
-    dplyr::ungroup()
-  numeric_only_interactions <- unique(
-    interactions$predictor[!interactions$contains_cat]
-  )
-  mixed_interactions <- interactions[interactions$contains_cat, ] |>
-    dplyr::distinct(.data$predictor, .data$main_effect, .keep_all = TRUE)
-  mixed_interactions_numeric <- mixed_interactions[
-    !mixed_interactions$main_effect %in% categorical_vars, "main_effect"
-  ]
-  mixed_interactions_categoric <- mixed_interactions[
-    mixed_interactions$main_effect %in% categorical_vars, "main_effect"
-  ]
-
-  # get numeric columns
-  numeric_vars <- term_map$term[!term_map$term %in% categorical_vars &
-                                  !term_map$term %in% interactions$predictor]
-
-  # get data
-  data_columns <- unique(unlist(c(
-    categorical_vars,
-    mixed_interactions_categoric
-  )))
-  plot_data_from_data <- data[, data_columns, drop = FALSE]
-  matrix_columns <- unique(unlist(c(numeric_vars,
-                                    numeric_only_interactions,
-                                    mixed_interactions_numeric)))
-  plot_data_from_matrix <- as.data.frame(unscaled_matrix)[, matrix_columns,
-                                                          drop = FALSE]
-
-  # add response to data
-  # TODO test with cbind() - will probably fail there
-  response_str <- deparse1(formula.tools::lhs(formula))
-  plot_data_response <- data[, response_str, drop = FALSE]
-  plot_data <- cbind(plot_data_from_data,
-                     plot_data_from_matrix,
-                     plot_data_response)
-  list(plot_data,
-       categorical_vars,
-       unique(unlist(c(numeric_vars,
-                       numeric_only_interactions))),
-       mixed_interactions)
 }
 
 #' Omit NAs from model data

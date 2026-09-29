@@ -28,7 +28,7 @@
 #' @param simplify_model
 #'  Whether or not to simplify the full model. Default: TRUE
 #' @param scale_predictors
-#'  Whether to apply scaling to predictor variables. Default: FALSE
+#'  Whether to apply scaling to predictor variables. Default: TRUE
 #' @param detect_autocors
 #'  Whether to detect autocorrelated dataframe variables. Note that we
 #'    support autocorrelation detection only for model types "lm", "glm",
@@ -114,6 +114,7 @@
 #'  List with a) information on autocorrelated variables and b)
 #'    final simplified/expanded models with further information and plots
 #' @examples
+#' # Example 1: Backward glm model simplification using example plant data
 #' # setup
 #' data("plants")
 #'
@@ -150,6 +151,75 @@
 #'   round_p = 3,
 #'   trace = TRUE
 #' )
+#'
+#' # Example 2: glmer model optimization
+#' set.seed(42)
+#'
+#' n_groups <- 20
+#' n_per_group <- 20
+#' n <- n_groups * n_per_group
+#'
+#' x1 <- rnorm(n)
+#' x2 <- rnorm(n)
+#' x3 <- rnorm(n)
+#' grp <- factor(rep(seq_len(n_groups),
+#'                   each = n_per_group))
+#' group_effect <- rnorm(n_groups,
+#'                       mean = 0,
+#'                       sd = 0.6)
+#' eta <- 0.5 +
+#'   0.4 * x1 -
+#'   0.3 * x2 +
+#'   0.2 * x3 +
+#'   group_effect[grp]
+#' y <- rpois(n,
+#'            lambda = exp(eta))
+#' p <- plogis(eta)
+#' y_binom <- rbinom(n, size = 1, prob = p)
+#'
+#' d <- data.frame(
+#'   y = y,
+#'   y_binom = y_binom,
+#'   x1 = x1,
+#'   x2 = x2,
+#'   x3 = x3,
+#'   grp = grp
+#' )
+#'
+#' res <- optimize_model(
+#'   formula = y ~ x1 + x2 + x3 + x1:x3 + (1 | grp),
+#'   data = d,
+#'   model_type = "glmer",
+#'   model_args = list(),
+#'   evaluation_methods = c("anova"),
+#'   directions = c("backward"),
+#'   family = poisson
+#' )
+#'
+#' # Example 3: nls model optimization
+#' set.seed(42)
+#' x <- seq(0, 10, length.out = n)
+#' asym <- 5
+#' k <- 0.6
+#' y <- asym * (1 - exp(-k * x)) + rnorm(n, sd = 0.15)
+#'
+#' d <- data.frame(
+#'   y = y,
+#'   x = x
+#' )
+#' start <- c(Asym = 5, k = 0.6, offset = .1, slope = .5)
+#'
+#' res <- optimize_model(
+#'   formula = y ~ offset + Asym * (1 - exp(-k * x)) + slope * x,
+#'   data = d,
+#'   model_type = "nls",
+#'   model_args = list(
+#'     start = start
+#'   ),
+#'   evaluation_methods = c("anova"),
+#'   directions = c("backward"),
+#'   scale_predictors = FALSE
+#' )
 #' @export
 optimize_model <- function(
     formula,
@@ -184,6 +254,16 @@ optimize_model <- function(
     categorical_stat_test = "wilcox",
     plot_type = "boxplot",
     plot_curve = TRUE) {
+  data <- as.data.frame(data)
+  if (ncol(data) < 2) {
+    stop(
+      paste(
+        "Your dataframe contains less than 2 columns. You need at least 2",
+        "columns (representing the response and the predictor(s))."
+      )
+    )
+  }
+
   check_user_args(sys.call(), LazyModeler::optimize_model)
 
   check_model_type(model_type, model_args)
@@ -235,9 +315,8 @@ optimize_model <- function(
   }
 
   # MODEL SIMPLIFICATION
-  model_out <- list()
   for (direction in directions) {
-    model_out[[direction]] <- list()
+    model_out <- list()
     if (simplify_model) {
       res <- simplify_model(formula,
                             data,
@@ -250,7 +329,7 @@ optimize_model <- function(
                             trace,
                             base_formula,
                             delta)
-      model_out[[direction]]$model_selection_result <- res
+      model_out$model_selection_result <- res
 
       # PSI
       if ((model_type %in% c("glm", "lm")) && use_psi) {
@@ -269,11 +348,20 @@ optimize_model <- function(
                               p_threshold,
                               psi_label_size)
 
-        model_out[[direction]]$psi_result <- psi_result
+        model_out$psi_result <- psi_result
         model_to_plot <- psi_result$psi_model
+      } else if (use_psi) {
+        warning(
+          paste(
+            "Unfortunately, we currently only allow for PSI for glm and lm",
+            "models. We will therefore proceed without PSI."
+          )
+        )
+        model_to_plot <- res$final_model
       } else {
         model_to_plot <- res$final_model
       }
+      model_out$final_model <- model_to_plot
     } else {
       model_to_plot <- create_model(
         formula,
@@ -282,10 +370,10 @@ optimize_model <- function(
         family,
         model_args
       )
-      model_out[[direction]]$final_model <- model_to_plot
+      model_out$final_model <- model_to_plot
     }
 
-    plotting_allowed <- c("glm", "lm", "glmer", "lmer", "gam")
+    plotting_allowed <- c("glm", "lm", "glmer", "lmer")
     if (model_type %in% plotting_allowed && plot_relationships) {
       plots <- plot_model(model_to_plot,
                           if (scale_predictors) original_data else data,
@@ -299,10 +387,18 @@ optimize_model <- function(
                           round_p,
                           plot_point_position,
                           p_threshold)
-      model_out[[direction]]$plots <- plots
+      model_out$plots <- plots
+    } else if (plot_relationships) {
+      warning(
+        paste(
+          "We currently do not allow for plotting of your model type.",
+          "However, plotting for gam models will be added soon."
+        )
+      )
     }
+
+    out[[direction]] <- model_out
   }
 
-  out$models_with_info <- model_out
   out
 }

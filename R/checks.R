@@ -121,14 +121,20 @@ check_correlation_threshold <- function(threshold) {
 #'  The response column name
 #' @param response_data
 #'  The response data points
-check_response_data_format <- function(response_col, response_data) {
-  if (all(is.finite(response_data)) && all(response_data %% 1 == 0)) {
+#' @param response_type
+#'  The response data type
+check_response_data_format <- function(response_col,
+                                       response_data,
+                                       response_type) {
+  if (all(is.finite(response_data)) &&
+        all(response_data %% 1 == 0) &&
+        response_type == "double") {
     warning(
       sprintf(
         paste(
           "Your response column %s looks to be of type integer",
-          "but is formatted as numeric.",
-          "We are going to treat it as numeric. If your response is of",
+          "but is formatted as 'double'.",
+          "We are going to treat it as 'double'. If your response is of",
           "type integer, please correct the column's formatting and restart."
         ),
         response_col
@@ -153,14 +159,13 @@ check_response_data_format <- function(response_col, response_data) {
 #' @returns A list containing all valid families and a notice explaining
 #'  the family choice
 check_cbind_model_family <- function(model_type, data, pasted_response) {
-  # TODO should the first two variables only be used for model family OR
-  #   TODO should the formula be updated??
   if (length(pasted_response) > 3) {
     warning(
       paste(
         "It seems like you have specified more than two variables within",
         "cbind(). This is not supported. We will only consider the first",
-        "two variables. If you wish to correct your formula, please stop",
+        "two variables for the determination of the correct model family.",
+        "If you wish to correct your formula, please stop",
         "and rerun LazyModeler."
       ),
       call. = FALSE

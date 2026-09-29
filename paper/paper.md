@@ -5,7 +5,7 @@ tags:
 - stepwise model simplification and selection
 - quality checks
 - R programming
-- (non)linear regression models (LM, GLM, LMER, GLMER, GAM, NLS, or NLMER)
+- (non)linear regression models (LM, GLM, LMER, GLMER, GAM, NLS, or NLME)
 - relationship plotting
 
 date: "18 September 2026"
@@ -39,7 +39,7 @@ Linear models, as one of the most basic and powerful tools, have been frequently
 
 In statistical modeling, and especially in real-world applications, multiple predictors are assumed for a given response variable. As a consequence, people strive to exclude the irrelevant from the relevant (statistically significant) information, which is called model simplification [@Crawley2007; @Forstmeier2011; @Crawley2015]. One of the most widely used optimization workflows is stepwise model simplification. For example, starting from a full or saturated model, the least significant variable (p\>0.05) is excluded until the final minimal adequate model is attained ['backward simplification'; @Crawley2007; @Forstmeier2011; @Crawley2015]. Each model simplification step will be justified with certain metrics (e.g., SSE, AIC, or BIC) [@Henley2020]. Given the number of models, variables of interest, and their data characteristics, this task can be extraordinarily time consuming. Currently, only AIC/BIC-based automated simplification is available [e.g., 'stepAIC', @Venables2002]. Nevertheless, model simplification continues to be a rather manual process [on Google Scholar, only ~5,000 "stepAIC" entries despite ~5,000,000 "linear regression model" studies (0.1%); e.g., @Roemermann2016; @Karbstein2019; @Henley2020; @Karbstein2020; @Cai2023; @Li2023]. In addition, simplification and other aspects such as data cleaning, model comparison and quality control, and output visualization are not yet automated. An easy-to-use, all-in-one function for the entire modeling process within a single software package is missing.
 
-Our R package `LazyModeler` addresses these issues by automating variable selection, model optimization, and output illustration and generation. In detail, users will be enabled to automatically remove autocorrelated variables, choose between several types of (non)linear regression models (e.g., LM, GLM, LMER, GLMER, GAM, NLS, or NLMER), perform stepwise model simplification, check model quality, plot coefficient estimates and relationships, and generate the output of the final model.
+Our R package `LazyModeler` addresses these issues by automating variable selection, model optimization, and output illustration and generation. In detail, users will be enabled to automatically remove autocorrelated variables, choose between several types of (non)linear regression models (e.g., LM, GLM, LMER, GLMER, GAM, NLS, or NLME), perform stepwise model simplification, check model quality, plot coefficient estimates and relationships, and generate the output of the final model.
 
 # Overview and major functions
 

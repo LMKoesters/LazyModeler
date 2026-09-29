@@ -168,7 +168,6 @@ plot_model <- function(model,
                        round_p = 5,
                        point_position = "jitter",
                        p_threshold = 0.05) {
-
   # BASIC QUALITY ASSESSMENT
   model_plots <- list()
   model_plots$quality_check <- assess_basic_model_quality(
@@ -176,6 +175,29 @@ plot_model <- function(model,
     quality_assessment,
     model_type
   )
+
+  # FORMULA CHECK
+  lhs <- formula.tools::lhs(stats::formula(model))
+  response_str <- deparse1(lhs)
+  if (grepl("cbind", response_str)) {
+    if (length(lhs) > 3) {
+      warning(
+        paste(
+          "We do not allow for plotting of models using formulas containing",
+          "cbind() with more than 2 variables."
+        )
+      )
+      return(model_plots)
+    } else {
+      message(
+        paste(
+          "Notice that for plotting of response-predictor relationships, we",
+          "treat cbind as (success, failure) and calculate y as",
+          "success / (success + failure)."
+        )
+      )
+    }
+  }
 
   # SETUP
   if (model_type == "gam") {
@@ -202,7 +224,7 @@ plot_model <- function(model,
     model_args
   )
 
-  c(model_overview, formatted_labels) %<-% add_reference_factors(
+  model_overview <- add_reference_factors(
     plot_data,
     model_overview,
     categorical_vars,
@@ -211,10 +233,8 @@ plot_model <- function(model,
     model_args$contrasts
   )
 
-  model_plots$estimates <- plot_estimates(model_overview,
-                                          formatted_labels)
-  model_plots$effect_sizes <- plot_effect_sizes(model_overview,
-                                                formatted_labels)
+  model_plots$estimates <- plot_estimates(model_overview)
+  model_plots$effect_sizes <- plot_effect_sizes(model_overview)
   categorical_plots <- plot_categorical_vars(plot_data,
                                              categorical_vars,
                                              response_str,
@@ -328,11 +348,17 @@ assess_basic_model_quality <- function(
 #'
 #' @param model_overview
 #'  Overview of model coefficients with estimates
-#' @param formatted_labels
-#'  A list with formatted labels (italic and bold for factor levels)
 #' @returns
 #'  An estimate plot
-plot_estimates <- function(model_overview, formatted_labels) {
+plot_estimates <- function(model_overview) {
+  formatted_labels <- lapply(model_overview$formatted_pred, function(x) {
+    if (grepl("^italic", x) || grepl("^bold", x)) {
+      parse(text = as.character(x))[[1]]
+    } else {
+      as.character(x)
+    }
+  })
+
   p <- ggplot2::ggplot(
     model_overview,
     ggplot2::aes(x = .data$Estimate, y = .data$formatted_pred)
@@ -363,12 +389,9 @@ plot_estimates <- function(model_overview, formatted_labels) {
 #'
 #' @param model_overview
 #'  Overview of model coefficients with estimates
-#' @param formatted_labels
-#'  A list with formatted labels (italic and bold for factor levels)
 #' @returns
 #'  An effect size plot
-plot_effect_sizes <- function(model_overview,
-                              formatted_labels) {
+plot_effect_sizes <- function(model_overview) {
   model_overview <- model_overview |>
     dplyr::filter(.data$predictor != "(Intercept)") |>
     dplyr::mutate(
@@ -384,6 +407,14 @@ plot_effect_sizes <- function(model_overview,
     model_overview$predictor,
     levels = rev(levels(model_overview$predictor))
   )
+
+  formatted_labels <- lapply(model_overview$formatted_pred, function(x) {
+    if (grepl("^italic", x) || grepl("^bold", x)) {
+      parse(text = as.character(x))[[1]]
+    } else {
+      as.character(x)
+    }
+  })
   formatted_labels <- rev(formatted_labels)
 
   p <- ggplot2::ggplot(
@@ -581,9 +612,9 @@ plot_numeric_vars <- function(plot_data,
     x_max <- max(plot_data[[numeric_var]])
     x_min <- min(plot_data[[numeric_var]])
     if (estimate > 0 || is.na(estimate)) {
-      box_pos <- x_min + (abs((abs(x_max) - abs(x_min))) * (est_len * .2))
+      box_pos <- x_min + (abs((abs(x_max) - abs(x_min))) * (est_len * .6))
     } else {
-      box_pos <- x_max - (abs((abs(x_max) - abs(x_min))) * (est_len * .2))
+      box_pos <- x_max - (abs((abs(x_max) - abs(x_min))) * (est_len * .6))
     }
     plot_label <- stringr::str_interp("estimate = ${estimate}\n${significance}")
 
@@ -699,4 +730,134 @@ plot_interactions <- function(plot_data,
   }
 
   mixed_plots
+}
+
+#' Formats data for plotting
+#' @param model
+#'  The final model after model selection
+#' @param formula
+#'  The final model formula
+#' @param data
+#'  The unscaled data; original input to [LazyModeler::optimize_model()]
+#' @param m_matrix
+#'  Matrix of model
+#' @param term_map
+#'  A dataframe with column names and corresponding formula terms
+#' @param model_type
+#'  Model type to be used as character string.
+#'    Options: "lm", "glm", "gam".
+#' @param family
+#'  A character string or call describing the family used for model calculation.
+#'    See [stats::family] for options. Can also be "automatic".
+#' @param model_args
+#'  A named list of additional model arguments
+#' @return
+#'  Formatted data for plotting with info on categorical and numeric variables
+#'    and interactions
+format_plot_data <- function(model,
+                             formula,
+                             data,
+                             m_matrix,
+                             term_map,
+                             model_type,
+                             family,
+                             model_args = list()) {
+  # OMIT NA
+  data <- omit_na_from_model_data(
+    formula,
+    data,
+    model_type,
+    family,
+    model_args
+  )
+
+  # compute unscaled model matrix
+  unscaled_matrix <- get_model_matrix(
+    data,
+    formula,
+    model_type,
+    family,
+    model_args = model_args
+  )
+  # quick check: same length of
+  rows_scaled <- rownames(m_matrix)
+
+  if (nrow(m_matrix) != nrow(unscaled_matrix)) {
+    stop(
+      paste(
+        "There's a difference between the number of rows of data used for the",
+        "model and the number of rows of data used to create an unscaled model",
+        "matrix for plotting. Please open an issue at",
+        "https://github.com/LMKoesters/LazyModeler stating the model_args",
+        "used for this run."
+      )
+    )
+  }
+
+  # subset rows used for modeling
+  data <- data[rownames(data) %in% rows_scaled, ]
+
+  # get categorical columns
+  categorical_vars <- extract_categorical_vars(stats::model.frame(model))$var |>
+    unique()
+
+  # get interactions
+  interactions <- extract_interactions(term_map$term) |>
+    dplyr::mutate(is_cat = .data$main_effect %in% categorical_vars) |>
+    dplyr::group_by(.data$predictor) |>
+    dplyr::mutate(contains_cat = any(.data$is_cat)) |>
+    dplyr::ungroup()
+  numeric_only_interactions <- unique(
+    interactions$predictor[!interactions$contains_cat]
+  )
+  mixed_interactions <- interactions[interactions$contains_cat, ] |>
+    dplyr::distinct(.data$predictor, .data$main_effect, .keep_all = TRUE)
+  mixed_interactions_numeric <- mixed_interactions[
+    !mixed_interactions$main_effect %in% categorical_vars, "main_effect"
+  ]
+  mixed_interactions_categoric <- mixed_interactions[
+    mixed_interactions$main_effect %in% categorical_vars, "main_effect"
+  ]
+
+  # get numeric columns
+  numeric_vars <- term_map$term[!term_map$term %in% categorical_vars &
+                                  !term_map$term %in% interactions$predictor]
+
+  # get data
+  data_columns <- unique(unlist(c(
+    categorical_vars,
+    mixed_interactions_categoric
+  )))
+  plot_data_from_data <- data[, data_columns, drop = FALSE]
+  matrix_columns <- unique(unlist(c(numeric_vars,
+                                    numeric_only_interactions,
+                                    mixed_interactions_numeric)))
+  plot_data_from_matrix <- as.data.frame(unscaled_matrix)[, matrix_columns,
+                                                          drop = FALSE]
+
+  # add response to data
+  response_str <- deparse1(formula.tools::lhs(formula))
+  if (grepl("cbind", response_str)) {
+    resp <- formula.tools::lhs(formula)
+    col1 <- deparse1(resp[[2]])
+    col2 <- deparse1(resp[[3]])
+
+    succ <- data[, col1, drop = FALSE]
+    fail <- data[, col2, drop = FALSE]
+
+    plot_data_response <- succ / (succ + fail)
+    colnames(plot_data_response) <- c(response_str)
+  } else {
+    plot_data_response <- data[, response_str, drop = FALSE]
+  }
+
+  plot_data <- cbind(plot_data_from_data,
+                     plot_data_from_matrix,
+                     plot_data_response)
+
+  list(plot_data,
+       categorical_vars,
+       unique(unlist(c(numeric_vars,
+                       numeric_only_interactions))),
+       mixed_interactions)
 }

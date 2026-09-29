@@ -149,7 +149,7 @@ test_that("gam is optimized (backward simplification)", {
     direction = "backward",
     family = gaussian
   )) |>
-   expect_no_error()
+    expect_no_error()
 
   expect_equal(stats::formula(m$final_model),
                y ~ s(x1) + x2,

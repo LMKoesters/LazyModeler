@@ -38,6 +38,7 @@
 #'  b) a dataframe with comprehensive information on autocorrelations;
 #'    NULL if no autocorrelations were detected
 #'  c) an updated formula without autocorrelated variables
+#' @export
 handle_autocorrelations <- function(
     formula,
     data,
@@ -50,6 +51,7 @@ handle_autocorrelations <- function(
     cor_args = list(method = c("pearson"),
                     use = "complete.obs"),
     model_args = list()) {
+  cols <- if (all(is.na(cols))) c()
   if (length(cols) == 1) {
     stop(
       paste(
@@ -481,4 +483,141 @@ extract_cor_p_values <- function(correlations_l, cor_args) {
   }
 
   correlations_l
+}
+
+#' Pivots correlations to long format
+#'
+#' @param correlations
+#'  The result of [corrplot::cor.mtest()] as a dataframe
+#' @param values_to
+#'  Column name for values
+#' @returns
+#'  A pivoted dataframe with correlations
+cor_pivot_longer <- function(correlations, values_to) {
+  correlations |>
+    tibble::rownames_to_column(var = "coefficientA") |>
+    tidyr::pivot_longer(
+      !"coefficientA",
+      names_to = "coefficientB",
+      values_to = values_to
+    ) |>
+    dplyr::filter(.data$coefficientA != .data$coefficientB)
+}
+
+#' Sort and filter correlations
+#'
+#' @param correlations_w_p
+#'  Dataframe with information on correlations between variables with p-values
+#' @param threshold
+#'  The threshold at which to consider two variables autocorrelated
+#' @param p_threshold
+#'  p-value threshold for significance evaluation
+#' @returns
+#'  A sorted dataframe of autocorrelations with a correlation coefficient
+#'  equal to or larger than threshold
+cor_sort_and_filter <- function(correlations_w_p, threshold, p_threshold) {
+  correlations_w_p |>
+    dplyr::mutate(
+      sorted_coefA = pmin(.data$coefficientA, .data$coefficientB),
+      sorted_coefB = pmax(.data$coefficientA, .data$coefficientB),
+      comparison = paste(.data$sorted_coefA, .data$sorted_coefB)
+    ) |>
+    dplyr::distinct(.data$comparison, .keep_all = TRUE) |>
+    dplyr::select(!tidyr::any_of(c("sorted_coefA",
+                                   "sorted_coefB",
+                                   "comparison"))) |>
+    dplyr::filter(!is.na(.data$p_value) &
+                    .data$p_value < p_threshold) |>
+    tibble::add_column(note = NA)
+}
+
+#' Format correlation information for removal of variables
+#'
+#' @param autocorrelations
+#'  Dataframe with autocorrelated variables with p-values
+#' @param coefficients
+#'  List of variables to consider for removal
+#' @returns
+#'  A dataframe with indexed variables and a dataframe with pairs of
+#'    autocorrelated variables
+cor_prep_autocor <- function(autocorrelations, coefficients) {
+  coefficients_df <- data.frame(
+    idx = seq_along(coefficients),
+    coefficient = coefficients
+  )
+
+  autocorrelations <- autocorrelations |>
+    dplyr::left_join(coefficients_df, by = c("coefficientA" = "coefficient")) |>
+    dplyr::left_join(coefficients_df, by = c("coefficientB" = "coefficient"),
+                     suffix = c("1", "2")) |>
+    dplyr::mutate(
+      idx_smaller = pmin(.data$idx1, .data$idx2),
+      idx_bigger = pmax(.data$idx1, .data$idx2)
+    ) |>
+    dplyr::arrange(dplyr::desc(.data$idx_bigger)) |>
+    dplyr::select(-c("idx1", "idx2"))
+
+  list(coefficients_df, autocorrelations)
+}
+
+#' Remove autocorrelated predictors from formula
+#'
+#' @param formula
+#'  Formula to remove predictors from
+#' @param predictors
+#'  Predictors to remove
+#' @returns
+#'  Updated formula without autocorrelated predictors
+remove_autocor_predictors <- function(formula,
+                                      predictors) {
+  for (pred in predictors) {
+    d <- paste(". ~ . -", pred)
+    formula <- stats::update(formula, d)
+  }
+
+  formula
+}
+
+#' Format data for detection of autocorrelations
+#'
+#' Format input data for detection of autocorrelations
+#'  by calculating the model matrix that allows autocorrelation testing
+#'  for interactions, transforms, and factor variables.
+#' @param formula
+#'  A formula used for downstream model creation and simplification
+#' @param data
+#'  Underlying data for autocorrelation detection and downstream
+#'    model creation
+#' @param model_type
+#'  Model type to be used as character string.
+#'  Options: "lm", "glm", "lmer", "glmer",
+#'  "nlme", "gam", and "nls"
+#' @param family
+#'  A character string or call describing the family used for model calculation.
+#'    See [stats::family] for options.
+#' @param model_args
+#'  A named list of additional arguments given directly to model call
+#' @return
+#'  Dataframe with interactions, transforms,
+#'    and factor variables as numeric columns
+format_cor_data <- function(
+    data,
+    formula,
+    model_type,
+    family,
+    model_args = list()) {
+  model_args$na.action <- stats::na.pass
+  m_matrix <- get_model_matrix(
+    data,
+    formula,
+    model_type,
+    family,
+    model_args = model_args
+  )
+
+  term_map <- map_col_to_term(m_matrix, formula)
+  m_matrix <- m_matrix |>
+    as.data.frame() |>
+    dplyr::select(-c("(Intercept)"))
+  list(m_matrix = m_matrix, term_map = term_map)
 }

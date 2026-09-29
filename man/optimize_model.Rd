@@ -64,7 +64,7 @@ Default: c("anova")}
 
 \item{simplify_model}{Whether or not to simplify the full model. Default: TRUE}
 
-\item{scale_predictors}{Whether to apply scaling to predictor variables. Default: FALSE}
+\item{scale_predictors}{Whether to apply scaling to predictor variables. Default: TRUE}
 
 \item{detect_autocors}{Whether to detect autocorrelated dataframe variables. Note that we
 support autocorrelation detection only for model types "lm", "glm",
@@ -156,6 +156,7 @@ Optimize model by removing autocorrelations and variables
 that do not significantly predict the response variable.
 }
 \examples{
+# Example 1: Backward glm model simplification using example plant data
 # setup
 data("plants")
 
@@ -191,5 +192,74 @@ simplified_model_info <- optimize_model(
   plot_type = "violin",
   round_p = 3,
   trace = TRUE
+)
+
+# Example 2: glmer model optimization
+set.seed(42)
+
+n_groups <- 20
+n_per_group <- 20
+n <- n_groups * n_per_group
+
+x1 <- rnorm(n)
+x2 <- rnorm(n)
+x3 <- rnorm(n)
+grp <- factor(rep(seq_len(n_groups),
+                  each = n_per_group))
+group_effect <- rnorm(n_groups,
+                      mean = 0,
+                      sd = 0.6)
+eta <- 0.5 +
+  0.4 * x1 -
+  0.3 * x2 +
+  0.2 * x3 +
+  group_effect[grp]
+y <- rpois(n,
+           lambda = exp(eta))
+p <- plogis(eta)
+y_binom <- rbinom(n, size = 1, prob = p)
+
+d <- data.frame(
+  y = y,
+  y_binom = y_binom,
+  x1 = x1,
+  x2 = x2,
+  x3 = x3,
+  grp = grp
+)
+
+res <- optimize_model(
+  formula = y ~ x1 + x2 + x3 + x1:x3 + (1 | grp),
+  data = d,
+  model_type = "glmer",
+  model_args = list(),
+  evaluation_methods = c("anova"),
+  directions = c("backward"),
+  family = poisson
+)
+
+# Example 3: nls model optimization
+set.seed(42)
+x <- seq(0, 10, length.out = n)
+asym <- 5
+k <- 0.6
+y <- asym * (1 - exp(-k * x)) + rnorm(n, sd = 0.15)
+
+d <- data.frame(
+  y = y,
+  x = x
+)
+start <- c(Asym = 5, k = 0.6, offset = .1, slope = .5)
+
+res <- optimize_model(
+  formula = y ~ offset + Asym * (1 - exp(-k * x)) + slope * x,
+  data = d,
+  model_type = "nls",
+  model_args = list(
+    start = start
+  ),
+  evaluation_methods = c("anova"),
+  directions = c("backward"),
+  scale_predictors = FALSE
 )
 }

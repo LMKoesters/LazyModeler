@@ -4,12 +4,10 @@
 \alias{plot_effect_sizes}
 \title{Plot effect sizes}
 \usage{
-plot_effect_sizes(model_overview, formatted_labels)
+plot_effect_sizes(model_overview)
 }
 \arguments{
 \item{model_overview}{Overview of model coefficients with estimates}
-
-\item{formatted_labels}{A list with formatted labels (italic and bold for factor levels)}
 }
 \value{
 An effect size plot

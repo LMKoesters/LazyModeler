@@ -16,7 +16,7 @@
 Statistical modeling describes the process of finding a mathematical function with specific statistical assumptions that best fits the observed data (Crawley, 2007, 2015; Henley et al., 2020).
 This process attempts, in practice, to find a (causal) relationship between a dependent response variable `y` and an independent predictor variable `x` for any postulated hypothesis. For statistical inference and graphics in science, the programming environment R (R Core Team, 2026) has become highly popular.
 
-Our R package `LazyModeler` enables users to automatically remove autocorrelated variables, choose between several types of (non)linear regression models (e.g., LM, GLM, LMER, GLMER, GAM, or NLMER), perform stepwise model simplification, check model quality, plot coefficient estimates and relationships, and generate the output of the final model.
+Our R package `LazyModeler` enables users to automatically remove autocorrelated variables, choose between several types of (non)linear regression models (e.g., LM, GLM, LMER, GLMER, GAM, or NLME), perform stepwise model simplification, check model quality, plot coefficient estimates and relationships, and generate the output of the final model.
 
 # Overview and major functions
 
@@ -24,7 +24,7 @@ Our R package `LazyModeler` enables users to automatically remove autocorrelated
 
 The first major function `handle_autocorrelations` checks for any autocorrelations (\|r\| \> 0.7) (Dormann et al. 2013) given a list of variables sorted by relevance. Automatic removal of these autocorrelations is possible through the use of a function parameter. Removal will follow the order of the list of variables, ensuring that the user's expertise on the importance of features is respected. A named list is returned with a) a vector containing all removed predictors, and b) a data frame listing autocorrelations and information on deleted variables.
 
-The main function provides the model formula to the second major function `simplify_model`. If autocorrelations were detected, the formula is updated accordingly. The regression model is then calculated. Options for the models are: `lm`, `glm`, `lmer`, `glmer`, `gam`, `nls`, or `nlmer`, with all possible distributions of the response variable being allowed. Stepwise backward simplification or forward model selection takes place using an iterative process where each time the metric(s) specified by the user are applied on the model to check whether further simplification/selection is needed. Main variables are kept when they are involved in interactions. Options for the metrics are: `anova`, `aic`, `aicc`, or `bic`. The final model is returned to the main function alongside its metadata as well as simplification history if requested by the user.
+The main function provides the model formula to the second major function `simplify_model`. If autocorrelations were detected, the formula is updated accordingly. The regression model is then calculated. Options for the models are: `lm`, `glm`, `lmer`, `glmer`, `gam`, `nls`, or `nlme`, with all possible distributions of the response variable being allowed. Stepwise backward simplification or forward model selection takes place using an iterative process where each time the metric(s) specified by the user are applied on the model to check whether further simplification/selection is needed. Main variables are kept when they are involved in interactions. Options for the metrics are: `anova`, `aic`, `aicc`, or `bic`. The final model is returned to the main function alongside its metadata as well as simplification history if requested by the user.
 
 Using the third major function `plot_model()`, the final model then undergoes multiple visualization steps. Plots to assess model quality are created using the standard plot function available through base R, or model check included in the `performance` R package (Lüdecke et al. 2021). Furthermore, the script produces regression, box, or violin plots for each numerical or categorical coefficient as well as plots depicting effects sizes and estimates. All generated plots are returned to the user within a named list. The main function additionally returns the output of both the model simplification/selection and autocorrelation functions as well as the summary of the final model.
 
@@ -35,7 +35,6 @@ In addition, `LazyModeler` relies on the following R packages:
 - [`formula.tools`](https://cran.r-project.org/web/packages/formula.tools/index.html)
 - [`ggrepel`](https://ggrepel.slowkow.com/)
 - [`graphics`](https://www.rdocumentation.org/packages/graphics/versions/3.6.2)
-- [`purrr`](https://purrr.tidyverse.org/)
 - [`reformulas`](https://cran.r-project.org/web/packages/reformulas/index.html)
 - [`rlang`](https://cran.r-project.org/web/packages/rlang/index.html)
 - [`selcorr`](https://cran.r-project.org/web/packages/selcorr/index.html)
@@ -67,12 +66,13 @@ To get to know the package and its main function `optimize_model()`, we provide 
 
 A common usage requires an input data frame as well as a starting term for the model. The term can be provided as a language object and can encompass transformed variables and interactions. If the user wants to check for autocorrelations, they can provide a list of coefficients (in the form of data frame columns) that must be sorted by their relevance in descending order. If an autocorrelation is detected and the parameter `remove_autocors = TRUE` is set, the coefficient further down the list will be removed first.
 
-To calculate the model, the user can provide the type of linear model to calculate (default: "glm"), and the family (default: "gaussian"). The user can also decide on the simplification direction (a character vector containing "forward" for forward selection, "backward" for backward simplification, or both). If no simplification is desired, setting `simplify_model = FALSE` yields the original model without simplification.
+To calculate the model, the user can provide the type of linear model to calculate, and the family (default: "gaussian"). The user can also decide on the simplification direction (a character vector containing "forward" for forward selection, "backward" for backward simplification, or both). If no simplification is desired, setting `simplify_model = FALSE` yields the original model without simplification.
 
 The following example generates and optimizes a generalized linear model using the provided plant dataset and a term that includes plant reproductive, geographic, ecological, and cytogenetic information. The aim of the model is to identify the cytogenetic (ploidy levels [2n, 4n, etc.]), environmental (altitude in meters above sea level, latitude, longitude, WorldClim solar radiation [kJ m⁻² day⁻¹], BioClim annual mean temperature [°C], and BioClim isothermality [ratio of mean diurnal range to temperature annual range * 100]) factors that determine the production of sexual seeds (ratio of sexually to asexually formed seeds [%]) in the facultatively asexual model plant group _Ranunculus auricomus_ (Ranunculaceae). Please see Karbstein et al. 2021 for more details. 
 
 The pipeline checks for correlations between the values of the provided data frame columns and removes autocorrelated variables. The autocorrelation-cleaned term is then used for backward simplification of the model. Finally, the information on the coefficients of the simplified model is plotted. To access the final model, the user can navigate to `models_with_info` within the result, then either to `forward` or `backward` depending on the chosen selection/simplification procedure, and then to `final_model`. The plots are stored alongside the model within `plots` - these plots cover the result of `performance::check_model()`, as well as the regression, estimate, and effect size plots.
 
+If you want to compare the output of more than one optimize_model run, you can refer to the metrics used for evaluation during model selection which are stored within the final model.
 
 ``` r
 # import example data
@@ -121,7 +121,7 @@ results_example <- optimize_model(
 Navigating through the output. For example, (a) simply click on the data frame button highlighted with a red arrow to (b) illustrate the final model output.
 
 ![(a) Model quality check and (b,c) exemplary output plots of significant relationships.](paper/assets/figure2.png)
-(a) Model quality check provided by `performance::model_check()` and (b,c) exemplary output plots of significant relationships.
+(a) Model quality check provided by `performance::check_model()` and (b,c) exemplary output plots of significant relationships.
 
 # Community guidelines
 

@@ -162,7 +162,6 @@ nls_nlme <- function(formula,
                      model_args = list(),
                      evaluation_methods = c("anova"),
                      p_threshold = 0.05) {
-
   model <- create_model(formula,
                         data,
                         model_type = model_type,

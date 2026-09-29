@@ -13,6 +13,7 @@ test_that("Support model type is accepted", {
 
 test_that("Binomial distribution is correctly identified", {
   d <- make_unformatted_binary_data()
+  d$y <- as.double(d$y)
 
   (family <- check_model_family(
     "glm",
@@ -22,7 +23,7 @@ test_that("Binomial distribution is correctly identified", {
     lhs = quote(y)
   )) |>
     expect_message() |>
-    expect_warning(regexp = "formatted as numeric")
+    expect_warning(regexp = "formatted as 'double'")
 
   expect_equal(family, "binomial")
 })
@@ -57,6 +58,7 @@ test_that("Quasibinomial distribution is correctly identified", {
 
 test_that("Poisson distribution is correctly identified", {
   d <- make_tiny_poisson_data()
+  d$y <- as.double(d$y)
 
   (family <- check_model_family(
     "glm",
@@ -65,7 +67,7 @@ test_that("Poisson distribution is correctly identified", {
     data = d,
     lhs = quote(y)
   )) |>
-    expect_warning(regexp = "formatted as numeric") |>
+    expect_warning(regexp = "formatted as 'double'") |>
     expect_message()
 
   expect_equal(family, "poisson")
@@ -73,6 +75,7 @@ test_that("Poisson distribution is correctly identified", {
 
 test_that("Warning on non-automatic incorrect family", {
   d <- make_tiny_poisson_data()
+  d$y <- as.double(d$y)
 
   (family <- check_model_family(
     "glm",
@@ -81,7 +84,7 @@ test_that("Warning on non-automatic incorrect family", {
     data = d,
     lhs = quote(y)
   )) |>
-    expect_warning(regexp = "formatted as numeric") |>
+    expect_warning(regexp = "formatted as 'double'") |>
     expect_warning(regexp = "does not match response values")
 
   expect_equal(family, "binomial")
@@ -89,6 +92,7 @@ test_that("Warning on non-automatic incorrect family", {
 
 test_that("Family as closure is accepted", {
   d <- make_tiny_poisson_data()
+  d$y <- as.double(d$y)
 
   (family <- check_model_family(
     "glm",
@@ -97,7 +101,7 @@ test_that("Family as closure is accepted", {
     data = d,
     lhs = quote(y)
   )) |>
-    expect_warning(regexp = "formatted as numeric")
+    expect_warning(regexp = "formatted as 'double'")
 
   expect_equal(family, poisson)
 })
@@ -128,9 +132,7 @@ test_that("Binomial cbind is accepted", {
     data = d,
     lhs = quote(cbind(success, failure))
   )) |>
-    expect_no_error() |>
-    expect_warning(regex = "formatted as numeric") |>
-    expect_warning(regex = "formatted as numeric")
+    expect_no_error()
 
   expect_equal(family, "binomial")
 })

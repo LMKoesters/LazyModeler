@@ -216,3 +216,25 @@ test_that("lmer plots successfully", {
   expect_equal(names(p), c("quality_check", "estimates", "effect_sizes",
                            "categorical_variables", "relationships"))
 })
+
+test_that("plot output formatted correctly (cbind)", {
+  d <- make_grouped_data()
+
+  final_model <- create_model(
+    formula = cbind(success, failure) ~ x,
+    data = d,
+    model_type = "glm",
+    family = binomial,
+  )
+
+  (p <- plot_model(model = final_model,
+                   data = d,
+                   model_type = "glm",
+                   family = gaussian,
+                   quality_assessment = "baseR")) |>
+    expect_message(regexp = "Notice that for plotting of response-predictor")
+
+  expect_named(p,
+               c("quality_check", "estimates", "effect_sizes",
+                 "categorical_variables", "relationships"))
+})
