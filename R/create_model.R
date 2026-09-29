@@ -31,7 +31,7 @@
 #'   model_type = "glm",
 #'   family = "quasibinomial"
 #'  )
-#'  @export
+#' @export
 create_model <- function(formula,
                          data,
                          model_type,

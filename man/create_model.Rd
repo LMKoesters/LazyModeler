@@ -49,5 +49,4 @@ Creates a regression model
   model_type = "glm",
   family = "quasibinomial"
  )
- @export
 }
