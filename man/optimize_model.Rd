@@ -69,10 +69,10 @@ Default: c("anova")}
 \item{detect_autocors}{Whether to detect autocorrelated dataframe variables. Note that we
 support autocorrelation detection only for model types "lm", "glm",
 "lmer", "glmer", and "gam".
-Default: TRUE}
+Default: FALSE}
 
 \item{remove_autocors}{Whether to remove autocorrelated dataframe variables from formula.
-Default: TRUE}
+Default: FALSE}
 
 \item{trace}{Whether to return the full model selection history. Default: TRUE}
 
@@ -174,6 +174,9 @@ simplified_model_info <- optimize_model(
     annual_mean_temperature:isothermality,
   data = plants,
   model_type = "glm",
+  scale_predictors = TRUE,
+  detect_autocors = TRUE,
+  remove_autocors = TRUE,
   ac_threshold = 0.8,
   ac_columns = c("solar_radiation",
                  "annual_mean_temperature",
@@ -185,7 +188,6 @@ simplified_model_info <- optimize_model(
                   use = "complete.obs"),
   family = "quasibinomial",
   directions = c("backward"),
-  scale_predictors = TRUE,
   evaluation_methods = c("anova"),
   quality_assessment = "performance",
   categorical_stat_test = "wilcox",

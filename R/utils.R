@@ -30,7 +30,7 @@ determine_model_family <- function(model_type, data, formula) {
   if (is.logical(response_data) ||
         all(response_data %in% c(0, 1))) {
     valid_families <- c("binomial")
-    notice <- paste("For your data, binomial appears to be an apprioriate",
+    notice <- paste("For your data, binomial appears to be an appropriate",
                     "distribution. If observations represent grouped binomial",
                     "outcomes, provide trials/weights or use",
                     "cbind(successes, failures). Please also check for",

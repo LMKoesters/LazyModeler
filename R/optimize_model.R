@@ -33,10 +33,10 @@
 #'  Whether to detect autocorrelated dataframe variables. Note that we
 #'    support autocorrelation detection only for model types "lm", "glm",
 #'    "lmer", "glmer", and "gam".
-#'    Default: TRUE
+#'    Default: FALSE
 #' @param remove_autocors
 #'  Whether to remove autocorrelated dataframe variables from formula.
-#'    Default: TRUE
+#'    Default: FALSE
 #' @param trace
 #'  Whether to return the full model selection history. Default: TRUE
 #' @param base_formula
@@ -132,6 +132,9 @@
 #'     annual_mean_temperature:isothermality,
 #'   data = plants,
 #'   model_type = "glm",
+#'   scale_predictors = TRUE,
+#'   detect_autocors = TRUE,
+#'   remove_autocors = TRUE,
 #'   ac_threshold = 0.8,
 #'   ac_columns = c("solar_radiation",
 #'                  "annual_mean_temperature",
@@ -143,7 +146,6 @@
 #'                   use = "complete.obs"),
 #'   family = "quasibinomial",
 #'   directions = c("backward"),
-#'   scale_predictors = TRUE,
 #'   evaluation_methods = c("anova"),
 #'   quality_assessment = "performance",
 #'   categorical_stat_test = "wilcox",
