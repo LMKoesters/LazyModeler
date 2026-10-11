@@ -488,7 +488,7 @@ extract_cor_p_values <- function(correlations_l, cor_args) {
 #' Pivots correlations to long format
 #'
 #' @param correlations
-#'  The result of [corrplot::cor.mtest()] as a dataframe
+#'  The result of [stats::cor.test()] as a dataframe
 #' @param values_to
 #'  Column name for values
 #' @returns

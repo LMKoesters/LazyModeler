@@ -7,7 +7,7 @@
 cor_pivot_longer(correlations, values_to)
 }
 \arguments{
-\item{correlations}{The result of \code{\link[corrplot:cor.mtest]{corrplot::cor.mtest()}} as a dataframe}
+\item{correlations}{The result of \code{\link[stats:cor.test]{stats::cor.test()}} as a dataframe}
 
 \item{values_to}{Column name for values}
 }

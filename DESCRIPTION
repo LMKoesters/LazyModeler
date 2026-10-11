@@ -18,11 +18,10 @@ Encoding: UTF-8
 LazyData: true
 URL: https://github.com/LMKoesters/LazyModeler
 BugReports: https://github.com/LMKoesters/LazyModeler/issues
-Depends: R (>= 4.5.0)
+Depends: R (>= 4.4.0)
 Imports: 
     car,
     colorspace,
-    corrplot,
     dplyr,
     formula.tools,
     ggplot2,
@@ -44,7 +43,8 @@ Imports:
     withr,
     zeallot
 Suggests:
-    testthat (>= 3.0.0)
+    corrplot,
+    testthat (>= 3.3.0)
 Config/testthat/edition: 3
 License: GPL (>= 3)
 Roxygen: list(markdown = TRUE)
