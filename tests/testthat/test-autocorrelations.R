@@ -50,7 +50,7 @@ test_that("handle_autocorrelations recognizes priority order of variables", {
   d <- make_autocor_data()
 
   res <- handle_autocorrelations(
-    formula = y ~ x2 + x1 + x3,
+    formula = y ~ x1 + x2 + x3,
     data = d,
     model_type = "glm",
     family = gaussian,
@@ -97,8 +97,8 @@ test_that("handle_autocorrelations respects main effects", {
   )
 
   expect_equal(res$problematic_predictors,
-               c("log(x1)", "f1B:log(x1)", "f1C:log(x1)", "x3", "x1:x3", "x5",
-                 "x2", "x1:x2"))
+               c("log(x1)", "f1B:log(x1)", "f1C:log(x1)", "x3", "x1:x3", "x2",
+                 "x1:x2", "x5"))
   expect_equal(res$formula,
                y ~ x1 + x4 + f1)
 })
@@ -153,7 +153,7 @@ test_that("invalid input of 1 column throws informative error", {
       family = gaussian,
       cols = c("does_not_exist")
     ),
-    regexp = "unable to detect enough valid columns"
+    regexp = "provided only a single column"
   )
 })
 

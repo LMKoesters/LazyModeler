@@ -51,7 +51,7 @@ handle_autocorrelations <- function(
     cor_args = list(method = c("pearson"),
                     use = "complete.obs"),
     model_args = list()) {
-  cols <- if (all(is.na(cols))) c()
+  cols <- if (all(is.na(cols))) c() else cols
   if (length(cols) == 1) {
     stop(
       paste(
