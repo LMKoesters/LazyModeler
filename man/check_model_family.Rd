@@ -5,14 +5,16 @@
 \title{Check validity of model family}
 \usage{
 check_model_family(
+  formula,
   model_type,
   family = NULL,
   automatic = TRUE,
-  data = NULL,
-  lhs = NULL
+  data = NULL
 )
 }
 \arguments{
+\item{formula}{The formula to be used with the model. Can be either quote() or formula().}
+
 \item{model_type}{Model type to be used as character string.
 Options: "lm", "glm", "lmer", "glmer",
 "nlme", "gam", and "nls".}
@@ -22,9 +24,6 @@ Options: "lm", "glm", "lmer", "glmer",
 \item{automatic}{Whether to automatically choose an appropriate family. Default: NULL}
 
 \item{data}{The underlying data to use when determining an appropriate model family.
-Default: NULL}
-
-\item{lhs}{The left-hand-side of the formula used for downstream model creation.
 Default: NULL}
 }
 \value{

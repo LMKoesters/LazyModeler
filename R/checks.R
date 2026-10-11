@@ -32,6 +32,8 @@ check_model_type <- function(model_type, model_args) {
 #'
 #' Checks whether model family is supported and matches response data of
 #'  given formula
+#' @param formula
+#'  The formula to be used with the model. Can be either quote() or formula().
 #' @param model_type
 #'  Model type to be used as character string.
 #'    Options: "lm", "glm", "lmer", "glmer",
@@ -43,21 +45,26 @@ check_model_type <- function(model_type, model_args) {
 #' @param data
 #'  The underlying data to use when determining an appropriate model family.
 #'    Default: NULL
-#' @param lhs
-#'  The left-hand-side of the formula used for downstream model creation.
-#'    Default: NULL
 #' @returns
 #'  An appropriate model family for downstream model creation
-check_model_family <- function(model_type,
+check_model_family <- function(formula,
+                               model_type,
                                family = NULL,
                                automatic = TRUE,
-                               data = NULL,
-                               lhs = NULL) {
-  valid_families_info <- determine_model_family(model_type, data, lhs)
+                               data = NULL) {
+  valid_families_info <- determine_model_family(model_type, data, formula)
   valid_families <- valid_families_info$valid_families
 
   if (automatic) {
-    if (length(valid_families) > 1) {
+    if (length(valid_families) == 0) {
+      stop(
+        sprintf(
+          "%s Quitting.",
+          valid_families_info$notice
+        ),
+        call. = FALSE
+      )
+    } else if (length(valid_families) > 1) {
       stop(
         sprintf(
           paste("Your response variable allows for the following",
@@ -80,6 +87,17 @@ check_model_family <- function(model_type,
         family
       ))
     }
+  } else if (length(valid_families) == 0) {
+    stop(
+      sprintf(
+        paste(
+          "Unable to infer appropriate distribution from response. %s",
+          "Please check."
+        ),
+        valid_families_info$notice
+      ),
+      call. = FALSE
+    )
   } else if (!get_family_character(family) %in% valid_families) {
     warning(
       sprintf(
@@ -114,90 +132,47 @@ check_correlation_threshold <- function(threshold) {
   }
 }
 
-#' Check for data type of response
-#'
-#' Checks whether formatting of response column matches data
-#' @param response_col
-#'  The response column name
-#' @param response_data
-#'  The response data points
-#' @param response_type
-#'  The response data type
-check_response_data_format <- function(response_col,
-                                       response_data,
-                                       response_type) {
-  if (all(is.finite(response_data)) &&
-        all(response_data %% 1 == 0) &&
-        response_type == "double") {
-    warning(
-      sprintf(
-        paste(
-          "Your response column %s looks to be of type integer",
-          "but is formatted as 'double'.",
-          "We are going to treat it as 'double'. If your response is of",
-          "type integer, please correct the column's formatting and restart."
-        ),
-        response_col
-      ),
-      call. = FALSE
-    )
-  }
-}
-
 #' Checks model family in case of [cbind()]
 #'
 #' Checks which model family matches data when [cbind()]
 #'  was specified in formula
+#' @param formula
+#'  The formula to be used with the model. Can be either quote() or formula().
 #' @param model_type
 #'  Model type to be used as character string.
 #'    Options: "lm", "glm", "lmer", "glmer",
 #'    "nlme", "gam", and "nls".
 #' @param data
 #'  The underlying data to use when determining an appropriate model family
-#' @param pasted_response
-#'  Response as character
 #' @returns A list containing all valid families and a notice explaining
 #'  the family choice
-check_cbind_model_family <- function(model_type, data, pasted_response) {
-  if (length(pasted_response) > 3) {
-    warning(
-      paste(
-        "It seems like you have specified more than two variables within",
-        "cbind(). This is not supported. We will only consider the first",
-        "two variables for the determination of the correct model family.",
-        "If you wish to correct your formula, please stop",
-        "and rerun LazyModeler."
-      ),
-      call. = FALSE
-    )
-  }
+check_cbind_model_family <- function(formula, model_type, data) {
+  formula_reduced <- formula
+  formula.tools::rhs(formula_reduced) <- 1
+  m_frame <- stats::model.frame(formula_reduced, data)
+  response_data <- stats::model.response(m_frame)
 
-  col1 <- pasted_response[[2]]
-  col2 <- pasted_response[[3]]
+  is_binomial_matrix <- is.matrix(response_data) &&
+    ncol(response_data) == 2L &&
+    is.numeric(response_data) &&
+    all(is.finite(response_data)) &&
+    all(response_data >= 0) &&
+    all(response_data == floor(response_data)) &&
+    all(rowSums(response_data) > 0)
 
-  valid_families1 <- determine_model_family(
-    model_type, data, str2lang(col1)
-  )$valid_families
-  valid_families2 <- determine_model_family(
-    model_type, data, str2lang(col2)
-  )$valid_families
-
-  if ("quasibinomial" %in% valid_families1 ||
-        "quasibinomial" %in% valid_families2) {
-    valid_families <- c("quasibinomial")
-    notice <- paste("Your left-hand-side appears to be a grouped binomial",
-                    "outcome and your columns fit a quasibinomial model",
-                    "family. If you intended to fit a multivariate linear",
-                    "model, unfortunately, we do not support that right now.")
-  } else {
-    valid_families <- c("binomial")
+  if (is_binomial_matrix) {
+    valid_families <- c("binomial", "quasibinomial")
     notice <- paste("Your left-hand-side appears to be a grouped binomial",
                     "outcome. Please also check for overdispersion;",
-                    "if present, quasibinomial may be more appropriate.",
-                    "If you intended to fit a multivariate linear model,",
-                    "unfortunately, we do not support that right now.")
+                    "if present, quasibinomial may be more appropriate.")
+  } else {
+    valid_families <- c()
+    notice <- paste(
+      "It seems like you used cbind() with non-binomial data. Unfortunately,",
+      "we do not support this type of formula right now."
+    )
   }
-
+  
   list(valid_families = valid_families,
        notice = notice)
 }

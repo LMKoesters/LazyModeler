@@ -6,29 +6,25 @@
 #'    "nlme", "gam", and "nls".
 #' @param data
 #'  Data to consider when matching model family
-#' @param lhs
-#'  Left-hand-side of model formula (i.e., response term)
+#' @param formula
+#'  The formula to be used with the model. Can be either quote() or formula().
 #' @returns
 #'  A character vector with valid families given the data and
 #'    a notice explaining the choice
-determine_model_family <- function(model_type, data, lhs) {
-  response_col <- paste(lhs, collapse = "")
-
+determine_model_family <- function(model_type, data, formula) {
+  response_col <- Reduce(paste, deparse(formula))
   if (grepl("cbind", response_col)) {
-    return(check_cbind_model_family(model_type, data, paste(lhs)))
+    return(
+      check_cbind_model_family(formula,
+                               model_type,
+                               data)
+    )
   }
 
-  if (!response_col %in% colnames(data)) {
-    message("Transformed response for model family check.")
-    data[response_col] <- with(data, eval(parse(text = lhs)))
-  }
-
-  response_data <- data[!is.na(data[[response_col]]), response_col]
-  check_response_data_format(
-    response_col,
-    response_data,
-    typeof(data[[response_col]])
-  )
+  formula_reduced <- formula
+  formula.tools::rhs(formula_reduced) <- 1
+  m_frame <- stats::model.frame(formula_reduced, data)
+  response_data <- stats::model.response(m_frame)
   is_num <- is.numeric(response_data)
 
   if (is.logical(response_data) ||
@@ -39,15 +35,14 @@ determine_model_family <- function(model_type, data, lhs) {
                     "outcomes, provide trials/weights or use",
                     "cbind(successes, failures). Please also check for",
                     "overdispersion; if present, quasibinomial may be more",
-                    "appropriate")
+                    "appropriate.")
   } else if (is_num && (min(response_data) >= 0 &&
                           max(response_data) <= 1)) {
     if (model_type == "glmer") {
       valid_families <- c("gaussian")
       notice <- paste("Your values appear to be proportions.",
-                      "Since quasibinomial is not suitable",
-                      "for GLMER models, gaussian may be",
-                      "appropriate for your data.")
+                      "For GLMER models, binomial with trial weights or",
+                      "using cbind() may be appropriate for your data.")
     } else {
       valid_families <- c("gaussian", "quasibinomial")
       notice <- paste("Your values appear to be proportions.",
@@ -62,8 +57,8 @@ determine_model_family <- function(model_type, data, lhs) {
     notice <- paste("Poisson assumes non-negative count data",
                     "and mean-variance equality. Check for",
                     "overdispersion; if present, quasipoisson or",
-                    "negative binomial may be more appropriate.",
-                    "Note, however, that we currently only",
+                    "negative binomial may be more appropriate",
+                    "- note, however, that we currently only",
                     "cover poisson distributions.")
   } else {
     valid_families <- c("gaussian")

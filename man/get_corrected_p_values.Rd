@@ -4,7 +4,13 @@
 \alias{get_corrected_p_values}
 \title{Get corrected p-values}
 \usage{
-get_corrected_p_values(final_model, postsel, model_type, stat_type = 3)
+get_corrected_p_values(
+  final_model,
+  postsel,
+  model_type,
+  stat_type = 3,
+  p_threshold = 0.05
+)
 }
 \arguments{
 \item{final_model}{The final model selected in \code{\link[=simplify_model]{simplify_model()}}}
@@ -15,6 +21,8 @@ get_corrected_p_values(final_model, postsel, model_type, stat_type = 3)
 Options: "lm" or "glm"}
 
 \item{stat_type}{Type of Anova test. Default: 3}
+
+\item{p_threshold}{P-value threshold for significance evaluation. Default: 0.05}
 }
 \value{
 A dataframe with model coefficients, and raw and corrected p-values for

@@ -4,7 +4,7 @@
 \alias{determine_model_family}
 \title{Determine appropriate model family}
 \usage{
-determine_model_family(model_type, data, lhs)
+determine_model_family(model_type, data, formula)
 }
 \arguments{
 \item{model_type}{Model type to be used as character string.
@@ -13,7 +13,7 @@ Options: "lm", "glm", "lmer", "glmer",
 
 \item{data}{Data to consider when matching model family}
 
-\item{lhs}{Left-hand-side of model formula (i.e., response term)}
+\item{formula}{The formula to be used with the model. Can be either quote() or formula().}
 }
 \value{
 A character vector with valid families given the data and

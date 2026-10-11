@@ -269,11 +269,11 @@ optimize_model <- function(
   check_model_type(model_type, model_args)
   formula <- check_formula(formula, data)
   if (model_type %in% c("glm", "glmer", "gam")) {
-    family <- check_model_family(model_type,
+    family <- check_model_family(formula,
+                                 model_type,
                                  family,
                                  automatic = identical(family, "automatic"),
-                                 data = data,
-                                 lhs = formula.tools::lhs(formula))
+                                 data = data)
   }
   out <- list()
   rownames(data) <- seq_len(nrow(data))

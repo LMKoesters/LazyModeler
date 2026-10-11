@@ -1,3 +1,36 @@
+test_that("Transformed response is handled correctly", {
+  n <- 50
+  d <- data.frame(y = abs(rnorm(n)),
+                  x1 = rnorm(n),
+                  logy = factor(sample(c("A", "B", "C"), n, replace = TRUE)))
+
+  (family <- check_model_family(
+    log(y) ~ x1,
+    "glm",
+    NULL,
+    automatic = TRUE,
+    data = d
+  )) |>
+    expect_message("Gaussian is suggested")
+
+  expect_equal(family, "gaussian")
+})
+
+test_that("gam is handled correctly", {
+  d <- make_gam_data()
+
+  (family <- check_model_family(
+    y ~ s(x1) + x2 + x3,
+    "gam",
+    NULL,
+    automatic = TRUE,
+    data = d
+  )) |>
+    expect_message("Gaussian is suggested")
+
+  expect_equal(family, "gaussian")
+})
+
 test_that("Unsupported model type is rejected (string)", {
   expect_error(
     check_model_type("some model"),
@@ -13,17 +46,15 @@ test_that("Support model type is accepted", {
 
 test_that("Binomial distribution is correctly identified", {
   d <- make_unformatted_binary_data()
-  d$y <- as.double(d$y)
 
   (family <- check_model_family(
+    y ~ x,
     "glm",
     NULL,
     automatic = TRUE,
-    data = d,
-    lhs = quote(y)
+    data = d
   )) |>
-    expect_message() |>
-    expect_warning(regexp = "formatted as 'double'")
+    expect_message("Continuing with binomial distribution")
 
   expect_equal(family, "binomial")
 })
@@ -32,11 +63,11 @@ test_that("Gaussian distribution is correctly identified", {
   d <- make_tiny_data()
 
   (family <- check_model_family(
+    y ~ x1,
     "glm",
     NULL,
     automatic = TRUE,
-    data = d,
-    lhs = quote(x1)
+    data = d
   )) |>
     expect_message()
 
@@ -47,92 +78,85 @@ test_that("Quasibinomial distribution is correctly identified", {
   d <- make_tiny_proportions_data()
 
   check_model_family(
+    y ~ x1,
     "glm",
     NULL,
     automatic = TRUE,
-    data = d,
-    lhs = quote(y)
+    data = d
   ) |>
     expect_error(regex = "following distributions: gaussian and quasibinomial")
 })
 
 test_that("Poisson distribution is correctly identified", {
   d <- make_tiny_poisson_data()
-  d$y <- as.double(d$y)
 
   (family <- check_model_family(
+    y ~ x,
     "glm",
     NULL,
     automatic = TRUE,
-    data = d,
-    lhs = quote(y)
+    data = d
   )) |>
-    expect_warning(regexp = "formatted as 'double'") |>
-    expect_message()
+    expect_message(regexp = "Poisson assumes non-negative")
 
   expect_equal(family, "poisson")
 })
 
 test_that("Warning on non-automatic incorrect family", {
   d <- make_tiny_poisson_data()
-  d$y <- as.double(d$y)
 
   (family <- check_model_family(
+    y ~ x,
     "glm",
     "binomial",
     automatic = FALSE,
-    data = d,
-    lhs = quote(y)
+    data = d
   )) |>
-    expect_warning(regexp = "formatted as 'double'") |>
-    expect_warning(regexp = "does not match response values")
+    expect_warning(
+      regexp = "Chosen distribution 'binomial' does not match response values"
+    )
 
   expect_equal(family, "binomial")
 })
 
 test_that("Family as closure is accepted", {
   d <- make_tiny_poisson_data()
-  d$y <- as.double(d$y)
 
-  (family <- check_model_family(
+  family <- check_model_family(
+    y ~ x,
     "glm",
     poisson,
     automatic = FALSE,
-    data = d,
-    lhs = quote(y)
-  )) |>
-    expect_warning(regexp = "formatted as 'double'")
+    data = d
+  )
 
   expect_equal(family, poisson)
 })
 
-test_that("Response is transformed in check_model_family", {
-  d <- make_tiny_data()
-
-  (family <- check_model_family(
-    "glm",
-    NULL,
-    automatic = TRUE,
-    data = d,
-    lhs = quote(I(x1^2))
-  )) |>
-    expect_message(regex = "Transformed response") |>
-    expect_message(regex = "Gaussian is suggested")
-
-  expect_equal(family, "gaussian")
-})
-
 test_that("Binomial cbind is accepted", {
-  d <- make_grouped_data()
+  d <- make_grouped_data(n = 50)
 
   (family <- check_model_family(
+    cbind(success, failure) ~ x,
     "glm",
     "binomial",
     automatic = FALSE,
-    data = d,
-    lhs = quote(cbind(success, failure))
-  )) |>
-    expect_no_error()
+    data = d
+  ))
 
   expect_equal(family, "binomial")
+})
+
+test_that("Non-binomial cbind is rejected", {
+  d <- make_grouped_data(n = 50)
+  d$x1 <- rnorm(50)
+
+  (check_model_family(
+    cbind(success, x1) ~ x,
+    "glm",
+    "binomial",
+    automatic = TRUE,
+    data = d
+  )) |>
+    expect_error(regexp = "Quitting.")
 })

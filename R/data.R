@@ -3,10 +3,9 @@
 #' A dataset containing the traits of 220
 #'  plant populations.
 #'
-#' @format A data frame with 220 rows and 13 variables:
+#' @format A data frame with 220 rows and 12 variables:
 #' \itemize{
 #'   \item population_id: the official population identifier
-#'   \item ploidy_level: the number of entire sets of chromosomes in a cell
 #'   \item sexual_seed_perc: the percent of sexual to all formed seeds averaged
 #'   across all flowers within the population
 #'   \item sexual_seed_prop: the ratio of sexual to all formed seeds averaged
@@ -20,6 +19,7 @@
 #'   (kJ/m^-2/day^-1; see BioClim database)
 #'   \item habitat: description of the environment where the measurement was
 #'   taken (e.g., forest, meadow, swamp; see BioClim database)
+#'   \item ploidy: the number of entire sets of chromosomes in a cell
 #'   \item number_flower_leaves: number of flower or floral leaves of a plant
 #'   \item annual_mean_temperature: annual mean temperature at the location
 #'   (see 'Bio1' in BioClim database)
