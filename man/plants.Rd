@@ -18,7 +18,7 @@ across all flowers within the population
 \item longitude_gps_e: longitude coordinate of the measurement location
 (Eastern Hemisphere)
 \item solar_radiation: amount of incoming solar radiation at the location
-(kJ/m^-2/day^-1; see BioClim database)
+(kJ m⁻² day⁻¹; see BioClim database)
 \item habitat: description of the environment where the measurement was
 taken (e.g., forest, meadow, or swamp)
 \item ploidy: the number of entire sets of chromosomes in a cell
