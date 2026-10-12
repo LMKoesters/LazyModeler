@@ -1,7 +1,11 @@
 #' Traits of 220 populations of the Ranunculus auricomus plant species complex (Karbstein et al. 2021)
 #'
-#' A dataset containing the traits of 220
-#'  plant populations.
+#' A dataset containing reproductive and cytogenetic traits,
+#' and environmental characteristics of 220
+#' plant populations comprising 80 taxa. 
+#' It has been published by Karbstein et al. 2021 
+#' in Molecular Ecology (https://onlinelibrary.wiley.com/doi/10.1111/mec.15919).
+#'
 #'
 #' @format A data frame with 220 rows and 12 variables:
 #' \itemize{
