@@ -1,4 +1,4 @@
-#' Traits of 220 populations of the Ranunculus auricomus species complex
+#' Traits of 220 populations of the Ranunculus auricomus plant species complex (Karbstein et al. 2021)
 #'
 #' A dataset containing the traits of 220
 #'  plant populations.
@@ -16,9 +16,9 @@
 #'   \item longitude_gps_e: longitude coordinate of the measurement location
 #'   (Eastern Hemisphere)
 #'   \item solar_radiation: amount of incoming solar radiation at the location
-#'   (kJ/m^-2/day^-1; see BioClim database)
+#'   (kJ m⁻² day⁻¹; see BioClim database)
 #'   \item habitat: description of the environment where the measurement was
-#'   taken (e.g., forest, meadow, swamp; see BioClim database)
+#'   taken (e.g., forest, meadow, or swamp)
 #'   \item ploidy: the number of entire sets of chromosomes in a cell
 #'   \item number_flower_leaves: number of flower or floral leaves of a plant
 #'   \item annual_mean_temperature: annual mean temperature at the location
